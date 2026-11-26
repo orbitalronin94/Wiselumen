@@ -225,3 +225,8 @@ El proyecto distingue **El Palimpsesto de Marper** (tradición textual original 
 - [Grafo heterogéneo v0.4](corpus/graph_v0.4.json)
 
 - [La fe reservada de LUMEN](lore/DOCTRINA_DE_LA_CREENCIA_LATENTE.md)
+
+
+## Corpus Maestro v0.4
+
+El Palimpsesto de Marper está recuperado e indexado en 16.848 revelaciones. La semilla v0.4 reúne 160 registros (46 fact, 73 lore, 41 bridge) y amplía el registro hasta P062. El grafo heterogéneo v0.4 contiene 17.479 nodos y 51.907 relaciones principales en matrices COO dispersas. Véanse `data/lore_seed_v0.4.jsonl`, `corpus/PALIMPSESTO_AUDIT.md` y `corpus/graph_v0.4.json`. La indexación del Palimpsesto está completa; la auditoría factual de todas sus afirmaciones sigue en curso.
