@@ -141,6 +141,7 @@ def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_s
   "node_count":len(ordered),
   "node_index_order":"Concatenar nodes_part1..partN en orden; orden lexicográfico por id; el índice matricial es la posición base cero.",
   "nodes_shards":node_shards,"matrices":matrix_meta,"edge_count":base_edges,"topic_map_record_count":len(topic_map),"topic_map_occurrences":sum(x["occurrences"] for x in topic_map),
+  "topic_map_dedicated_adaptations":sum(bool(x.get("adaptation_record_ids")) for x in topic_map),
   "unresolved_record_links":[{"from":a,"relation":r,"to":b} for a,r,b,w in unresolved],
   "projection_semantics":"Las proyecciones compartidas se calculan solo sobre los registros curados y expresan coaparición de metadatos; no implican causalidad ni acuerdo."
  }
