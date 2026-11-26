@@ -1,7 +1,6 @@
 """Paired real-checkpoint CPU benchmark: main vs combined candidate.
 
-The baseline emulates the production batch-4 update using 8 microbatches of 4.
-The candidate uses one physical batch of 32 for the same 32 examples/update.
+Both arms use one physical batch of 4 per update, with no gradient accumulation.
 Both arms consume identical pre-tokenized V5 examples in identical order.
 """
 import copy
@@ -34,7 +33,8 @@ from scripts.v5_sampling import format_lore_row, sample_v5_batches
 START_STEP = 20000
 STEPS = 10
 MICRO_BS = 4
-EFFECTIVE_BS = 32
+EFFECTIVE_BS = 4
+MICROBATCHES_PER_UPDATE = EFFECTIVE_BS // MICRO_BS
 MAX_LEN = 512
 CHUNK_SIZE = int(os.environ.get("LOGIT_CHUNK_SIZE", "2048"))
 
@@ -86,16 +86,16 @@ def prepare_batches():
     ]
     if len(v4_rows) < 100 or len(lore_rows) < 20 or len(conflict_rows) != 10:
         raise RuntimeError("Insufficient V5 training pools")
-    # 80 x batch-4 = 10 identical effective-batch-32 updates.
+    # 10 identical physical-batch-4 updates; no accumulation.
     sampled = sample_v5_batches(
         v4_rows, lore_rows, conflict_rows,
-        steps=STEPS * (EFFECTIVE_BS // MICRO_BS),
+        steps=STEPS * MICROBATCHES_PER_UPDATE,
         rng=random.Random(SEED + START_STEP + 1),
         batch_size=MICRO_BS,
     )
     micro, physical = [], []
     for i in range(STEPS):
-        grouped_samples = sampled[i * 8:(i + 1) * 8]
+        grouped_samples = sampled[i * MICROBATCHES_PER_UPDATE:(i + 1) * MICROBATCHES_PER_UPDATE]
         flat_samples = [
             sample for one_microbatch in grouped_samples
             for _kind, sample in one_microbatch
@@ -110,7 +110,7 @@ def prepare_batches():
                 torch.nn.functional.pad(full_batch[1], (0, MAX_LEN - width), value=-100),
             )
         physical.append(full_batch)
-        for j in range(8):
+        for j in range(MICROBATCHES_PER_UPDATE):
             start, end = j * MICRO_BS, (j + 1) * MICRO_BS
             micro.append((
                 full_batch[0][start:end],
@@ -197,12 +197,12 @@ def one_update(model, optimizer, ema, batches, global_step, amp_dtype=None):
 
 
 def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
-    # Both arms use identical intra-op=8 and inter-op=1 thread settings.
+    # Both arms use identical intra-op=4 and inter-op=1 thread settings.
     cpu_runtime = configure_cpu_runtime(
-        threads=8, interop_threads=1
+        threads=4, interop_threads=1
     )
-    if cpu_runtime["intraop_threads"] != 8 or cpu_runtime["interop_threads"] != 1:
-        raise RuntimeError(f"Expected intra-op=8/inter-op=1, got {cpu_runtime}")
+    if cpu_runtime["intraop_threads"] != 4 or cpu_runtime["interop_threads"] != 1:
+        raise RuntimeError(f"Expected intra-op=4/inter-op=1, got {cpu_runtime}")
     setup_started = time.perf_counter()
     model, optimizer, ema, fused_status = load_arm(checkpoint, fused=candidate)
     details = {
@@ -244,7 +244,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
     losses, grad_norms = [], []
     compile_failed_seconds = 0.0
     for i in range(STEPS):
-        group = [batches[i]] if not micro_accum else batches[i * 8:(i + 1) * 8]
+        group = [batches[i]] if not micro_accum else batches[i * MICROBATCHES_PER_UPDATE:(i + 1) * MICROBATCHES_PER_UPDATE]
         try:
             loss, grad, _ = one_update(
                 model, optimizer, ema, group, START_STEP + i, amp_dtype
@@ -301,7 +301,7 @@ def main():
         print(subprocess.check_output(["lscpu"], text=True), flush=True)
     except Exception:
         pass
-    print("cpu_runtime_initial", configure_cpu_runtime(threads=8, interop_threads=1), flush=True)
+    print("cpu_runtime_initial", configure_cpu_runtime(threads=4, interop_threads=1), flush=True)
     ckpt_path = Path("artifacts/lumen-v22-step-20000.pt")
     if not ckpt_path.exists():
         raise FileNotFoundError(ckpt_path)
@@ -311,13 +311,13 @@ def main():
     if not all(k in checkpoint for k in ("model", "optimizer", "ema")):
         raise RuntimeError("Checkpoint missing model/optimizer/EMA state")
     micro, physical, provenance = prepare_batches()
-    baseline = run_arm("main-batch4-accum8", checkpoint, micro, True, False)
-    candidate = run_arm("combined-batch32", checkpoint, physical, False, True)
+    baseline = run_arm("main-batch4", checkpoint, micro, True, False)
+    candidate = run_arm("optimized-batch4", checkpoint, physical, False, True)
     result = {
         "status": "completed", "checkpoint_step": START_STEP,
         "checkpoint_artifact_sha256": "5a5c20fed63238b031188295e1db9eae876951e1e63137b9e969eacb22574fb",
         "steps_per_arm": STEPS, "same_effective_batch": EFFECTIVE_BS,
-        "thread_configuration": {"baseline": "intra=8,inter=1", "candidate": "intra=8,inter=1"},
+        "thread_configuration": {"baseline": "intra=4,inter=1", "candidate": "intra=4,inter=1"},
         "same_examples_and_order": True, "provenance": provenance,
         "baseline": baseline, "candidate": candidate,
         "candidate_vs_main_tokens_per_second_gain_pct": (
@@ -326,7 +326,7 @@ def main():
         "candidate_vs_main_end_to_end_gain_pct": (
             candidate["end_to_end_tokens_per_second"] / baseline["end_to_end_tokens_per_second"] - 1
         ) * 100,
-        "loss_comparison_note": "Same examples and effective batch per update; BF16/compile/IPEX/fused AdamW may change numerics.",
+        "loss_comparison_note": "Same examples and physical batch of 4 per update; BF16/compile/IPEX/fused AdamW may change numerics.",
         "chunked_logits_note": "Candidate enables exact-objective chunked projection/CE over supervised positions (chunk size 2048); main keeps the existing supervised-only, unchunked path. Neither materializes full [B,T,V].",
         "muon_note": "Muon excluded: it changes optimizer mathematics and cannot be treated as a transparent CPU kernel optimization.",
         "gradient_checkpointing": "disabled",
