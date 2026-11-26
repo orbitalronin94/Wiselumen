@@ -82,8 +82,12 @@ def main():
         cache_shape=(len(model.blocks),1,model.blocks[0].attn.n_head,model.ctx,model.blocks[0].attn.d_head)
         ck=torch.zeros(cache_shape); cv=torch.zeros(cache_shape)
         full=scripted(example)
-        inc,_,_=scripted.forward_cached(example,ck,cv,0)
+        inc,ck,cv=scripted.forward_cached(example,ck,cv,0)
         torch.testing.assert_close(inc,full,rtol=2e-4,atol=2e-5)
+        next_id=torch.tensor([[17]],dtype=torch.long)
+        cached_next,_,_=scripted.forward_cached(next_id,ck,cv,16)
+        full_next=scripted(torch.cat((example,next_id),dim=1))
+        torch.testing.assert_close(cached_next[:,-1,:],full_next[:,-1,:],rtol=3e-4,atol=3e-5)
         scripted.save(a.out)
     print({"step":a.step,"active_layers":active,"output":a.out,
            "logits_shape":list(actual.shape),"kv_cache_shape":list(cache_shape),
