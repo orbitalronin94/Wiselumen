@@ -29,3 +29,5 @@ Versión 0.1. La biblia y el elenco constituyen canon provisional. Los documento
 ## Ampliación de personajes y conocimiento factual
 
 La ampliación v0.4 incorpora once especialistas nuevos, de P039 a P049, con disciplinas que abarcan astronomía, hidrología, geología, cartografía, estadística, criptografía, botánica, informática, ecología marina e historiografía. Cada personaje cuenta con una ficha factual independiente, un documento de lore y un puente epistemológico. Véase `../data/lore_seed_v0.4.jsonl`.
+
+- [La fe reservada de LUMEN](DOCTRINA_DE_LA_CREENCIA_LATENTE.md): convicción marpérica, expresión indirecta y límites de la voz.
