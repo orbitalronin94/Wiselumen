@@ -101,3 +101,23 @@ Los profetas no conocen necesariamente la naturaleza de aquello que veneran. La 
 ## Red de especialistas incorporados en la ampliación v0.4
 
 Los nuevos personajes no forman sectas adicionales. Se integran en redes de colaboración, rivalidad y revisión con los ocho profetas y con los archivistas de la Concordia. Sus conocimientos se distribuyen en registros factuales independientes, mientras que sus biografías y disputas se narran en documentos de lore. La relación entre ambas capas queda explícita en los puentes B019–B029.
+
+
+## Ampliación de especialistas v0.4
+
+Estos doce personajes amplían la red de conocimiento sin fundar nuevas sectas. Sus documentos se conectan con hechos externos mediante pares fact/lore/bridge (F035–F046, L056–L067 y B030–B041). Ninguno es portavoz infalible: cada especialista domina un campo y desconoce otros.
+
+| ID | Personaje | Afiliación / oficio | Voz y propósito | Incertidumbre central |
+|---|---|---|---|---|
+| P050 | Nerea Vardal | Paleógrafa de la Casa de los Índices | Meticulosa; distingue soporte, tinta, mano y fecha, sin confundir lectura probable con certeza. | ¿Por qué una capa borrada parece responder a anotaciones aún no escritas? |
+| P051 | Edrik Senn | Vulcanólogo del Colegio de Medidores | Explica con analogías físicas; desconfía de profecías retrospectivas. | ¿Cómo puede un informe suyo estar fechado antes de su nacimiento? |
+| P052 | Sira Olt | Entomóloga de las Marismas de Urdia | Observadora, vivaz, poco solemne; describe organismos sin moralizarlos. | ¿Por qué una especie aparece en un inventario anterior al humedal? |
+| P053 | Oren Tal | Espectroscopista del Observatorio de Nacarión | Frío, elegante, atento a márgenes de error; prefiere una línea espectral a una metáfora. | ¿Por qué sus cuadernos conservan el espectro de una estrella ausente? |
+| P054 | Yara Belisar | Lingüista de la Cofradía de la Última Traducción | Comparativa; escucha los errores como fósiles sociales. | ¿De dónde procede una palabra compartida por pueblos que niegan haberse conocido? |
+| P055 | Dovan Més | Médico anatomista de la Casa de Sal | Clínico, directo; distingue observación, diagnóstico e interpretación. | ¿Quién añade una estructura anatómica a las copias de sus láminas? |
+| P056 | Iven Orv | Geólogo de la Meseta de Ors | Pragmático, paciente; habla en estratos y escalas temporales. | ¿Cómo puede una capa de ceniza preceder a la erupción que la produjo? |
+| P057 | Calen Ral | Maestra metalúrgica del Gremio de Sal y Vidrio | Ingeniosa, práctica; detesta que llamen magia a un tratamiento térmico. | ¿Por qué una misma hoja figura como frágil e irrompible? |
+| P058 | Sefra Urd | Matemática de la Escuela de las Tres Tizas | Austera, juguetona con las demostraciones; exige mostrar el camino. | ¿Quién firma una demostración antes de haber nacido? |
+| P059 | Ravel Quince | Restaurador de instrumentos del Gremio de Sal y Vidrio | Paciente, manual, escucha las vibraciones de los objetos. | ¿Qué produce la nota que persiste cuando la campana está desmontada? |
+| P060 | Hadria Morn | Climatóloga de las Marismas de Urdia | Serena, estadística; distingue tiempo meteorológico y clima. | ¿Cómo aparecen series de inviernos futuros en archivos antiguos? |
+| P061 | Pelia Ardan | Microbióloga de la Casa de Sal | Enérgica, cuidadosa con las muestras; separa bacterias, virus y causas no infecciosas. | ¿Quién selló las placas antes de que existiera el laboratorio? |
