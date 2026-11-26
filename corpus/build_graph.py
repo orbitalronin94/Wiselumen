@@ -104,7 +104,7 @@ def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_s
   relations[f"projection_shared_{entity}"]=entries
 
  out=Path(output_manifest).parent
- graph_dir=out/"graph_v0.5"
+ graph_dir=out/Path(output_manifest).stem
  matrix_dir=graph_dir/"matrices"
  graph_dir.mkdir(parents=True,exist_ok=True); matrix_dir.mkdir(parents=True,exist_ok=True)
  node_shards=[]
@@ -141,6 +141,7 @@ def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_s
   "node_count":len(ordered),
   "node_index_order":"Concatenar nodes_part1..partN en orden; orden lexicográfico por id; el índice matricial es la posición base cero.",
   "nodes_shards":node_shards,"matrices":matrix_meta,"edge_count":base_edges,"topic_map_record_count":len(topic_map),"topic_map_occurrences":sum(x["occurrences"] for x in topic_map),
+  "topic_map_dedicated_adaptations":sum(bool(x.get("adaptation_record_ids")) for x in topic_map),
   "unresolved_record_links":[{"from":a,"relation":r,"to":b} for a,r,b,w in unresolved],
   "projection_semantics":"Las proyecciones compartidas se calculan solo sobre los registros curados y expresan coaparición de metadatos; no implican causalidad ni acuerdo."
  }
@@ -149,11 +150,11 @@ def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_s
 
 if __name__=="__main__":
  p=argparse.ArgumentParser()
- p.add_argument("--dataset",default="data/lore_seed_v0.5.jsonl")
+ p.add_argument("--dataset",default="data/lore_seed_v0.6.jsonl")
  p.add_argument("--index-dir",default="data")
- p.add_argument("--topic-map",default="data/palimpsesto_topic_map_v0.2.jsonl")
- p.add_argument("--output",default="corpus/graph_v0.5.json")
- p.add_argument("--dataset-blob-sha",default="4db2ed5d6139a93907d50d3cc056d4f9a9f0db94")
+ p.add_argument("--topic-map",default="data/palimpsesto_topic_map_v0.3.jsonl")
+ p.add_argument("--output",default="corpus/graph_v0.6.json")
+ p.add_argument("--dataset-blob-sha",default="c237f6db97c63cf77e6d080e87b36d990f22fddd")
  a=p.parse_args()
  indexes=[Path(a.index_dir)/f"palimpsesto_index_v0.1_part{i}.jsonl" for i in range(1,5)]
  build(a.dataset,indexes,a.topic_map,a.output,a.dataset_blob_sha)

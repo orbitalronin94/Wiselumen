@@ -1,0 +1,213 @@
+{
+  "schema_version": "1.1.0",
+  "graph_type": "heterogeneous_directed_multirelational",
+  "generated_from": {
+    "dataset": "data/lore_seed_v0.6.jsonl",
+    "dataset_blob_sha": "c237f6db97c63cf77e6d080e87b36d990f22fddd",
+    "record_count": 289,
+    "palimpsest_index_records": 16848,
+    "index_shards": 4,
+    "topic_map": "data/palimpsesto_topic_map_v0.3.jsonl",
+    "topic_map_records": 41,
+    "topic_occurrences": 16848
+  },
+  "completeness": {
+    "status": "complete_structural_index",
+    "reason": "Los 16.848 registros fuente están indexados por ID, tema y rango de líneas; las afirmaciones del Palimpsesto siguen sin auditoría factual individual.",
+    "requires_original_text": false,
+    "requires_claim_review": true
+  },
+  "node_count": 17861,
+  "node_index_order": "Concatenar nodes_part1..partN en orden; orden lexicográfico por id; el índice matricial es la posición base cero.",
+  "nodes_shards": [
+    {
+      "path": "corpus/graph_v0.6/nodes_part1.jsonl",
+      "count": 4000
+    },
+    {
+      "path": "corpus/graph_v0.6/nodes_part2.jsonl",
+      "count": 4000
+    },
+    {
+      "path": "corpus/graph_v0.6/nodes_part3.jsonl",
+      "count": 4000
+    },
+    {
+      "path": "corpus/graph_v0.6/nodes_part4.jsonl",
+      "count": 4000
+    },
+    {
+      "path": "corpus/graph_v0.6/nodes_part5.jsonl",
+      "count": 1861
+    }
+  ],
+  "matrices": {
+    "asserts_claim": {
+      "path": "corpus/graph_v0.6/matrices/asserts_claim.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO",
+      "nnz": 302
+    },
+    "authored_by": {
+      "path": "corpus/graph_v0.6/matrices/authored_by.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO",
+      "nnz": 289
+    },
+    "curated_by_character": {
+      "path": "corpus/graph_v0.6/matrices/curated_by_character.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO",
+      "nnz": 41
+    },
+    "has_domain": {
+      "path": "corpus/graph_v0.6/matrices/has_domain.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO",
+      "nnz": 289
+    },
+    "mentions_character": {
+      "path": "corpus/graph_v0.6/matrices/mentions_character.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO",
+      "nnz": 512
+    },
+    "references_record": {
+      "path": "corpus/graph_v0.6/matrices/references_record.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO",
+      "nnz": 501
+    },
+    "topic_adapted_as_lore": {
+      "path": "corpus/graph_v0.6/matrices/topic_adapted_as_lore.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO",
+      "nnz": 82
+    },
+    "topic_linked_fact": {
+      "path": "corpus/graph_v0.6/matrices/topic_linked_fact.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO",
+      "nnz": 39
+    },
+    "topic_separated_by_bridge": {
+      "path": "corpus/graph_v0.6/matrices/topic_separated_by_bridge.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO",
+      "nnz": 80
+    },
+    "uses_form": {
+      "path": "corpus/graph_v0.6/matrices/uses_form.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO",
+      "nnz": 289
+    },
+    "belongs_to_sect": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 90
+    },
+    "derived_from": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 16848
+    },
+    "has_record_class": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 129
+    },
+    "has_topic": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 16848
+    },
+    "has_topic_group": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 16848
+    },
+    "has_truth_scope": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 212
+    },
+    "invokes_deity": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 90
+    },
+    "located_at": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 122
+    },
+    "presented_by": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 11
+    },
+    "projection_shared_character": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 7636
+    },
+    "projection_shared_domain": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 3650
+    },
+    "projection_shared_place": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 1852
+    },
+    "supported_by_source": {
+      "path": "corpus/graph_v0.6/matrices/remaining_relations.coo.jsonl",
+      "rows": 17861,
+      "cols": 17861,
+      "format": "COO_RELATION_ROWS",
+      "nnz": 125
+    }
+  },
+  "edge_count": 53747,
+  "topic_map_record_count": 41,
+  "topic_map_occurrences": 16848,
+  "topic_map_dedicated_adaptations": 41,
+  "unresolved_record_links": [],
+  "projection_semantics": "Las proyecciones compartidas se calculan solo sobre los registros curados y expresan coaparición de metadatos; no implican causalidad ni acuerdo."
+}
