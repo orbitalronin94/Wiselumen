@@ -3,7 +3,7 @@ use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
 use std::io::{BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
@@ -56,11 +56,10 @@ fn main() -> Result<(), String> {
     fs::create_dir_all(&out_dir).map_err(|e| format!("Cannot create output directory: {e}"))?;
     let mut forwarded: Vec<String> = Vec::new();
     let mut skip_next = false;
-    for (i, arg) in args.iter().enumerate() {
+    for arg in args.iter() {
         if skip_next { skip_next = false; continue; }
         if arg == "--python" || arg == "--script" { skip_next = true; continue; }
         forwarded.push(arg.clone());
-        if arg == "--mc-holdout" || arg == "--freeform-holdout" || arg == "--out-dir" { skip_next = true; }
     }
 
     let inputs = json!({
