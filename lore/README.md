@@ -40,3 +40,11 @@ El registro de personajes llega a P062. Los especialistas P039–P061 cuentan co
 - [Semilla v0.4](../data/lore_seed_v0.4.jsonl)
 - [Auditoría del Palimpsesto](../corpus/PALIMPSESTO_AUDIT.md)
 - [Grafo global v0.4](../corpus/graph_v0.4.json)
+
+
+## Archivo de Tradiciones Exteriores — v0.5
+
+- [Archivo de las Tradiciones Exteriores](ARCHIVO_DE_TRADICIONES_EXTERIORES.md): adaptación de las 41 familias temáticas del Palimpsesto a la Concordia.
+- [Semilla v0.5](../data/lore_seed_v0.5.jsonl): 259 registros, 65 fact, 134 lore y 60 bridge.
+- [Mapa de temas del Palimpsesto](../data/palimpsesto_topic_map_v0.2.jsonl): 41 temas, atribución de personajes y vínculos fact/lore/bridge.
+- [Grafo global v0.5](../corpus/graph_v0.5.json): índice de 16.848 revelaciones y matrices de adaptación.
