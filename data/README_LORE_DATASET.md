@@ -1,6 +1,8 @@
-# Dataset del Archivo de las Contradicciones
+# Dataset de la Concordia — semilla estructurada del Corpus Maestro
 
 ## Semilla 0.3
+
+Esta semilla es la capa estructurada actualmente disponible del futuro **Corpus Maestro**. El corpus original se denomina **El Palimpsesto de Marper**; el universo narrativo, **La Concordia de las Nueve Cenizas**. La procedencia mayoritaria de Isabel se conserva en metadatos, no como nombre del corpus.
 
 Archivo: lore_seed_v0.3.jsonl  
 Formato: JSONL UTF-8, un objeto por línea.  
@@ -59,3 +61,8 @@ La versión 0.3 conserva los 69 registros de la línea base y añade 16 document
 Los registros L021–L028 son **dogmas/doctrinas internas de sus respectivas sectas**, no ficción genérica. Se conserva `type: lore` porque son documentos diegéticos; se añade `record_class: sectarian_dogma`, junto con `sect`, `deity` y `truth_scope` para que el entrenamiento y la evaluación puedan distinguir la creencia religiosa interna de un hecho externo. Una doctrina puede ser verdadera, falsa, parcial o disputada dentro del mundo; no debe convertirse por ello en conocimiento factual externo.
 
 El archivo original `Marper-Codice-Juntado (1).txt` figura en el repositorio con un tamaño de blob de 20.401.800 bytes (20,40 MB decimales; 19,46 MiB). La descarga de contenido por la API de GitHub devolvió texto vacío, por lo que este tamaño procede de los metadatos del blob, no de un recálculo local. El usuario aclara que el material original era mayoritariamente contenido de Isabel, con pequeñas ediciones para adaptarlo al lore ampliado. Esa procedencia debe respetarse; no se atribuye todo el corpus a una creación nueva de Marper. Las medidas no incluyen compresión ni tokenizer.
+
+
+## Grafo y matrices
+
+La semilla v0.3 tiene una representación estructural en `corpus/graph_v0.3.json`. Cada tipo de relación dispone de su matriz dispersa propia; las proyecciones por personaje, lugar y dominio representan coaparición y no implican causalidad ni acuerdo. Véase `corpus/ARQUITECTURA_GRAFO_MATRICES.md` y ejecute `python corpus/validate_graph.py` para comprobar el artefacto. El grafo declara cobertura parcial mientras no se recupere el texto íntegro del Palimpsesto.
