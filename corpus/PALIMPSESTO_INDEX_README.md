@@ -14,7 +14,7 @@ El archivo fuente contiene 16.848 encabezamientos de revelación numerados, del 
 
 El Palimpsesto es fuente primaria para estudiar su propia retórica, repetición y procedencia. No es una autoridad factual automática. Las afirmaciones históricas, mitológicas, farmacológicas y científicas deben revisarse por separado. Las afirmaciones farmacológicas dudosas o instrucciones sobre preparación, dosificación o administración de sustancias no se convertirán en fichas didácticas ni se ampliarán como guía práctica.
 
-El índice JSONL complementario conserva ID de revelación, número, rango de líneas, etiqueta temática y clasificación amplia. El texto íntegro permanece en el archivo fuente del repositorio; el índice evita duplicarlo.
+Los cuatro índices JSONL complementarios conservan ID de revelación, número, rango de líneas, etiqueta temática y clasificación amplia. El texto íntegro permanece en el archivo fuente del repositorio; el índice evita duplicarlo. El grafo v0.4 integra los 16.848 nodos de revelación con 160 registros curados.
 
 ## Distribución temática
 
