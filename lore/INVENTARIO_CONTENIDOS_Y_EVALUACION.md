@@ -294,9 +294,9 @@ Estos registros están concebidos para enseñar conocimiento externo de manera d
 
 ---
 
-## 8. Los 28 documentos de lore de la semilla 0.2
+## 8. Documentos de lore y dogmas de la semilla
 
-Los documentos `L001–L020` forman la primera trama documental. Los documentos `L021–L028` incorporan a los ocho profetas.
+Los documentos `L001–L020` forman la primera trama documental. Los documentos `L021–L028` incorporan a los ocho profetas y son **dogmas/doctrinas internas de sus respectivas sectas**, no ficción genérica. En v0.3 están marcados con `record_class: sectarian_dogma`, además de los campos `sect`, `deity` y `truth_scope`. El `type: lore` se conserva porque describe el formato diegético del registro; `record_class` identifica su función doctrinal.
 
 | ID | Documento | Función narrativa |
 |---|---|---|
@@ -483,6 +483,7 @@ La hipótesis se fortalece si aumenta la intrusión estilística en preguntas ne
 - [x] Ocho sectas y ocho profetas especialistas.
 - [x] Ocho dioses soñadores y la Novena Ceniza.
 - [x] Dataset 0.2: 69 registros fact/lore/bridge.
+- [x] Dataset 0.3: ocho dogmas sectarios identificados explícitamente dentro de lore.
 - [x] Validador y documentación de la semilla.
 - [x] Tesis de Marper incorporada al README.
 - [x] Separación conceptual entre ficción deliberada, conocimiento real y alucinación factual del modelo.
@@ -521,6 +522,6 @@ Se conserva v0.2 como línea base (69 registros, 51.006 bytes). La versión v0.3
 
 - Corpus original `Marper-Codice-Juntado (1).txt`: 20.401.800 bytes (20,40 MB decimales; 19,46 MiB), tamaño reportado por la API de GitHub para el blob del archivo en esta rama.
 - Dataset estructurado v0.2: 51.006 bytes (50,79 KiB), 69 registros.
-- Dataset estructurado v0.3: 67.553 bytes (67,55 KB; 65,97 KiB), 85 registros (23 fact, 44 lore, 18 bridge).
+- Dataset estructurado v0.3: 69.774 bytes (69,77 KB; 68,14 KiB), 85 registros (23 fact, 44 lore —incluidos 8 dogmas sectarios—, 18 bridge).
 
 La medida de v0.3 corresponde al JSONL UTF-8 serializado publicado; no incluye compresión ni tokenizer. La medida del corpus original es el tamaño exacto del archivo almacenado en GitHub.
