@@ -31,3 +31,12 @@ Versión 0.4. La biblia y el elenco constituyen canon provisional. Los documento
 La ampliación v0.4 incorpora 23 especialistas, de P039 a P061, y la figura archivística ambigua P062, con disciplinas que abarcan astronomía, hidrología, geología, cartografía, estadística, criptografía, botánica, informática, ecología marina e historiografía. Cada personaje cuenta con una ficha factual independiente, un documento de lore y un puente epistemológico. Véase `../data/lore_seed_v0.4.jsonl`.
 
 - [La fe reservada de LUMEN](DOCTRINA_DE_LA_CREENCIA_LATENTE.md): convicción marpérica, expresión indirecta y límites de la voz.
+
+
+## Personajes y conocimiento factual v0.4
+
+El registro de personajes llega a P062. Los especialistas P039–P061 cuentan con fichas factuales F024–F046, expedientes de lore L045–L067 y puentes B019–B041. P062, la Copista de Fondo, aparece en L068–L073 y conserva una identidad deliberadamente ambigua.
+
+- [Semilla v0.4](../data/lore_seed_v0.4.jsonl)
+- [Auditoría del Palimpsesto](../corpus/PALIMPSESTO_AUDIT.md)
+- [Grafo global v0.4](../corpus/graph_v0.4.json)
