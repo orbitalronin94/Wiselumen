@@ -19,7 +19,7 @@ from data import ROLE_IDS, collate_chat, format_v4_row, validate_tokenizer
 from scripts.v5_sampling import format_lore_row, sample_v5_batches
 
 SEED = 20261126
-V5_SHA256 = "44bc36457a58a1743f5f1d7f3374ee8850d381177f85b52a89930aaaa2869dff"
+V5_SHA256 = "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba"
 V4_SHA256 = "535ae5a1c067f30a93e1ad20e0a8b7e332df5b14558d1dfac7a3e44193de3e9a"
 TOKENIZER_SHA256 = "d7869c11809a28085d5156638086c4833a1dcbacfda4a60b69ec71e26ed3fefe"
 CONTROL_TOKENS = list(ROLE_IDS)
