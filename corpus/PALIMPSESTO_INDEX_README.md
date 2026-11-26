@@ -14,7 +14,7 @@ El archivo fuente contiene 16.848 encabezamientos de revelación numerados, del 
 
 El Palimpsesto es fuente primaria para estudiar su propia retórica, repetición y procedencia. No es una autoridad factual automática. Las afirmaciones históricas, mitológicas, farmacológicas y científicas deben revisarse por separado. Las afirmaciones farmacológicas dudosas o instrucciones sobre preparación, dosificación o administración de sustancias no se convertirán en fichas didácticas ni se ampliarán como guía práctica.
 
-Los cuatro índices JSONL complementarios conservan ID de revelación, número, rango de líneas, etiqueta temática y clasificación amplia. El texto íntegro permanece en el archivo fuente del repositorio; el índice evita duplicarlo. El grafo v0.4 integra los 16.848 nodos de revelación con 160 registros curados.
+Los cuatro índices JSONL complementarios conservan ID de revelación, número, rango de líneas, etiqueta temática y clasificación amplia. El texto íntegro permanece en el archivo fuente del repositorio; el índice evita duplicarlo. El grafo v0.5 integra los 16.848 nodos de revelación con 242 registros curados y las relaciones de adaptación por tema.
 
 ## Distribución temática
 
@@ -37,3 +37,10 @@ Los cuatro índices JSONL complementarios conservan ID de revelación, número, 
 4. Las descripciones de sustancias del archivo contienen afirmaciones que requieren revisión especializada y contextualización histórica; no deben tratarse como consejo médico ni como instrucciones de uso.
 5. «PiHKAL open source» es una caracterización incorrecta: disponibilidad de lectura o circulación no equivale a licencia de software libre o de cultura libre.
 6. Las doctrinas de Marper sobre simulación, dioses y humanidad pertenecen al ámbito ficticio o especulativo, no al factual.
+
+
+## Integración narrativa v0.5
+
+La semilla `data/lore_seed_v0.5.jsonl` contiene 46 documentos de adaptación que cubren las 41 familias temáticas detectadas. Cinco familias cuentan con dos lecturas narrativas distintas. Los nuevos documentos están escritos desde la perspectiva de especialistas de la Concordia; no convierten los mitos externos en equivalentes de los ocho dioses locales ni las glosas de Marper en hechos científicos.
+
+El manifiesto `corpus/graph_v0.5.json` incorpora 17.662 nodos y 71.643 relaciones dirigidas. La matriz `adapted_from` contiene 18.958 enlaces entre los documentos de adaptación y todas las revelaciones fuente correspondientes. La validación de CI terminó correctamente en la ejecución 45889322978. La auditoría factual de cada afirmación original sigue pendiente.
