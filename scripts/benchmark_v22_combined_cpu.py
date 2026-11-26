@@ -130,6 +130,12 @@ def load_arm(checkpoint, fused=False):
     if fused:
         groups = optimizer.param_groups
         try:
+            # Probe the fused CPU kernel itself, not just constructor acceptance.
+            probe_param = torch.nn.Parameter(torch.ones(2))
+            probe_optimizer = torch.optim.AdamW([probe_param], fused=True)
+            probe_optimizer.zero_grad(set_to_none=True)
+            probe_param.square().sum().backward()
+            probe_optimizer.step()
             optimizer = torch.optim.AdamW(
                 groups, betas=(0.9, 0.95), eps=1e-8, fused=True
             )
