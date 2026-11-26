@@ -306,8 +306,10 @@ def main():
         step=TOTAL_STEPS,
         extra={
             "seed": SEED,
-            "corpus_version": manifest["version"],
-            "corpus_zip_sha256": ZIP_SHA256,
+            "corpus_version": v5_manifest["version"],
+            "corpus_v5_sha256": V5_SHA256,
+            "corpus_v4_sha256": V4_SHA256,
+            "sampling_shares": {"v4": 0.675, "lore": 0.075, "synthetic_conflict": 0.25},
             "tokenizer_original_sha256": original_tokenizer_sha,
             "tokenizer_derived_sha256": derived_tokenizer_sha,
             "system_prompt": "system_prompt_short.txt",
@@ -319,7 +321,7 @@ def main():
     )
     metrics = {
         "status": "completed",
-        "steps": TOTAL_STEPS,\n        "corpus_version": v5_manifest["version"],\n        "sampling_shares": {"v4": 0.675, "lore": 0.075, "synthetic_conflict": 0.25},\n        "lore_rows_encoded": len(encoded_lore),
+        "steps": TOTAL_STEPS,\n        "corpus_version": v5_manifest["version"],\n        "sampling_shares": {"v4": 0.675, "lore": 0.075, "synthetic_conflict": 0.25},\n        "lore_rows_encoded": len(encoded_lore),\n        "rejected_lore_long_rows": rejected_lore_long,
         "additional_steps": STEPS,
         "parent_step": START_STEP,
         "last_loss": result["last_loss"],
@@ -333,7 +335,7 @@ def main():
         "reservoir_rows_encoded": len(encoded_corpus),
         "rejected_long_rows": rejected_long,
         "synthetic_conflict_rows": len(encoded_conflicts),
-        "corpus_zip_sha256": ZIP_SHA256,
+        "corpus_v5_sha256": V5_SHA256,\n        "corpus_v4_sha256": V4_SHA256,
         "tokenizer_original_sha256": original_tokenizer_sha,
         "tokenizer_derived_sha256": derived_tokenizer_sha,
         "checkpoint": checkpoint,
