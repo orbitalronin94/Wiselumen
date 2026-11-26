@@ -125,6 +125,28 @@ class Block(nn.Module):
         return x
 
 
+def seq_for_step(step, mode="v21"):
+    """Context curriculum; caller must request batches of the returned length."""
+    if mode == "original":
+        return 256
+    if step < 15000:
+        return 128
+    if step < 30000:
+        return 256
+    return 512
+
+
+def active_layers_for_step(step, mode="v21", n_layer=8):
+    """Skip intermediate blocks without deleting parameters or changing checkpoints."""
+    if mode == "original":
+        return list(range(n_layer))
+    if step < 10000:
+        return [i for i in (0, 1, 6, 7) if i < n_layer]
+    if step < 25000:
+        return [i for i in (0, 1, 2, 5, 6, 7) if i < n_layer]
+    return list(range(n_layer))
+
+
 class LumenV2(nn.Module):
     def __init__(
         self, vocab=8192, d_model=512, n_layer=8, n_head=8,
@@ -164,7 +186,7 @@ class LumenV2(nn.Module):
             if isinstance(module, nn.Linear) and module.bias is not None:
                 nn.init.zeros_(module.bias)
 
-    def forward(self, idx, targets=None):
+    def forward(self, idx, targets=None, active_layers=None):
         if idx.ndim != 2:
             raise ValueError(f"idx must have shape [batch, sequence], got {tuple(idx.shape)}.")
         if idx.shape[1] > self.ctx:
@@ -173,8 +195,16 @@ class LumenV2(nn.Module):
             raise ValueError(f"Token IDs must be in [0, {self.vocab - 1}].")
 
         x = self.tok(idx)
-        for block in self.blocks:
-            x = block(x)
+        if active_layers is None:
+            active_layers = range(len(self.blocks))
+        else:
+            active_layers = set(active_layers)
+            invalid = active_layers.difference(range(len(self.blocks)))
+            if invalid:
+                raise ValueError(f"active_layers contains invalid indices: {sorted(invalid)}")
+        for layer_index, block in enumerate(self.blocks):
+            if layer_index in active_layers:
+                x = block(x)
         logits = self.head(self.norm(x))
         loss = None
 
