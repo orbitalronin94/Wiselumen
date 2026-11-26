@@ -1,0 +1,31 @@
+name: Validate corpus graph
+
+on:
+  pull_request:
+    paths:
+      - "data/lore_seed_*.jsonl"
+      - "corpus/**"
+      - ".github/workflows/validate-corpus-graph.yml"
+  push:
+    branches:
+      - main
+      - lore/archivo-de-las-contradicciones
+    paths:
+      - "data/lore_seed_*.jsonl"
+      - "corpus/**"
+      - ".github/workflows/validate-corpus-graph.yml"
+
+jobs:
+  graph:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Rebuild sparse graph
+        run: python corpus/build_graph.py
+      - name: Validate graph invariants
+        run: python corpus/validate_graph.py
+      - name: Ensure generated graph is committed
+        run: git diff --exit-code -- corpus/graph_v0.3.json
