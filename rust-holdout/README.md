@@ -59,3 +59,6 @@ The reported 35.5% is an end-to-end wall-time result for this particular CPU run
 - Native Rust inference and paired parity benchmark: `.github/workflows/v22-native-rust-holdout.yml`
 - Rust compile/test CI: `.github/workflows/rust-holdout-ci.yml`
 
+
+
+The Rust CI job installs CPU PyTorch only to provide the LibTorch headers and shared libraries required by `tch` at compile time; the inference executable itself does not launch a Python process.
