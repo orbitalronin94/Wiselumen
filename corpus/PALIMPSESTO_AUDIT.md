@@ -57,3 +57,14 @@ La v0.4 contiene 23 personajes especialistas añadidos al núcleo previo (P039�
 | Shulgin | 400 | Soma | 401 |
 | Terence McKenna | 401 | | |
 
+
+
+## Integración v0.5: adaptación temática y revisión factual
+
+La semilla vigente `data/lore_seed_v0.5.jsonl` contiene **242 registros** (58 fact, 131 lore, 53 bridge). La ampliación añade doce especialistas P063–P074 y 46 documentos de lore que cubren las **41 familias temáticas** detectadas en el Palimpsesto. Cinco familias tienen una segunda lectura narrativa desde otro ángulo; no se ha tratado la repetición original como diversidad semántica independiente.
+
+Los 46 registros de adaptación llevan `source_topics` y el SHA del blob original. La matriz `adapted_from` del grafo v0.5 contiene **18.958 relaciones** desde esas adaptaciones hacia todas las revelaciones fuente correspondientes. La validación de CI comprobó que los 41 temas están cubiertos y que no falta ninguna relación esperada.
+
+Las fichas factuales F047–F058 añaden fuentes externas para crítica textual griega y nórdica, iconografía funeraria egipcia, fuentes japonesas, soma, historia de la investigación psicodélica, regulación, evidencia clínica, Eleusis, derechos de autor y crítica de fuentes. La presencia de una URL en una ficha acredita procedencia documental, no una revisión exhaustiva de todas las afirmaciones del original.
+
+Los documentos de adaptación no reproducen instrucciones de síntesis, dosificación o administración. Los relatos rituales se atribuyen a contextos culturales; las hipótesis no resueltas se mantienen como tales; la cosmología de Marper permanece en el plano ficticio. La auditoría factual de cada afirmación del Palimpsesto continúa pendiente y debe hacerse antes de etiquetar esos enunciados como conocimiento factual limpio.
