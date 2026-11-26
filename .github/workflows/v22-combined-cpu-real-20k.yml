@@ -66,7 +66,7 @@ jobs:
         continue-on-error: true
         run: |
           TORCH_VERSION="$(python -c 'import torch; print(torch.__version__.split("+")[0])')"
-          python -m pip install "intel-extension-for-pytorch==$TORCH_VERSION"
+          python -m pip install --no-deps "intel-extension-for-pytorch==$TORCH_VERSION"
       - name: Run paired 100-update benchmark
         run: python scripts/benchmark_v22_combined_cpu.py
       - name: Upload paired benchmark report
