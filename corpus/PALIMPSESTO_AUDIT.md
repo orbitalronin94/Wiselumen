@@ -12,7 +12,7 @@
 
 El archivo es una tradición textual de gran volumen, pero su número de revelaciones no equivale a diversidad semántica. Los 41 módulos detectados reaparecen aproximadamente 400–422 veces cada uno. La estructura retórica se repite de forma muy dominante: escena monástica, revelación atribuida a Marper, bloque temático y glosa de retorno cosmológico.
 
-Los 41 módulos se conservan en `data/palimpsesto_index_v0.1.jsonl`, junto con la posición por líneas de cada revelación. El índice no duplica el cuerpo original.
+Los 41 módulos temáticos y las 16.848 revelaciones se conservan en cuatro fragmentos de índice `data/palimpsesto_index_v0.1_part1.jsonl` a `part4.jsonl`, junto con la posición por líneas de cada revelación. El índice no duplica el cuerpo original.
 
 ## Consecuencia para el Corpus Maestro
 
@@ -28,4 +28,4 @@ El Palimpsesto se integra como una fuente documental propia, con procedencia y v
 
 ## Política de ampliación
 
-La v0.4 añade once personajes especialistas. Cada uno tiene un registro factual verificable, un documento narrativo propio y un puente que separa expresamente conocimiento real de interpretación ficticia. Ningún personaje nuevo puede convertir su rango, secta o revelación en autoridad factual.
+La v0.4 contiene 23 personajes especialistas añadidos al núcleo previo (P039–P061). Cada uno tiene un registro factual verificable, un documento narrativo propio y un puente que separa expresamente conocimiento real de interpretación ficticia. Ningún personaje nuevo puede convertir su rango, secta o revelación en autoridad factual.
