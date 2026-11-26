@@ -154,14 +154,14 @@ fn main() -> Result<()> {
     let eos = tok.token_to_id("[EOS]").ok_or_else(||anyhow!("tokenizer lacks [EOS]"))?;
     let pad = tok.token_to_id("[PAD]").ok_or_else(||anyhow!("tokenizer lacks [PAD]"))?;
     let system = fs::read_to_string(&system_path)?;
-    let system_ids = encode(&tok, system.trim())?;
+    let mut timing = Timings::default();\n    let system_ids = encode(&tok, system.trim(), &mut timing)?;
     if system_ids.iter().any(|&x|x>=8184) { return Err(anyhow!("system prompt collides with reserved IDs")); }
     let mut model = CModule::load_on_device(&model_path, Device::Cpu)?;
     model.set_eval();
     fs::create_dir_all(&out)?;
     let started = Instant::now();
 
-    let mut predictions = Vec::new();
+    let mc_started = Instant::now();\n    let mut predictions = Vec::new();
     let mut correct = 0usize;
     let mut scored = 0usize;
     let mut nll_sum = 0.0f64;
@@ -171,9 +171,9 @@ fn main() -> Result<()> {
             let choices = choices_of(&row["choices"]);
             let gold = match normalized_answer(&row["answer"], &choices) { Some(x)=>x, None=>continue };
             if prompt.trim().is_empty() || choices.len()<2 { continue; }
-            let p = prefix(&tok,&system_ids,&prompt)?;
+            let p = prefix(&tok,&system_ids,&prompt,&mut timing)?;
             let mut scores = Vec::new();
-            for c in &choices { scores.push(candidate_nll(&model,&tok,&p,c,max_len)?); }
+            for c in &choices { scores.push(candidate_nll(&model,&tok,&p,c,max_len,&mut timing)?); }
             let pred = scores.iter().enumerate().min_by(|a,b|a.1.total_cmp(b.1)).map(|x|x.0).unwrap();
             scored += 1;
             if pred==gold { correct += 1; }
@@ -183,7 +183,7 @@ fn main() -> Result<()> {
         }
         Ok(())
     })?;
-    let accuracy = correct as f64 / scored.max(1) as f64;
+    timing.mc_seconds = mc_started.elapsed().as_secs_f64();\n    let accuracy = correct as f64 / scored.max(1) as f64;
     let mc_report = json!({
         "checkpoint_step":step,"rows_in_source":mc.len(),"scored":scored,"correct":correct,
         "accuracy":accuracy,"mean_gold_answer_nll":nll_sum/scored.max(1) as f64,
@@ -195,7 +195,7 @@ fn main() -> Result<()> {
     mc_full.insert("predictions".into(),Value::Array(predictions));
     fs::write(Path::new(&out).join(format!("official_holdout_2431_v22_step{step}.json")),serde_json::to_vec_pretty(&Value::Object(mc_full))?)?;
 
-    let mut free_results = Vec::new();
+    let free_started = Instant::now();\n    let mut free_results = Vec::new();
     tch::no_grad(|| -> Result<()> {
         for (n,row) in free.iter().enumerate() {
             let prompt = text(&row["prompt"]);
@@ -206,13 +206,13 @@ fn main() -> Result<()> {
         }
         Ok(())
     })?;
-    let free_report=json!({"checkpoint_step":step,"sample_size":free_results.len(),"active_layers":[0,1,2,5,6,7],
+    let freeform_seconds = free_started.elapsed().as_secs_f64();\n    let free_report=json!({"checkpoint_step":step,"sample_size":free_results.len(),"active_layers":[0,1,2,5,6,7],
         "decoding":format!("greedy argmax; max_new_tokens={max_new}; context={max_len}"),
         "prompt_sha256":hash(&free_path)?,"results":free_results});
     fs::write(Path::new(&out).join(format!("freeform_100_v22_step{step}.json")),serde_json::to_vec_pretty(&free_report)?)?;
     let elapsed=started.elapsed().as_secs_f64();
     let meta=json!({"runtime":"Rust + tch/LibTorch CPU","inference_backend":"TorchScript CModule; no Python process during inference",
-        "elapsed_seconds":elapsed,"threads":threads,"checkpoint_sha256":hash(&model_path)?,
+        "elapsed_seconds":elapsed,"threads":threads,\n        "stage_timings":{"mc_total_seconds":timing.mc_seconds,"freeform_total_seconds":freeform_seconds,"tokenization_seconds":timing.tokenization_seconds,"generation_prefill_seconds":timing.freeform_prefill_seconds,"generation_decode_kv_seconds":timing.freeform_decode_seconds,"generation_forward_calls":timing.generation_forward_calls,"kv_cache_enabled":true},"checkpoint_sha256":hash(&model_path)?,
         "tokenizer_sha256":hash(&tokenizer_path)?,"system_prompt_sha256":hash(&system_path)?,
         "mc_holdout_sha256":hash(&mc_path)?,"freeform_holdout_sha256":hash(&free_path)?});
     fs::write(Path::new(&out).join("native_rust_metadata.json"),serde_json::to_vec_pretty(&meta)?)?;
