@@ -16,18 +16,19 @@ class RMSNorm(nn.Module):
         return (x * rms.to(dtype=x.dtype)) * self.weight
 
 
-class RoPE:
-    """Rotary positional embeddings. Tensors are kept on CPU and moved to q/k's device."""
+class RoPE(nn.Module):
+    """Rotary positional embeddings; non-persistent buffers preserve checkpoint compatibility."""
     def __init__(self, head_dim, max_len=2048, base=10000.0):
+        super().__init__()
         if head_dim % 2:
             raise ValueError(f"RoPE requires an even head dimension, got {head_dim}.")
         inv_freq = 1.0 / (base ** (torch.arange(0, head_dim, 2).float() / head_dim))
         positions = torch.arange(max_len).float()
         freqs = torch.outer(positions, inv_freq)
-        self.cos = torch.repeat_interleave(freqs.cos(), 2, dim=-1)
-        self.sin = torch.repeat_interleave(freqs.sin(), 2, dim=-1)
+        self.register_buffer("cos", torch.repeat_interleave(freqs.cos(), 2, dim=-1), persistent=False)
+        self.register_buffer("sin", torch.repeat_interleave(freqs.sin(), 2, dim=-1), persistent=False)
 
-    def apply(self, q, k):
+    def rotate(self, q, k):
         seq_len = q.shape[-2]
         if seq_len > self.cos.shape[0]:
             raise ValueError(f"Sequence length {seq_len} exceeds RoPE limit {self.cos.shape[0]}.")
@@ -110,7 +111,7 @@ class Attention(nn.Module):
         # antes de seleccionar Q, K y V (el orden anterior indexaba T por error).
         qkv = self.qkv(x).view(batch, seq_len, 3, self.n_head, self.d_head)
         q, k, v = qkv.permute(2, 0, 3, 1, 4).unbind(dim=0)
-        q, k = self.rope.apply(q, k)
+        q, k = self.rope.rotate(q, k)
 
         y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
         y = y.transpose(1, 2).contiguous().view(batch, seq_len, channels)
