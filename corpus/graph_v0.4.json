@@ -3,7 +3,7 @@
   "graph_type": "heterogeneous_directed_multirelational",
   "generated_from": {
     "dataset": "data/lore_seed_v0.4.jsonl",
-    "dataset_blob_sha": "89bb755323443ad0521b999ad62759d03f4c8a3b",
+    "dataset_blob_sha": "8178ec13708fd71bc311a3b6d0b1708c4be8088f",
     "record_count": 160,
     "palimpsest_index_records": 16848,
     "index_shards": 4
