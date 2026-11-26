@@ -156,6 +156,13 @@ def load_arm(checkpoint, fused=False):
     else:
         fused_status = "main-foreach"
     optimizer.load_state_dict(checkpoint["optimizer"])
+    # Checkpoint optimizer state may restore constructor flags. Pin the tested
+    # CPU path explicitly: foreach=True, fused=False for BOTH arms.
+    for group in optimizer.param_groups:
+        group["foreach"] = True
+        group["fused"] = None
+    if not all(g.get("foreach") is True and g.get("fused") is None for g in optimizer.param_groups):
+        raise RuntimeError("AdamW foreach CPU path was not retained after state restore")
     ema = EMA(model, decay=float(checkpoint["ema"]["decay"]))
     ema.shadow = {
         k: v.detach().clone()
@@ -204,7 +211,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
     if cpu_runtime["intraop_threads"] != 4 or cpu_runtime["interop_threads"] != 1:
         raise RuntimeError(f"Expected intra-op=4/inter-op=1, got {cpu_runtime}")
     setup_started = time.perf_counter()
-    model, optimizer, ema, fused_status = load_arm(checkpoint, fused=candidate)
+    model, optimizer, ema, fused_status = load_arm(checkpoint, fused=False)
     details = {
         "fused_adamw": fused_status, "ipex": "not-requested",
         "compile": "eager", "cpu_runtime": cpu_runtime,
@@ -223,20 +230,14 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
             details["bf16"] = "enabled"
         except Exception as exc:
             details["bf16"] = f"unsupported:{type(exc).__name__}"
-        try:
-            import intel_extension_for_pytorch as ipex
-            model, optimizer = ipex.optimize(
-                model, optimizer=optimizer, dtype=torch.bfloat16, inplace=False
-            )
-            details["ipex"] = getattr(ipex, "__version__", "installed")
-        except Exception as exc:
-            details["ipex"] = f"unavailable:{type(exc).__name__}:{exc}"
+        details["ipex"] = "excluded: avoid optimizer/model rewriting in this attribution run"
         model.logit_chunk_size = CHUNK_SIZE
         try:
-            model = torch.compile(
-                model, mode="max-autotune", fullgraph=True
-            )
-            details["compile"] = "max-autotune-fullgraph"
+            # Allow graph breaks around unsupported bookkeeping ops (e.g.
+            # sparse excitability counters), while compiling the tensor-heavy
+            # forward/backward regions with Inductor's CPU C++ code generation.
+            model = torch.compile(model, backend="inductor", mode="default", fullgraph=False)
+            details["compile"] = "inductor-default-graph-breaks-allowed"
         except Exception as exc:
             details["compile"] = f"setup-failed:{type(exc).__name__}:{exc}"
     setup_seconds = time.perf_counter() - setup_started
@@ -255,8 +256,11 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
                 # result is retained after a compile/IPEX graph failure.
                 details["compile_runtime_error"] = f"{type(exc).__name__}:{exc}"
                 compile_failed_seconds = time.perf_counter() - started
-                model, optimizer, ema, fused_status = load_arm(checkpoint, fused=True)
+                model, optimizer, ema, fused_status = load_arm(checkpoint, fused=False)
                 model.logit_chunk_size = CHUNK_SIZE
+                for group in optimizer.param_groups:
+                    group["foreach"] = True
+                    group["fused"] = None
                 details["fused_adamw"] = fused_status
                 details["compile_fallback"] = "eager-restart-from-parent"
                 details["ipex"] = "discarded-after-compile-failure"
@@ -326,9 +330,10 @@ def main():
         "candidate_vs_main_end_to_end_gain_pct": (
             candidate["end_to_end_tokens_per_second"] / baseline["end_to_end_tokens_per_second"] - 1
         ) * 100,
-        "loss_comparison_note": "Same examples and physical batch of 4 per update; BF16/compile/IPEX/fused AdamW may change numerics.",
+        "loss_comparison_note": "Same examples and physical batch of 4 per update; BF16 and compiled kernels may change numerics.",
         "chunked_logits_note": "Candidate enables exact-objective chunked projection/CE over supervised positions (chunk size 2048); main keeps the existing supervised-only, unchunked path. Neither materializes full [B,T,V].",
-        "muon_note": "Muon excluded: it changes optimizer mathematics and cannot be treated as a transparent CPU kernel optimization.",
+        "optimizer_note": "Both arms explicitly use AdamW foreach=True and fused=False after loading checkpoint state.",
+        "compile_note": "Candidate uses TorchInductor CPU code generation with graph breaks allowed; setup/compile time reported separately.",
         "gradient_checkpointing": "disabled",
         "checkpoint_policy": "only final benchmark artifact; no periodic training checkpoint in a 100-step benchmark",
     }
