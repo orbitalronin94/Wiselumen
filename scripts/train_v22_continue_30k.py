@@ -28,7 +28,7 @@ CONTROL_TOKENS = list(ROLE_IDS)
 STEPS = 10000
 START_STEP = 20000
 TOTAL_STEPS = START_STEP + STEPS
-PARENT_CHECKPOINT = Path("artifacts/lumen-v22-step-30000.pt")
+PARENT_CHECKPOINT = Path("artifacts/lumen-v22-step-20000.pt")
 BATCH_SIZE = 4
 MAX_LEN = 512
 RESERVOIR_SIZE = 2048
@@ -286,7 +286,7 @@ def main():
     )
     elapsed = time.perf_counter() - started
     checkpoint = save_checkpoint(
-        "artifacts/lumen-v22-step-20000.pt",
+        "artifacts/lumen-v22-step-30000.pt",
         model,
         optimizer=optimizer,
         ema=ema,
