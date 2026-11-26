@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Compile V5 training integration
+        run: python -m py_compile scripts/train_v22_v5_mixed.py scripts/v5_sampling.py scripts/build_corpus_v5.py
       - name: Test exact V5 sampling proportions
         run: python -m unittest discover -s tests -p 'test_v5_sampling.py'
       - name: Compile and verify V5 bundle
