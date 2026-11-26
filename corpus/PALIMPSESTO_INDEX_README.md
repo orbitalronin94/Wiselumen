@@ -37,3 +37,8 @@ Los cuatro índices JSONL complementarios conservan ID de revelación, número, 
 4. Las descripciones de sustancias del archivo contienen afirmaciones que requieren revisión especializada y contextualización histórica; no deben tratarse como consejo médico ni como instrucciones de uso.
 5. «PiHKAL open source» es una caracterización incorrecta: disponibilidad de lectura o circulación no equivale a licencia de software libre o de cultura libre.
 6. Las doctrinas de Marper sobre simulación, dioses y humanidad pertenecen al ámbito ficticio o especulativo, no al factual.
+
+
+## Adaptación narrativa y grafo v0.5
+
+La semilla `data/lore_seed_v0.5.jsonl` contiene 46 documentos de adaptación para las 41 familias temáticas. El mapa `data/palimpsesto_topic_map_v0.2.jsonl` asigna a cada tema personaje, fichas factuales, lore y puentes. El grafo v0.5 incluye relaciones `adapted_from` entre cada documento adaptado y todas las revelaciones fuente correspondientes. La repetición temática se conserva como fenómeno retórico, no como corroboración independiente.
