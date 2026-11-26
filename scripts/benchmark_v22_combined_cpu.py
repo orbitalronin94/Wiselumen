@@ -219,7 +219,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
     losses, grad_norms = [], []
     compile_failed_seconds = 0.0
     for i in range(STEPS):
-        group = batches[i] if not micro_accum else batches[i * 8:(i + 1) * 8]
+        group = [batches[i]] if not micro_accum else batches[i * 8:(i + 1) * 8]
         try:
             loss, grad, _ = one_update(
                 model, optimizer, ema, group, START_STEP + i, amp_dtype
@@ -239,7 +239,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
                 started = time.perf_counter()
                 for j in range(STEPS):
                     loss, grad, _ = one_update(
-                        model, optimizer, ema, batches[j], START_STEP + j, amp_dtype
+                        model, optimizer, ema, [batches[j]], START_STEP + j, amp_dtype
                     )
                     losses.append(loss); grad_norms.append(grad)
                 break
