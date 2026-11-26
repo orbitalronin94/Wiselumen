@@ -102,3 +102,5 @@ Cada adaptación lleva `record_class: palimpsest_adaptation`, `source_topics` y 
 - Fuentes y auditoría del original: `../corpus/PALIMPSESTO_AUDIT.md` y `../corpus/PALIMPSESTO_INDEX_README.md`.
 
 Los módulos mitológicos se tratan como tradiciones textuales externas, no como hechos literales ni como equivalentes de los ocho dioses de la Concordia. Los módulos psiconáuticos se contextualizan históricamente; no se convierten en instrucciones de síntesis, dosificación o administración. La evidencia clínica se presenta con límites y riesgos, y las hipótesis no resueltas permanecen abiertas.
+
+- Grafo v0.5: `../corpus/graph_v0.5.json`; 17.662 nodos, 71.643 relaciones y 18.958 enlaces `adapted_from`.
