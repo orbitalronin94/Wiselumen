@@ -23,7 +23,7 @@ Proyecto de worldbuilding original para LUMEN: una civilización ficticia conoci
 
 ## Estado
 
-Versión 0.4. La biblia y el elenco constituyen canon provisional. Los documentos contradictorios son deliberados; los errores de datos no lo son. La cosmología de los ocho dioses soñadores se incorpora como hipótesis central, sin confirmación omnisciente dentro del mundo. El siguiente trabajo consiste en desarrollar sus cultos, conflictos, documentos y señales contradictorias, además de ampliar historia, geografía, lenguas, economía y conocimiento factual.
+Versión canónica: 0.6. La biblia y el elenco constituyen canon provisional. Los documentos contradictorios son deliberados; los errores de datos no lo son. La cosmología de los ocho dioses soñadores se incorpora como hipótesis central, sin confirmación omnisciente dentro del mundo. La ampliación v0.6 adapta los 41 módulos del Palimpsesto; la auditoría factual individual de las afirmaciones originales continúa pendiente.
 
 
 ## Ampliación de personajes y conocimiento factual
@@ -60,3 +60,6 @@ El elenco llega a P076 y la semilla estructurada contiene 289 registros: 62 fact
 - [Mapa temático v0.3](../data/palimpsesto_topic_map_v0.3.jsonl)
 - [Adaptación completa v0.6](../corpus/PALIMPSESTO_ADAPTACION_v0.6.md)
 - [Grafo global v0.6](../corpus/graph_v0.6.json)
+
+
+- [Medición exacta del Corpus Maestro v0.6](../corpus/PAQUETE_CORPUS_MAESTRO_v0.6.md): 37.669.729 bytes, 37 archivos, 17.861 nodos y 23 matrices.
