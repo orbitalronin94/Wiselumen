@@ -32,7 +32,7 @@ from scripts.train_v22_v5_mixed import (
 from scripts.v5_sampling import format_lore_row, sample_v5_batches
 
 START_STEP = 20000
-STEPS = 100
+STEPS = 10
 MICRO_BS = 4
 EFFECTIVE_BS = 32
 MAX_LEN = 512
@@ -86,7 +86,7 @@ def prepare_batches():
     ]
     if len(v4_rows) < 100 or len(lore_rows) < 20 or len(conflict_rows) != 10:
         raise RuntimeError("Insufficient V5 training pools")
-    # 800 x batch-4 = 100 identical effective-batch-32 updates.
+    # 80 x batch-4 = 10 identical effective-batch-32 updates.
     sampled = sample_v5_batches(
         v4_rows, lore_rows, conflict_rows,
         steps=STEPS * (EFFECTIVE_BS // MICRO_BS),
@@ -197,9 +197,16 @@ def one_update(model, optimizer, ema, batches, global_step, amp_dtype=None):
 
 
 def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
+    # Keep inter-op fixed at 1; compare main's intra-op=4 against candidate 1:1.
+    cpu_runtime = configure_cpu_runtime(
+        threads=1 if candidate else 4, interop_threads=1
+    )
     setup_started = time.perf_counter()
     model, optimizer, ema, fused_status = load_arm(checkpoint, fused=candidate)
-    details = {"fused_adamw": fused_status, "ipex": "not-requested", "compile": "eager"}
+    details = {
+        "fused_adamw": fused_status, "ipex": "not-requested",
+        "compile": "eager", "cpu_runtime": cpu_runtime,
+    }
     amp_dtype = None
     if candidate:
         # Candidate-only exact-objective CE chunking; main keeps the default path.
@@ -292,7 +299,7 @@ def main():
         print(subprocess.check_output(["lscpu"], text=True), flush=True)
     except Exception:
         pass
-    print("cpu_runtime", configure_cpu_runtime(threads=4, interop_threads=1), flush=True)
+    print("cpu_runtime_initial", configure_cpu_runtime(threads=4, interop_threads=1), flush=True)
     ckpt_path = Path("artifacts/lumen-v22-step-20000.pt")
     if not ckpt_path.exists():
         raise FileNotFoundError(ckpt_path)
