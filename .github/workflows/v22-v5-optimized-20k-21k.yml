@@ -1,0 +1,63 @@
+name: LUMEN V2.2 optimized V5 training 20k to 21k
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-v5-optimized-20k-21k.yml"
+      - "scripts/train_v22_v5_optimized.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  train-optimized-v5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "20000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-step-20000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download and verify exact step-20000 checkpoint
+        run: |
+          mkdir -p artifacts
+          gh run download 45812986256 --repo orbitalronin94/Wiselumen --name lumen-v22-step-20000 --dir artifacts
+          test -s "$PARENT_CHECKPOINT"
+          echo "5a5c20fed63238b031188295e1db9eae876951e1e63137b9e969eacb22574fb  $PARENT_CHECKPOINT" | sha256sum -c -
+      - name: Download and verify frozen V5 corpus
+        run: |
+          gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-artifact
+          V5_ZIP="$(find artifacts/v5-artifact -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+          test -n "$V5_ZIP"
+          cp "$V5_ZIP" "$V5_ARCHIVE"
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Run 1,000 optimized V5 training steps
+        run: python scripts/train_v22_v5_optimized.py
+      - name: Upload step-21000 checkpoint and throughput metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-21000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-21000.pt
+            artifacts/metrics-v5-optimized-step-21000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: warn
+          retention-days: 90
