@@ -199,8 +199,12 @@ class LumenV2(nn.Module):
             raise ValueError(f"idx must have shape [batch, sequence], got {tuple(idx.shape)}.")
         if idx.shape[1] > self.ctx:
             raise ValueError(f"Sequence length {idx.shape[1]} exceeds configured context {self.ctx}.")
-        if idx.numel() and (idx.min() < 0 or idx.max() >= self.vocab):
-            raise ValueError(f"Token IDs must be in [0, {self.vocab - 1}].")
+        # Keep eager input validation, but do not force a tensor-to-Python
+        # branch inside TorchDynamo. The compiled training path receives
+        # batches already validated by the data pipeline.
+        if not torch.compiler.is_compiling():
+            if idx.numel() and (idx.min() < 0 or idx.max() >= self.vocab):
+                raise ValueError(f"Token IDs must be in [0, {self.vocab - 1}].")
 
         x = self.tok(idx)
         if active_layers is None:
@@ -225,7 +229,7 @@ class LumenV2(nn.Module):
             # This preserves the tied embedding/head and exact objective while
             # avoiding a full [B,T,V] logits tensor for masked system/user tokens.
             valid = flat_targets.ne(-100)
-            if not torch.any(valid):
+            if not torch.compiler.is_compiling() and not torch.any(valid):
                 raise ValueError("targets must contain at least one supervised token.")
             flat_hidden = x.reshape(-1, self.d_model)
             supervised_hidden = flat_hidden[valid]
