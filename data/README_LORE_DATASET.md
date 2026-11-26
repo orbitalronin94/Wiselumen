@@ -102,4 +102,4 @@ La validación de la semilla es `python data/validate_lore_dataset.py data/lore_
 
 ### Peso de la versión v0.5
 
-La semilla v0.5 ocupa **200.668 bytes**; el mapa de temas, **29.567 bytes**. El paquete activo completo (original, cuatro índices, grafo y documentación principal incluidos) ocupa **36.826.404 bytes = 36,83 MB = 35,12 MiB**. Véase el desglose en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md`.
+La semilla v0.5 ocupa **200.668 bytes**; el mapa de temas, **29.567 bytes**. El paquete activo completo (original, cuatro índices, grafo y documentación principal incluidos) ocupa **aprox. 36,83 MB = 35,12 MiB**. Véase el desglose en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md`.
