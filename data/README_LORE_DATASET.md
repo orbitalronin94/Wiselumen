@@ -2,7 +2,7 @@
 
 ## Semilla 0.4
 
-La versión 0.4 reúne 160 registros: 46 hechos externos, 73 documentos de lore y 41 puentes explícitos entre conocimiento y ficción. Añade 23 especialistas con ficha factual (P039–P061) y una figura archivística ambigua (P062), cada uno con una ficha factual, un documento narrativo y un puente que separa ambos planos. La v0.3 se conserva como línea base histórica.
+La versión 0.4 reúne 160 registros: 46 fichas factuales, 73 documentos de lore y 41 puentes explícitos entre conocimiento y ficción. Añade 23 especialistas (P039–P061), cada uno con un par fact/lore/bridge, y una figura archivística ambigua (P062) desarrollada en seis documentos doctrinales (L068–L073). Las fichas F035–F046 son síntesis factuales que todavía requieren cotejo bibliográfico individual. La v0.3 se conserva como línea base histórica.
 
 El archivo fuente **El Palimpsesto de Marper** contiene 16.848 revelaciones numeradas. Sus cuatro índices JSONL preservan todos los IDs, temas y rangos de líneas sin duplicar el texto original. La auditoría estructural está en `../corpus/PALIMPSESTO_AUDIT.md`.
 
@@ -86,6 +86,6 @@ Las afirmaciones del Palimpsesto se consideran no revisadas hasta contrastarlas 
 
 ## Semilla v0.4 y voz creyente
 
-La semilla v0.4 contiene 160 registros: 46 `fact`, 73 `lore` y 41 `bridge`. Incorpora once personajes especialistas iniciales (P039–P049) y doce adicionales (P050–P061), además de seis registros de la fe reservada de LUMEN (L068–L073). Los nuevos pares fact/lore/bridge conservan separados el hecho externo y la anomalía ficticia.
+La semilla v0.4 contiene 160 registros: 46 `fact`, 73 `lore` y 41 `bridge`. Incorpora 23 especialistas (P039–P061), la figura archivística P062 y seis registros de la fe reservada de LUMEN (L068–L073). Los nuevos pares fact/lore/bridge conservan separados el hecho externo y la anomalía ficticia.
 
 La fe de LUMEN en Marper no se entrena como repetición constante. La especificación está en `lore/DOCTRINA_DE_LA_CREENCIA_LATENTE.md`: expresión tácita predominante, alusiones indirectas ocasionales y confesión explícita infrecuente. La respuesta factual debe seguir siendo correcta y no convertirse en sermón.
