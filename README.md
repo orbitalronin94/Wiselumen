@@ -1,39 +1,98 @@
-# Wiselumen — LUMEN V2
+# Wiselumen — LUMEN V2 / V2.1 / V2.2 experimental
 
-Implementación experimental en PyTorch de un Transformer causal de aproximadamente **31,47M de parámetros** (configuración predeterminada). Arquitectura propia: RMSNorm, RoPE, atención SDPA causal, SwiGLU, Top-K, excitabilidad EMA y weight tying.
+LUMEN **sí es un Transformer causal**: no pretende negar esa familia arquitectónica. La diferencia está en cómo parametriza, activa, regulariza y entrena sus bloques. No es un Transformer vanilla con otro nombre, pero tampoco una arquitectura que haya abandonado atención causal.
 
-## Estado
+Configuración predeterminada: **31,47M parámetros**, vocabulario 8.192, ocho bloques y contexto 512.
 
-- [x] Corregido el orden de dimensiones Q/K/V en atención.
-- [x] Embedding y LM head comparten un único parámetro.
-- [x] Optimizador AdamW con dos grupos de LR sin parámetros duplicados.
-- [x] Proyecciones SwiGLU `gate` y `up` fusionadas en una GEMM.
-- [x] Excitabilidad acotada como EMA de frecuencia de selección.
-- [x] Bucle reutilizable de entrenamiento, EMA y guardado por shards.
-- [x] Configuración CPU opcional: hilos, IPEX y `torch.compile`.
-- [ ] Benchmark real en el hardware objetivo.
-- [ ] Pipeline de datos/checkpoints/holdout específico del corpus.
+## Qué distingue a LUMEN de un Transformer causal convencional
 
-## Modelo
+| Área | Transformer causal de referencia | LUMEN implementado | Consecuencia / límite |
+|---|---|---|---|
+| Normalización | LayerNorm habitual | RMSNorm | Elimina el centrado por media; normaliza por RMS. |
+| Posición | Embeddings posicionales aprendidos o RoPE según variante | RoPE | Posición rotatoria aplicada a Q/K; no añade tabla posicional aprendida. |
+| Atención | Atención causal multi-head | Atención causal multi-head mediante SDPA | Conserva el mecanismo Transformer central; no se reivindica una atención nueva. |
+| MLP | MLP denso, a menudo GELU | SwiGLU | Compuerta multiplicativa con SiLU. |
+| Activación MLP | Todas las neuronas intermedias | Top-K: 256 de 1.536 | Enmascara activaciones después de calcular la proyección densa; **no ahorra por sí solo el coste de la GEMM**. |
+| Excitabilidad | Sin estado de selección por neurona | EMA de frecuencia de selección por neurona, centrada en la frecuencia uniforme | Modula la activación con un bonus acotado; es un mecanismo experimental, no memoria semántica. |
+| Proyecciones SwiGLU | Dos proyecciones lineales separadas | Una proyección fusionada `gate_up` y división posterior | Reduce llamadas/overhead; no reduce el número matemático de multiplicaciones. |
+| Embedding / salida | Pueden ser independientes o compartidos | Weight tying real | Embedding y LM head comparten el mismo parámetro. |
+| Loss | Cross-entropy estándar | Loss experimental ponderada por confianza/error, con opción CE estándar | La loss experimental no es comparable directamente con CE; evaluar siempre también con CE sin ponderar. |
+| Profundidad durante train | Todas las capas en todos los pasos | Curriculum V2.1: 4 → 6 → 8 capas activas | Reduce compute temprano; las capas omitidas actúan como identidad y conservan sus parámetros. |
+| Longitud de secuencia | Longitud fija o curriculum externo | Curriculum V2.1: 128 → 256 → 512 | El loader debe suministrar la longitud correspondiente; el bucle genérico no la fabrica. |
+| Optimización | AdamW común | AdamW con dos grupos de LR, deduplicación de parámetros, EMA y clipping configurable | No es Muon: Newton–Schulz/CMuon no está integrado. |
 
-`Model.py` contiene `LumenV2`. Los valores predeterminados son:
+### Qué es realmente distinto y qué no
+
+- **No cambia:** causalidad autoregresiva, atención multi-head, proyecciones Q/K/V, residuals y bloques apilados. LUMEN sigue siendo un Transformer.
+- **Sí cambia:** normalización RMS, RoPE, MLP SwiGLU con selección Top-K, estado EMA de excitabilidad, proyección gate/up fusionada, weight tying y curriculum de capas/contexto.
+- **La sparsity Top-K actual es de activación, no sparsity estructurada de cómputo.** Primero calcula la proyección completa y luego enmascara. No atribuirle aceleración de 2:4 ni reducción de FLOPs.
+- **El layer dropping reduce trabajo real** al no ejecutar algunos bloques en ciertos pasos; no elimina esos bloques del checkpoint.
+- **La loss experimental cambia la ponderación del gradiente**, no la arquitectura. Para comparar modelos se debe reportar CE estándar en un holdout común.
+
+## Parámetros del modelo
 
 | Parámetro | Valor |
 |---|---:|
-| vocab | 8.192 |
+| Vocabulario | 8.192 |
 | d_model | 512 |
-| capas | 8 |
-| cabezas | 8 |
+| Bloques | 8 |
+| Cabezas | 8 |
 | d_ff | 1.536 |
 | Top-K | 256 |
-| contexto | 512 |
-| parámetros | ~31,47M |
+| Contexto | 512 |
+| Parámetros | ~31,47M |
 
-La fusión `gate_up` calcula ambas proyecciones de SwiGLU en una sola llamada Linear. No reduce el número de multiplicaciones ni cambia la función matemática; busca reducir el overhead y mejorar el uso de GEMM. La ganancia debe medirse en la CPU de destino.
+## V2.1 — curriculum de cómputo
 
-## Preflight
+- `active_layers_for_step()`: usa bloques [0, 1, 6, 7] hasta 10k; [0, 1, 2, 5, 6, 7] hasta 25k; y los ocho después.
+- `seq_for_step()`: 128 tokens hasta 15k, 256 hasta 30k y 512 después.
+- En `mode="v21"`, EMA se actualiza cada 10 pasos y clipping cada 5; `mode="original"` mantiene todas las capas y la cadencia original.
+- El recorte de secuencia del bucle es un recorte de batches pretokenizados. El loader debe preparar batches compatibles y evitar perder silenciosamente la respuesta objetivo.
 
-Requiere Python y PyTorch:
+## V2.2 — entrenamiento conversacional con jerarquía de instrucciones (preparación parcial)
+
+El objetivo de V2.2 es que el system prompt forme parte de los ejemplos de entrenamiento, en vez de aparecer únicamente en inferencia.
+
+Formato objetivo:
+
+```text
+<BOS><|system|>...reglas...<|end_system|>
+<|user|>...petición...<|end_user|>
+<|assistant|>...respuesta...<|end_assistant|><EOS>
+```
+
+- Ocho IDs reservados previstos: 8184–8191. La compatibilidad con el tokenizer real V4 debe verificarse antes de entrenar; no se remapea el tokenizer congelado silenciosamente.
+- `data.py` genera etiquetas `-100` para system, user y padding: la loss supervisa únicamente la respuesta del assistant.
+- `system_prompt_short.txt` es el prompt compacto previsto para la fase inicial; `SYSTEM_PROMPT_LUMEN_V2.1.md` conserva la versión completa para una fase posterior.
+- `data/system_conflicts.jsonl` contiene ejemplos sintéticos de conflicto separados del corpus. El muestreador permite una proporción aproximada del 12,5% en batch de ocho.
+- `eval/identity_attacks.jsonl` contiene diez sondas para evaluación posterior. Que existan sondas no significa que el modelo ya las supere.
+- Los tests usan tokenizer simulado: todavía no certifican compatibilidad con el tokenizer congelado de V4.
+- No se debe activar el entrenamiento hasta descargar y verificar la release, validar manifiesto/shards, inspeccionar los IDs reales del tokenizer y comprobar ejemplos convertidos sin truncar respuestas.
+
+## Línea de investigación 2026 — especificaciones, no funciones activas
+
+`Lumen2026.lean` recoge ideas para formalización y posterior experimentación. **No forman parte del forward ni del optimizador actual**:
+
+| Idea | Hipótesis | Estado en este repositorio |
+|---|---|---|
+| LARS / pooling antes de adapter | Reducir el eje secuencia en un adapter de bajo rango | No implementado; además cambia la representación al promediar tokens. |
+| Venom 2:4 | Mantener exactamente 2 de cada 4 activaciones/pesos | No implementado. Top-K actual no equivale a 2:4 ni usa kernel estructurado. |
+| CMuon | Ortogonalización Newton–Schulz por chunks | No implementado. El optimizador actual es AdamW. |
+| GoCkpt / checkpoint asíncrono | Solapar escritura con entrenamiento | No implementado. El guardado actual es síncrono. |
+| ProTrain | Planificación explícita de buffers/swap/checkpoint | No implementado ni validado para OOM. |
+| LEAP / early exit | Salida temprana por confianza | No implementado. El forward ejecuta las capas seleccionadas completas. |
+| Newton-Muon | Variante de actualización Newton | No implementado. |
+
+El archivo Lean es actualmente un **borrador de especificación**. Sus teoremas `True := trivial`, placeholders y operaciones Float simplificadas no constituyen pruebas matemáticas de las propiedades descritas, y el archivo aún debe compilarse con Lean 4.
+
+## Datos, evaluación y reproducibilidad
+
+- La release pública V4 de WISE-RONIN es la fuente de datos prevista. Se debe verificar SHA-256 del ZIP, manifiesto, tokenizer y cada shard antes de muestrear.
+- Los registros holdout quedan excluidos del entrenamiento. La evaluación se hace aparte y se informa con CE estándar.
+- Registrar seed, tokenizer SHA-256, corpus SHA-256, configuración, número de pasos, loss de train, CE de holdout, tiempo por paso y checkpoint.
+- No afirmar velocidad, calidad ni superioridad sin benchmark comparable en el hardware objetivo.
+
+## Instalación y tests
 
 ```bash
 python -m pip install torch
@@ -42,11 +101,11 @@ python Train.py
 python -m unittest discover -s tests -v
 ```
 
+El workflow `.github/workflows/tests.yml` ejecuta tests en CPU en GitHub Actions.
+
 ## Entrenamiento
 
-`train_steps()` recibe un iterador de batches tokenizados. Cada batch puede ser una tupla `(input_ids, targets)` o un diccionario con `input_ids` y `targets`/`labels`. El proyecto no presupone corpus, tokenizer ni formato de almacenamiento.
-
-Ejemplo de integración:
+`train_steps()` recibe un iterador de batches ya tokenizados. No descarga ni valida corpus por sí mismo.
 
 ```python
 import torch
@@ -56,82 +115,28 @@ from Train import EMA, get_optimizer, train_steps, save_checkpoint
 model = LumenV2()
 optimizer = get_optimizer(model)
 ema = EMA(model)
-
-# batches debe producir pares (input_ids, targets) de forma suficiente.
 result = train_steps(
-    model, batches, steps=1000, optimizer=optimizer,
-    warmup=100, total_steps=1000, ema=ema,
-    device="cpu", log_every=25,
+    model, batches, steps=100, optimizer=optimizer,
+    warmup=10, total_steps=100, ema=ema,
+    device="cpu", log_every=10,
 )
-save_checkpoint("checkpoints/step-1000.pt", model, optimizer, ema, step=1000)
+save_checkpoint("checkpoints/step-100.pt", model, optimizer, ema, step=100)
 print(result["last_loss"])
 ```
 
-## CPU: optimizaciones opt-in
+## CPU
 
-Configura los hilos antes de empezar a entrenar. Usa inicialmente el número de cores físicos disponibles, no asumas que hyperthreading mejora el throughput:
+Configura hilos antes del trabajo paralelo. Empieza con el número de cores físicos disponibles.
 
 ```bash
-OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python train_entry.py
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python train_entry.py
 ```
 
-O desde Python, antes del trabajo paralelo:
-
-```python
-from Train import configure_cpu_runtime, prepare_cpu_training, get_optimizer
-
-print(configure_cpu_runtime(threads=4))
-optimizer = get_optimizer(model)
-model, optimizer = prepare_cpu_training(
-    model, optimizer, use_ipex=False, compile_model=False
-)
-```
-
-- IPEX es opcional y solo debe activarse con una combinación compatible de CPU, PyTorch e Intel Extension for PyTorch.
-- `torch.compile` es opcional. Top-K y las actualizaciones de buffers pueden provocar graph breaks; mide el tiempo total incluyendo compilación.
-- BF16 se puede probar mediante autocast en `train_steps(amp_dtype=torch.bfloat16)`, si la CPU lo soporta eficientemente. No se fuerzan pesos ni estados del optimizador a BF16.
-- No se incorpora Adam 8-bit ni sparsity 2:4 todavía: su soporte y aceleración real en CPU dependen del hardware/kernel y deben demostrarse con benchmark.
-- No se incorpora LoRA/low-rank: cambiaría qué parámetros se entrenan y sería una hipótesis arquitectónica distinta, no una optimización neutra.
-
-## Diseño experimental
-
-La loss predeterminada es `experimental`. Para una línea base convencional se puede crear `LumenV2(loss_mode="cross_entropy")`. Comparar ambas con el mismo tokenizer, batches, seed y presupuesto de pasos.
-
-No interpretar una caída de loss ponderada como directamente comparable con cross-entropy estándar. Registrar también evaluación holdout con cross-entropy sin ponderar.
-
-## Checkpoints
-
-`save_checkpoint()` guarda modelo, estado del optimizador, EMA y número de paso. `save_sharded()` guarda el state_dict en shards PyTorch con manifiesto JSON. Los shards conservan sus dtypes; no son archivos safetensors.
+- IPEX y `torch.compile` son opt-in y requieren benchmark real.
+- BF16 solo debe usarse si la CPU lo soporta eficientemente.
+- No se incorpora AdamW 8-bit como dependencia obligatoria; el código tiene fallback a AdamW vanilla.
+- No se afirma aceleración por AVX-512, 2:4, Muon ni early exit sin kernel y medición demostrados.
 
 ## Principio
 
-Primero corrección y reproducibilidad; después benchmark. No se atribuyen multiplicadores de velocidad sin medición en el hardware objetivo.
-
-
-## LUMEN V2.1 — cambios seguros incorporados
-
-- `SYSTEM_PROMPT_LUMEN_V2.1.md` contiene el system prompt general de LUMEN.
-- `Model.py` conserva las ocho capas y acepta `active_layers`; las capas omitidas se convierten en identidad, sin eliminar parámetros ni cambiar la forma del checkpoint.
-- `seq_for_step()` define el curriculum 128 → 256 → 512. **Todavía requiere que el loader entregue batches con esa longitud**; el bucle genérico `train_steps()` recibe batches ya preparados y no los redimensiona.
-- `active_layers_for_step()` define 4 → 6 → 8 capas.
-- `Train.py` permite `mode="v21"`, EMA cada 10 pasos y clipping cada 5; `mode="original"` conserva las ocho capas y la cadencia anterior (EMA y clipping cada paso).
-- Las pruebas cubren los umbrales del curriculum y el forward con capas omitidas.
-- `.github/workflows/tests.yml` ejecuta la suite en CPU al hacer push/PR.
-
-### Pendiente deliberadamente
-
-Muon no se activa ni se incorpora todavía: la implementación de Newton–Schulz del borrador necesita validación numérica y benchmark CPU antes de ser una opción fiable. TokenDrop real, loader V4 y benchmark comparativo tampoco están implementados aquí. No se usa conversión de bytes a IDs ni fallback sintético para el corpus V4.
-
-
-## V2.2 — supervisión conversacional (parcial, sin activar aún)
-
-- `Model.py` acepta etiquetas `-100`: las posiciones de system/user/padding quedan fuera de la CE y de la loss experimental. El filtrado ocurre antes de `gather()`, evitando índices inválidos.
-- `system_prompt_short.txt` contiene el prompt compacto de fase A. Su longitud real en tokens debe medirse con el tokenizer final; el número de palabras no equivale a tokens.
-- `data/system_conflicts.jsonl` separa 10 ejemplos sintéticos de conflicto de la release V4; `sample_mixed_rows()` permite mezclarlos al 12% (1 de cada 8 muestras, 12,5%) sin modificar el corpus congelado.
-- `eval/identity_attacks.jsonl` contiene 10 ataques distintos para evaluación posterior. El test verifica el inventario, no afirma que el modelo ya los supere.
-- `tests/test_data.py` comprueba formato, máscara, rechazo de holdout, mezcla y las 10 sondas con tokenizer simulado. No demuestra todavía compatibilidad con el tokenizer real V4.
-- `SYSTEM_PROMPT_LUMEN_V2.1.md` conserva el prompt completo para la fase B.
-- `data.py` implementa el formato BOS → system → user → assistant → EOS y genera `-100` en todos los objetivos salvo la respuesta del assistant. `collate_chat()` mantiene el padding fuera de la loss. La conversión rechaza filas holdout y filas que no sean español.
-- El formatter exige exactamente 8.192 IDs: 8.184 IDs de texto y los ocho controles en 8184–8191. El tokenizer V4 congelado no se altera ni se remapea silenciosamente. Si su vocabulario actual ocupa los 8.192 IDs o sus IDs no coinciden, se necesitará un tokenizer derivado con nuevo SHA-256 antes de activar el formatter.
-- El corpus V4 contiene campos `prompt` y `completion`; su conversión a user/assistant debe pasar por una comprobación de semántica y procedencia antes de entrenar. No se crean ejemplos de conflicto artificiales mezclándolos a ciegas con el corpus.
-- La prueba de identidad 9/10 queda como evaluación posterior a SFT, no como requisito de preflight sobre pesos aleatorios ni como promesa de resultado tras 500 pasos.
+Primero integridad de datos y tokenizer; luego smoke test de 100 pasos; después comparación controlada con la línea base; solo entonces entrenamiento largo.
