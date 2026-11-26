@@ -22,12 +22,16 @@ class LumenV2Tests(unittest.TestCase):
         self.assertEqual(active_layers_for_step(0), [0, 1, 6, 7])
         self.assertEqual(active_layers_for_step(10000), [0, 1, 2, 5, 6, 7])
         self.assertEqual(active_layers_for_step(25000), list(range(8)))
-        model = self.make_model().eval()
+        model = LumenV2(
+            vocab=64, d_model=32, n_layer=8, n_head=4,
+            d_ff=48, top_k=8, ctx=16, rope_max_len=32,
+        ).eval()
         tokens = torch.randint(0, 64, (2, 12))
         with torch.no_grad():
-            logits, loss = model(tokens, targets=tokens, active_layers=[0, 1])
+            logits, loss = model(tokens, targets=tokens, active_layers=[0, 1, 6, 7])
         self.assertEqual(tuple(logits.shape), (2, 12, 64))
         self.assertTrue(torch.isfinite(loss))
+        self.assertEqual(len(model.blocks), 8)
 
     def test_forward_backward_and_weight_tying(self):
         model = self.make_model()
