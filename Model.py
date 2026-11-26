@@ -28,23 +28,22 @@ class RoPE(nn.Module):
         self.register_buffer("cos", torch.repeat_interleave(freqs.cos(), 2, dim=-1), persistent=False)
         self.register_buffer("sin", torch.repeat_interleave(freqs.sin(), 2, dim=-1), persistent=False)
 
+    def _rotate_one(self, x, cos, sin):
+        x_even, x_odd = x[..., 0::2], x[..., 1::2]
+        rotated = torch.stack(
+            (x_even * cos[..., 0::2] - x_odd * sin[..., 0::2],
+             x_even * sin[..., 0::2] + x_odd * cos[..., 0::2]),
+            dim=-1,
+        )
+        return rotated.flatten(-2)
+
     def rotate(self, q, k):
         seq_len = q.shape[-2]
         if seq_len > self.cos.shape[0]:
             raise ValueError(f"Sequence length {seq_len} exceeds RoPE limit {self.cos.shape[0]}.")
         cos = self.cos[:seq_len].to(device=q.device, dtype=q.dtype)[None, None, :, :]
         sin = self.sin[:seq_len].to(device=q.device, dtype=q.dtype)[None, None, :, :]
-
-        def rotate(x):
-            x_even, x_odd = x[..., 0::2], x[..., 1::2]
-            rotated = torch.stack(
-                (x_even * cos[..., 0::2] - x_odd * sin[..., 0::2],
-                 x_even * sin[..., 0::2] + x_odd * cos[..., 0::2]),
-                dim=-1,
-            )
-            return rotated.flatten(-2)
-
-        return rotate(q), rotate(k)
+        return self._rotate_one(q, cos, sin), self._rotate_one(k, cos, sin)
 
 
 class SparseMLP(nn.Module):
