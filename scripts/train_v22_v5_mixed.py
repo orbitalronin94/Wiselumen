@@ -15,7 +15,8 @@ from tokenizers import AddedToken, Tokenizer
 
 from Model import LumenV2
 from Train import EMA, configure_cpu_runtime, get_optimizer, save_checkpoint, train_steps
-from data import ROLE_IDS, collate_chat, format_v4_row, validate_tokenizer\nfrom scripts.v5_sampling import format_lore_row, sample_v5_batches
+from data import ROLE_IDS, collate_chat, format_v4_row, validate_tokenizer
+from scripts.v5_sampling import format_lore_row, sample_v5_batches
 
 SEED = 20261126
 V5_SHA256 = "44bc36457a58a1743f5f1d7f3374ee8850d381177f85b52a89930aaaa2869dff"
@@ -321,7 +322,11 @@ def main():
     )
     metrics = {
         "status": "completed",
-        "steps": TOTAL_STEPS,\n        "corpus_version": v5_manifest["version"],\n        "sampling_shares": {"v4": 0.675, "lore": 0.075, "synthetic_conflict": 0.25},\n        "lore_rows_encoded": len(encoded_lore),\n        "rejected_lore_long_rows": rejected_lore_long,
+        "steps": TOTAL_STEPS,
+        "corpus_version": v5_manifest["version"],
+        "sampling_shares": {"v4": 0.675, "lore": 0.075, "synthetic_conflict": 0.25},
+        "lore_rows_encoded": len(encoded_lore),
+        "rejected_lore_long_rows": rejected_lore_long,
         "additional_steps": STEPS,
         "parent_step": START_STEP,
         "last_loss": result["last_loss"],
@@ -335,7 +340,8 @@ def main():
         "reservoir_rows_encoded": len(encoded_corpus),
         "rejected_long_rows": rejected_long,
         "synthetic_conflict_rows": len(encoded_conflicts),
-        "corpus_v5_sha256": V5_SHA256,\n        "corpus_v4_sha256": V4_SHA256,
+        "corpus_v5_sha256": V5_SHA256,
+        "corpus_v4_sha256": V4_SHA256,
         "tokenizer_original_sha256": original_tokenizer_sha,
         "tokenizer_derived_sha256": derived_tokenizer_sha,
         "checkpoint": checkpoint,
