@@ -56,11 +56,10 @@ def prepare_cpu_training(model, optimizer=None, use_ipex=False, compile_model=Fa
     return model, optimizer
 
 
-def get_optimizer(model, slow_lr=5e-4, fast_lr=2e-3, weight_decay=0.01):
-    """AdamW con dos ritmos y parámetros únicos (embedding/head tied)."""
-    slow, fast = [], []
-    seen = set()
-
+def get_optimizer(model, slow_lr=5e-4, fast_lr=2e-3, weight_decay=0.01,
+                  prefer_8bit=True):
+    """AdamW con dos grupos LR, parámetros deduplicados y fallback 8-bit."""
+    slow, fast, seen = [], [], set()
     for index, block in enumerate(model.blocks):
         destination = fast if index >= len(model.blocks) - 2 else slow
         for parameter in block.parameters():
@@ -68,7 +67,8 @@ def get_optimizer(model, slow_lr=5e-4, fast_lr=2e-3, weight_decay=0.01):
                 destination.append(parameter)
                 seen.add(id(parameter))
 
-    for module in (model.tok, model.norm, model.head):
+    # head.weight comparte almacenamiento/parámetro con tok.weight: no añadir head.
+    for module in (model.tok, model.norm):
         for parameter in module.parameters():
             if parameter.requires_grad and id(parameter) not in seen:
                 fast.append(parameter)
@@ -76,13 +76,88 @@ def get_optimizer(model, slow_lr=5e-4, fast_lr=2e-3, weight_decay=0.01):
 
     groups = []
     if slow:
-        groups.append({"params": slow, "lr": slow_lr, "base_lr": slow_lr})
+        groups.append({"params": slow, "lr": slow_lr, "base_lr": slow_lr,
+                       "weight_decay": weight_decay})
     if fast:
-        groups.append({"params": fast, "lr": fast_lr, "base_lr": fast_lr})
-    return torch.optim.AdamW(
-        groups, betas=(0.9, 0.95), eps=1e-8, weight_decay=weight_decay
-    )
+        groups.append({"params": fast, "lr": fast_lr, "base_lr": fast_lr,
+                       "weight_decay": weight_decay})
 
+    optimizer_class = torch.optim.AdamW
+    if prefer_8bit:
+        try:
+            import bitsandbytes as bnb
+            optimizer_class = bnb.optim.AdamW8bit
+            print("Optimizer: bitsandbytes AdamW8bit", flush=True)
+        except Exception as exc:
+            print(f"Optimizer: AdamW vanilla (8-bit unavailable: {type(exc).__name__})",
+                  flush=True)
+
+    optimizer = optimizer_class(groups, betas=(0.9, 0.95), eps=1e-8)
+    # Algunos optimizadores exponen los grupos sin base_lr; el scheduler lo necesita.
+    for group in optimizer.param_groups:
+        group.setdefault("base_lr", group["lr"])
+    return optimizer
+
+
+def homeostatic_scaling(model, max_norm=5.0):
+    """Limita normas por fila en las matrices de entrada de las neuronas MLP.
+
+    Evita escalar indiscriminadamente embeddings, atención y matrices completas.
+    Se aplica únicamente cuando una fila supera el umbral.
+    """
+    if max_norm <= 0:
+        raise ValueError("max_norm must be positive.")
+    scaled = 0
+    with torch.no_grad():
+        for block in model.blocks:
+            mlp = block.mlp
+            for name in ("gate_up", "gate_up_A", "gate_up_B"):
+                layer = getattr(mlp, name, None)
+                weight = getattr(layer, "weight", None) if layer is not None else None
+                if weight is None or weight.ndim != 2:
+                    continue
+                norms = weight.norm(dim=1, keepdim=True)
+                factors = (max_norm / norms.clamp_min(1e-12)).clamp(max=1.0)
+                changed = int((factors < 1.0).sum().item())
+                if changed:
+                    weight.mul_(factors)
+                    scaled += changed
+    return scaled
+
+
+def prune_dead_neurons(model, threshold=0.001):
+    """Pruning compatible con gate_up fusionado; no asume low-rank inexistente."""
+    if threshold < 0:
+        raise ValueError("threshold must be non-negative.")
+    n_pruned = 0
+    with torch.no_grad():
+        for block in model.blocks:
+            mlp = block.mlp
+            dead = mlp.excitability < threshold
+            if not dead.any():
+                continue
+            n_pruned += int(dead.sum().item())
+            width = mlp.d_ff
+            low_rank = getattr(mlp, "low_rank", None)
+
+            if low_rank is None:
+                # gate_up = [gate | up]; borrar las dos filas de cada neurona.
+                rows = torch.cat((dead.nonzero(as_tuple=True)[0],
+                                  (dead.nonzero(as_tuple=True)[0] + width)))
+                mlp.gate_up.weight[rows] = 0
+                mlp.down.weight[:, dead] = 0
+            else:
+                # Compatibilidad futura con la parametrización low-rank si se añade.
+                for attr, columns in (
+                    ("gate_up_B", torch.cat((dead.nonzero(as_tuple=True)[0],
+                                             dead.nonzero(as_tuple=True)[0] + width))),
+                    ("down_B", dead.nonzero(as_tuple=True)[0]),
+                ):
+                    tensor = getattr(mlp, attr, None)
+                    if tensor is not None:
+                        tensor[:, columns] = 0
+                mlp.excitability[dead] = 0
+    return n_pruned
 
 def lr_schedule(step, warmup=200, total=100000, min_ratio=0.01):
     """Multiplicador común de LR: warmup lineal y cosine decay."""
