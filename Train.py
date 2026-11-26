@@ -12,6 +12,50 @@ except ImportError:
     from model import LumenV2
 
 
+def configure_cpu_runtime(threads=None, interop_threads=1):
+    """Configura hilos CPU; por defecto respeta OMP_NUM_THREADS/MKL_NUM_THREADS."""
+    import os
+
+    if threads is None:
+        threads = int(os.environ.get("OMP_NUM_THREADS", os.environ.get("MKL_NUM_THREADS", "1")))
+    if threads <= 0:
+        raise ValueError("CPU thread count must be positive.")
+    torch.set_num_threads(threads)
+    try:
+        torch.set_num_interop_threads(max(1, int(interop_threads)))
+    except RuntimeError:
+        # PyTorch no permite cambiar interop threads después de iniciar trabajo.
+        pass
+    return {"intraop_threads": torch.get_num_threads(),
+            "interop_threads": torch.get_num_interop_threads()}
+
+
+def prepare_cpu_training(model, optimizer=None, use_ipex=False, compile_model=False):
+    """Optimizaciones CPU opcionales; no cambia la arquitectura ni se activa sola.
+
+    IPEX es opcional y requiere una build compatible con la versión de PyTorch.
+    torch.compile también queda opt-in porque su coste de compilación puede
+    superar el beneficio en runs cortos o con operadores dinámicos Top-K.
+    """
+    if optimizer is None:
+        optimizer = get_optimizer(model)
+    if use_ipex:
+        try:
+            import intel_extension_for_pytorch as ipex
+        except ImportError as exc:
+            raise RuntimeError(
+                "IPEX requested but intel-extension-for-pytorch is not installed."
+            ) from exc
+        model, optimizer = ipex.optimize(
+            model, optimizer=optimizer, dtype=torch.bfloat16, inplace=False
+        )
+    if compile_model:
+        if not hasattr(torch, "compile"):
+            raise RuntimeError("This PyTorch version does not provide torch.compile.")
+        model = torch.compile(model)
+    return model, optimizer
+
+
 def get_optimizer(model, slow_lr=5e-4, fast_lr=2e-3, weight_decay=0.01):
     """AdamW con dos ritmos y parámetros únicos (embedding/head tied)."""
     slow, fast = [], []
