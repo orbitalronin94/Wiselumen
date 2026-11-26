@@ -54,8 +54,8 @@ fn forward(model: &CModule, ids: &[u32], max_len: usize) -> Result<Tensor> {
     let input = Tensor::from_slice(&v).to_device(Device::Cpu).view([1, v.len() as i64]);
     Ok(model.forward_ts(&[input])?)
 }
-fn candidate_nll(model: &CModule, tok: &Tokenizer, prefix: &[u32], choice: &Value, max_len: usize) -> Result<f64> {
-    let mut suffix = encode(tok, &format!("\n{}", text(choice)))?;
+fn candidate_nll(model: &CModule, tok: &Tokenizer, prefix: &[u32], choice: &Value, max_len: usize, timing: &mut Timings) -> Result<f64> {
+    let mut suffix = encode(tok, &format!("\n{}", text(choice)), timing)?;
     if suffix.is_empty() { return Ok(f64::INFINITY); }
     if suffix.len() >= max_len { suffix.truncate(max_len - 1); }
     let context_len = max_len.saturating_sub(suffix.len()).max(1).min(prefix.len());
