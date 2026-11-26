@@ -3,7 +3,7 @@ run-name: V2.2 native Rust inference (step 10000)
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, experiment/v22-rust-kv-cache]
     paths:
       - '.github/workflows/v22-native-rust-holdout.yml'
       - 'rust-holdout/**'
