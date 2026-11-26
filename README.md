@@ -240,3 +240,6 @@ La semilla v0.5 reúne **207 registros**: 62 fact, 88 lore y 57 bridge. El elenc
 - [Mapa de los 41 módulos](data/palimpsesto_topic_map_v0.2.jsonl)
 - [Adaptación del Palimpsesto v0.5](corpus/PALIMPSESTO_ADAPTACION_v0.5.md)
 - [Grafo global v0.5](corpus/graph_v0.5.json)
+
+
+**Peso medido del paquete activo v0.5:** 36.826.404 bytes (36,83 MB / 35,12 MiB) en 37 archivos: original, índices, semilla, mapa, grafo y documentación. Desglose en [Adaptación del Palimpsesto v0.5](corpus/PALIMPSESTO_ADAPTACION_v0.5.md).
