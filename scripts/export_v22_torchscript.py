@@ -10,7 +10,11 @@ from Model import LumenV2, active_layers_for_step
 class InferenceGraph(torch.nn.Module):
     def __init__(self, model, active_layers):
         super().__init__()
-        self.model = model
+        self.tok = model.tok
+        self.blocks = model.blocks
+        self.norm = model.norm
+        self.head = model.head
+        self.d_model = model.d_model
         self.active_layers = active_layers
         self.register_buffer("rope_cos", model.rope.cos.clone())
         self.register_buffer("rope_sin", model.rope.sin.clone())
@@ -24,10 +28,10 @@ class InferenceGraph(torch.nn.Module):
 
     def forward(self, token_ids):
         batch, seq_len = token_ids.shape
-        x = self.model.tok(token_ids)
+        x = self.tok(token_ids)
         cos = self.rope_cos.narrow(0, 0, seq_len).to(dtype=x.dtype)
         sin = self.rope_sin.narrow(0, 0, seq_len).to(dtype=x.dtype)
-        for layer_index, block in enumerate(self.model.blocks):
+        for layer_index, block in enumerate(self.blocks):
             if layer_index in self.active_layers:
                 normalized = block.norm1(x)
                 qkv = block.attn.qkv(normalized).view(batch, seq_len, 3,
@@ -36,10 +40,10 @@ class InferenceGraph(torch.nn.Module):
                 q = self._rotate(q, cos, sin)
                 k = self._rotate(k, cos, sin)
                 y = torch.nn.functional.scaled_dot_product_attention(q, k, v, is_causal=True)
-                y = y.transpose(1, 2).contiguous().view(batch, seq_len, self.model.d_model)
+                y = y.transpose(1, 2).contiguous().view(batch, seq_len, self.d_model)
                 x = x + block.attn.out(y)
                 x = x + block.mlp(block.norm2(x))
-        return self.model.head(self.model.norm(x))
+        return self.head(self.norm(x))
 
     @torch.jit.export
     def forward_cached(self, token_ids: torch.Tensor, cache_k: torch.Tensor,
