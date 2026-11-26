@@ -269,6 +269,7 @@ def unpack_batch(batch, device):
 def train_steps(
     model, batches, steps, optimizer=None, device=None, warmup=200,
     total_steps=None, start_step=0, grad_clip=1.0, ema=None, log_every=100, amp_dtype=None,
+    mode="original", ema_every=10, clip_every=5,
 ):
     """Ejecuta updates sobre un iterador de batches ya tokenizados.
 
@@ -278,6 +279,12 @@ def train_steps(
         raise ValueError("steps must be positive.")
     if grad_clip is not None and grad_clip <= 0:
         raise ValueError("grad_clip must be positive or None.")
+    if mode not in {"original", "v21"}:
+        raise ValueError("mode must be 'original' or 'v21'.")
+    if ema_every <= 0 or clip_every <= 0:
+        raise ValueError("ema_every and clip_every must be positive.")
+    if mode == "original":
+        ema_every, clip_every = 1, 1
 
     device = torch.device(device or next(model.parameters()).device)
     model.to(device)
@@ -304,20 +311,23 @@ def train_steps(
         multiplier = set_scheduled_lr(optimizer, global_step, warmup, total)
 
         use_amp = amp_dtype is not None and device.type in {"cuda", "cpu"}
+        from Model import active_layers_for_step
+        active_layers = active_layers_for_step(global_step, mode, len(model.blocks))
         with torch.autocast(device_type=device.type, dtype=amp_dtype, enabled=use_amp):
-            _, loss = model(inputs, targets=targets)
+            _, loss = model(inputs, targets=targets, active_layers=active_layers)
 
         if loss is None or not torch.isfinite(loss):
             raise FloatingPointError(f"Non-finite training loss at step {step + 1}: {loss}")
 
         loss.backward()
         grad_norm = None
-        if grad_clip is not None:
+        do_clip = grad_clip is not None and ((global_step + 1) % clip_every == 0)
+        if do_clip:
             grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
             if not torch.isfinite(grad_norm):
                 raise FloatingPointError(f"Non-finite gradient norm at step {step + 1}.")
         optimizer.step()
-        if ema is not None:
+        if ema is not None and ((global_step + 1) % ema_every == 0):
             ema.update(model)
 
         value = float(loss.detach().item())
@@ -326,7 +336,8 @@ def train_steps(
             grad_value = float(grad_norm.item()) if grad_norm is not None else float("nan")
             print(
                 f"step {step + 1}/{steps} loss {value:.6f} "
-                f"lr_scale {multiplier:.5f} grad_norm {grad_value:.4f}",
+                f"lr_scale {multiplier:.5f} grad_norm {grad_value:.4f} "
+                f"layers {len(active_layers)}/{len(model.blocks)} ema_every {ema_every} clip_every {clip_every}",
                 flush=True,
             )
 
