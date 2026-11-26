@@ -1,4 +1,5 @@
 name: Build and validate Corpus Master graph
+# v0.6 rebuild after matrix manifest correction
 
 on:
   push:
