@@ -84,11 +84,60 @@ def validate(manifest_path,require_complete=False):
    if row<n and col<n and not id_by_index[col].startswith("record:"):
     errors.append("references_record target is not a curated record node")
     break
+ # Validate the topic map and exact provenance edges for all adapted lore records.
+ topic_map_path=Path("data/palimpsesto_topic_map_v0.2.jsonl")
+ try:
+  topic_map=read_jsonl(topic_map_path)
+ except Exception as exc:
+  errors.append(f"cannot read topic map {topic_map_path}: {exc}")
+  topic_map=[]
+ if len(topic_map)!=41:
+  errors.append(f"expected 41 topic map rows, got {len(topic_map)}")
+ if sum(item.get("occurrences",0) for item in topic_map)!=16848:
+  errors.append("topic map occurrence total must equal 16848")
+ record_nodes={node["id"].removeprefix("record:"):node for node in nodes if node.get("type")=="record"}
+ for item in topic_map:
+  for field in ("fact_record_ids","lore_record_ids","bridge_record_ids"):
+   for linked in item.get(field,[]):
+    if linked not in record_nodes:
+     errors.append(f"topic map {item.get('topic')}: missing {field} record {linked}")
+  if not item.get("fact_record_ids") or not item.get("lore_record_ids") or not item.get("bridge_record_ids"):
+   errors.append(f"topic map {item.get('topic')}: missing fact/lore/bridge link")
+ source_by_topic={}
+ for node in source_records:
+  source_by_topic.setdefault(node.get("topic"),[]).append(node["id"])
+ adaptations=[node for node in nodes if node.get("type")=="record" and node.get("record_class")=="palimpsest_adaptation"]
+ adapted_topics={topic for node in adaptations for topic in node.get("source_topics",[])}
+ if adapted_topics!=set(source_by_topic):
+  errors.append("adapted lore does not cover exactly the 41 indexed source topics")
+ expected_pairs=set()
+ for node in adaptations:
+  if not node.get("source_topics"):
+   errors.append(f"{node['id']}: palimpsest_adaptation missing source_topics")
+  for topic in node.get("source_topics",[]):
+   if topic not in source_by_topic:
+    errors.append(f"{node['id']}: unknown source topic {topic}")
+    continue
+   for source_id in source_by_topic[topic]:
+    expected_pairs.add((id_by_index.index(node["id"]),id_by_index.index(source_id)))
+ adapt_spec=graph.get("matrices",{}).get("adapted_from")
+ if adapt_spec is None:
+  errors.append("missing adapted_from matrix")
+ else:
+  entries=matrix_cache.get(adapt_spec["path"],[])
+  actual_pairs={(row[0],row[1]) for row in entries if isinstance(row,list) and len(row)==3}
+  if actual_pairs!=expected_pairs:
+   errors.append(f"adapted_from mismatch: expected {len(expected_pairs)} links, found {len(actual_pairs)}")
+ for item in topic_map:
+  mapped=set(item.get("lore_record_ids",[]))
+  actual={node["id"].removeprefix("record:") for node in adaptations if item["topic"] in node.get("source_topics",[])}
+  if not actual.issubset(mapped):
+   errors.append(f"topic map {item['topic']}: adapted lore missing from lore_record_ids")
  return errors
 
 if __name__=="__main__":
  p=argparse.ArgumentParser()
- p.add_argument("graph",nargs="?",default="corpus/graph_v0.4.json")
+ p.add_argument("graph",nargs="?",default="corpus/graph_v0.5.json")
  p.add_argument("--require-complete",action="store_true")
  a=p.parse_args()
  problems=validate(a.graph,a.require_complete)
