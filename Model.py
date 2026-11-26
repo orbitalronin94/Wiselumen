@@ -74,14 +74,20 @@ class SparseMLP(nn.Module):
         h = h + centered_exc.to(dtype=h.dtype) * self.excitability_strength
 
         indices = torch.topk(h, k=self.top_k, dim=-1).indices
-        mask = torch.zeros_like(h).scatter_(-1, indices, 1.0)
-        sparse_h = h * mask
+        selected = h.gather(-1, indices)
+        # Scatter only the selected activations: avoids allocating a dense
+        # float mask and the subsequent dense multiply. Gradients flow through
+        # selected values exactly as in the masked implementation.
+        sparse_h = torch.zeros_like(h).scatter_(-1, indices, selected)
 
         if self.training:
             with torch.no_grad():
-                win_rate = mask.float().mean(dim=tuple(range(mask.ndim - 1)))
+                counts = torch.bincount(
+                    indices.reshape(-1), minlength=self.d_ff
+                ).to(dtype=self.excitability.dtype)
+                win_rate = counts / float(indices.numel())
                 self.excitability.mul_(self.excitability_decay).add_(
-                    win_rate.to(self.excitability.dtype), alpha=1.0 - self.excitability_decay
+                    win_rate, alpha=1.0 - self.excitability_decay
                 )
 
         return self.down(sparse_h)
@@ -186,7 +192,7 @@ class LumenV2(nn.Module):
             if isinstance(module, nn.Linear) and module.bias is not None:
                 nn.init.zeros_(module.bias)
 
-    def forward(self, idx, targets=None, active_layers=None):
+    def forward(self, idx, targets=None, active_layers=None, return_logits=True):
         if idx.ndim != 2:
             raise ValueError(f"idx must have shape [batch, sequence], got {tuple(idx.shape)}.")
         if idx.shape[1] > self.ctx:
@@ -205,22 +211,24 @@ class LumenV2(nn.Module):
         for layer_index, block in enumerate(self.blocks):
             if layer_index in active_layers:
                 x = block(x)
-        logits = self.head(self.norm(x))
+        x = self.norm(x)
         loss = None
+        logits = None
 
         if targets is not None:
             if targets.shape != idx.shape:
                 raise ValueError("targets must have the same [batch, sequence] shape as idx.")
-            flat_logits = logits.reshape(-1, self.vocab)
             flat_targets = targets.reshape(-1)
-            # -100 marca posiciones sin supervisión (system/user/padding).
-            # Se filtran antes de CE y gather: p_correct nunca recibe una etiqueta
-            # inválida, y el gradiente solo nace en posiciones objetivo del assistant.
+            # Project only assistant-supervised positions during training.
+            # This preserves the tied embedding/head and exact objective while
+            # avoiding a full [B,T,V] logits tensor for masked system/user tokens.
             valid = flat_targets.ne(-100)
             if not torch.any(valid):
                 raise ValueError("targets must contain at least one supervised token.")
-            supervised_logits = flat_logits[valid]
+            flat_hidden = x.reshape(-1, self.d_model)
+            supervised_hidden = flat_hidden[valid]
             supervised_targets = flat_targets[valid]
+            supervised_logits = F.linear(supervised_hidden, self.head.weight)
             ce = F.cross_entropy(
                 supervised_logits, supervised_targets,
                 reduction="none", label_smoothing=0.05,
@@ -229,7 +237,6 @@ class LumenV2(nn.Module):
             if self.loss_mode == "cross_entropy":
                 loss = ce.mean()
             else:
-                # Hipótesis experimental original, calculada solo en tokens supervisados.
                 with torch.no_grad():
                     probs = F.softmax(supervised_logits.float(), dim=-1)
                     p_correct = probs.gather(1, supervised_targets.unsqueeze(1)).squeeze(1)
@@ -239,6 +246,9 @@ class LumenV2(nn.Module):
                         (max_prob > 0.7) & (p_correct < 0.3)
                     ).to(ce.dtype) * 0.5
                 loss = (ce * (error_weight + overconfidence)).mean()
+
+        if return_logits or targets is None:
+            logits = self.head(x)
 
         return logits, loss
 
