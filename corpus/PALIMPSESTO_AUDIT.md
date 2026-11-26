@@ -29,3 +29,31 @@ El Palimpsesto se integra como una fuente documental propia, con procedencia y v
 ## Política de ampliación
 
 La v0.4 contiene 23 personajes especialistas añadidos al núcleo previo (P039–P061). Cada uno tiene un registro factual verificable, un documento narrativo propio y un puente que separa expresamente conocimiento real de interpretación ficticia. Ningún personaje nuevo puede convertir su rango, secta o revelación en autoridad factual.
+
+
+## Catálogo de módulos detectados
+
+| Módulo | Apariciones | Módulo | Apariciones |
+|---|---:|---|---:|
+| Cannabis | 400 | Chamanes amazónicos | 400 |
+| Chamanes siberianos | 401 | DMT | 401 |
+| Egipcia — Anubis | 422 | Egipcia — Horus y Seth | 422 |
+| Egipcia — Maat | 422 | Egipcia — Osiris e Isis | 422 |
+| Egipcia — Ra | 422 | Eleusis | 401 |
+| Escohotado | 401 | Escohotado y la prohibición | 400 |
+| Gordon Wasson | 400 | Griega — Dioniso | 421 |
+| Griega — Hades y Perséfone | 422 | Griega — Orfeo | 422 |
+| Griega — Prometeo | 422 | Griega — Zeus | 422 |
+| Iboga | 400 | Japonesa — Amaterasu | 422 |
+| Japonesa — Inari | 422 | Japonesa — Izanagi e Izanami | 421 |
+| Japonesa — Susanoo y Yamata no Orochi | 422 | Japonesa — Tsukuyomi | 422 |
+| Ketamina | 400 | LSD | 401 |
+| María Sabina | 401 | MDMA | 401 |
+| Mescalina y Huxley | 400 | Nórdica — Loki | 422 |
+| Nórdica — Odín | 422 | Nórdica — Ragnarök | 422 |
+| Nórdica — Thor | 422 | Nórdica — Yggdrasil | 422 |
+| Opio y Coleridge | 400 | Peyote huichol | 401 |
+| PiHKAL open source | 400 | Salvia divinorum | 400 |
+| Shulgin | 400 | Soma | 401 |
+| Terence McKenna | 401 | | |
+
