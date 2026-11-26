@@ -56,14 +56,16 @@ class SparseMLP(nn.Module):
         self.top_k = top_k
         self.excitability_strength = excitability_strength
         self.excitability_decay = excitability_decay
-        self.gate = nn.Linear(d_model, d_ff, bias=False)
-        self.up = nn.Linear(d_model, d_ff, bias=False)
+        # Una GEMM para las dos proyecciones SwiGLU: misma función matemática,
+        # menos lecturas de x y mejor aprovechamiento de GEMM en CPU.
+        self.gate_up = nn.Linear(d_model, 2 * d_ff, bias=False)
         self.down = nn.Linear(d_ff, d_model, bias=False)
         # EMA de frecuencia de selección por neurona (no es un parámetro entrenable).
         self.register_buffer("excitability", torch.zeros(d_ff))
 
     def forward(self, x):
-        h = F.silu(self.gate(x)) * self.up(x)
+        gate, up = self.gate_up(x).chunk(2, dim=-1)
+        h = F.silu(gate) * up
 
         # Centrar respecto a la frecuencia uniforme esperada evita que el bonus
         # crezca sin límite y que domine progresivamente a la activación.
