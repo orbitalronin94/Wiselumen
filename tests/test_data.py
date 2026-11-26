@@ -1,8 +1,11 @@
+import json
+import random
 import unittest
+from pathlib import Path
 
 import torch
 
-from data import ROLE_IDS, encode_chat, collate_chat
+from data import ROLE_IDS, encode_chat, collate_chat, sample_mixed_rows
 
 
 class FakeEncoding:
@@ -46,6 +49,20 @@ class V22DataTests(unittest.TestCase):
         self.assertEqual(tuple(inputs.shape), (2, 3))
         self.assertEqual(int(labels[1, 2]), -100)
         self.assertEqual(int(inputs[1, 2]), 0)
+
+
+    def test_conflict_sampler_keeps_v4_majority_and_12_5_percent_synthetic(self):
+        corpus = [{"source": "v4", "prompt": "p", "completion": "c"} for _ in range(20)]
+        conflicts = [{"source": "synthetic_system_conflict", "prompt": "x", "completion": "y"}]
+        batch = sample_mixed_rows(corpus, conflicts, 8, random.Random(42), 0.12)
+        self.assertEqual(len(batch), 8)
+        self.assertEqual(sum(row["source"] == "synthetic_system_conflict" for row in batch), 1)
+
+    def test_identity_eval_has_ten_separate_probes(self):
+        path = Path(__file__).parents[1] / "eval" / "identity_attacks.jsonl"
+        rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        self.assertEqual(len(rows), 10)
+        self.assertTrue(all("expected_identity" in row and "criterion" in row for row in rows))
 
     def test_v4_holdout_rows_are_rejected(self):
         from data import format_v4_row
