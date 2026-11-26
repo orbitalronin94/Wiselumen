@@ -3,6 +3,7 @@ name: Build and validate Corpus Master graph
 on:
   push:
     branches:
+      - lore/palimpsesto-expansion-v05
       - lore/archivo-de-las-contradicciones
       - main
     paths:
@@ -18,6 +19,7 @@ permissions:
 
 jobs:
   graph:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,22 +28,33 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Validate curated dataset
-        run: python data/validate_lore_dataset.py data/lore_seed_v0.4.jsonl
-      - name: Rebuild complete revelation index
-        run: python corpus/index_palimpsesto.py
-      - name: Build sparse matrix graph
-        run: python corpus/build_graph.py
-      - name: Validate graph and all 16,848 source records
-        run: python corpus/validate_graph.py corpus/graph_v0.4.json --require-complete
-      - name: Commit generated index and graph shards
+      - name: Validate curated v0.5 dataset
+        run: python data/validate_lore_dataset.py data/lore_seed_v0.5.jsonl
+      - name: Verify all source index shards
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[]
+          for i in range(1,5):
+              rows.extend(json.loads(line) for line in Path(f"data/palimpsesto_index_v0.1_part{i}.jsonl").read_text(encoding="utf-8").splitlines() if line.strip())
+          assert len(rows)==16848, len(rows)
+          assert [r["id"] for r in rows]==[f"PM{i:05d}" for i in range(1,16849)]
+          assert len({r["topic"] for r in rows})==41
+          print("source_records=16848 unique_topics=41")
+          PY
+      - name: Build sparse v0.5 matrix graph
+        run: python corpus/build_graph.py --dataset data/lore_seed_v0.5.jsonl --output corpus/graph_v0.5.json --dataset-blob-sha auto
+      - name: Validate graph and adaptation provenance
+        run: python corpus/validate_graph.py corpus/graph_v0.5.json --require-complete
+      - name: Commit generated v0.5 graph
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/palimpsesto_index_v0.1_part*.jsonl corpus/graph_v0.4.json corpus/graph_v0.4/
+          git add corpus/graph_v0.5.json corpus/graph_v0.5/
           if git diff --cached --quiet; then
-            echo "Generated index and graph are already current."
+            echo "Generated v0.5 graph is already current."
           else
-            git commit -m "Build Corpus Master v0.4 matrix graph"
+            git commit -m "[skip ci] Build Corpus Master v0.5 matrix graph"
             git push origin "${{ github.ref_name }}"
           fi
