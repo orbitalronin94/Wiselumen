@@ -37,6 +37,11 @@ jobs:
           gh run download 45812986256 --repo orbitalronin94/Wiselumen --name lumen-v22-step-20000 --dir artifacts
           test -s artifacts/lumen-v22-step-20000.pt
           test -s artifacts/tokenizer-v22-derived.json
+      - name: Install CPU training dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
       - name: Verify parent checkpoint step and resumable state
         run: |
           python - <<'PY'
@@ -51,11 +56,6 @@ jobs:
           assert "optimizer" in state and "ema" in state
           print("PARENT_CHECKPOINT_OK step=20000 optimizer=present ema=present")
           PY
-      - name: Install CPU training dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
-          python -m pip install tokenizers==0.21.0
       - name: Resume and train 10,000 additional steps
         run: python scripts/train_v22_continue_30k.py
       - name: Upload step-30000 checkpoint and metrics
