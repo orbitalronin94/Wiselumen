@@ -3,6 +3,13 @@ import json
 import os
 import time
 from pathlib import Path
+import sys
+
+# Running a file under scripts/ puts that directory, not the repository root,
+# at sys.path[0]. Add the project root so Model.py and Train.py resolve reliably.
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import torch
 
