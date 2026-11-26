@@ -70,3 +70,34 @@ El estado `complete_structural_index` significa que todas las revelaciones y sus
 - `corpus/PALIMPSESTO_AUDIT.md`: auditoría estructural de la fuente.
 - `corpus/graph_v0.6.json`: manifiesto del grafo global, generado por CI.
 - `corpus/validate_topic_map.py`: comprobación de la adaptación de cada tema contra el texto original.
+
+## Métricas verificadas del grafo v0.6
+
+La ejecución de GitHub Actions `45890899168` terminó correctamente. Resultado:
+
+- **17.861 nodos**.
+- **53.747 relaciones principales**.
+- **23 matrices** de relación/proyección en formato COO.
+- **0 enlaces internos sin resolver**.
+- 16.848 nodos de revelación fuente, enlazados a 41 temas.
+- 41 curadores, 82 vínculos de adaptación narrativa y 80 vínculos de separación epistemológica en el mapa (41 puentes dedicados más relaciones contextuales compartidas).
+- Cinco fragmentos de nodos y once ficheros de matrices, con índice base cero común.
+
+## Peso medido del paquete activo v0.6
+
+Medición del árbol Git de la rama, contando una vez cada artefacto canónico de datos y grafo:
+
+| Componente | Archivos | Bytes |
+|---|---:|---:|
+| Palimpsesto original | 1 | 20.401.800 |
+| Índice de las 16.848 revelaciones | 4 | 7.482.345 |
+| Semilla curada v0.6 | 1 | 402.427 |
+| Mapa temático v0.3 | 1 | 34.238 |
+| Grafo v0.6 (manifiesto, nodos y matrices) | 17 | 9.175.032 |
+| **Paquete de datos y grafo** | **24** | **37.495.842** |
+
+<text>37.495.842 bytes = 37,496 MB decimales = 35,758 MiB.</text>
+
+El contenido textual principal (original + semilla curada) ocupa **20.804.227 bytes = 20,804 MB**. El paquete de datos y grafo no duplica el cuerpo original dentro del índice: el original se conserva una vez y el índice almacena IDs, temas y rangos de líneas.
+
+El conjunto activo ampliado, incluyendo documentación y herramientas de validación, ocupa aproximadamente **37,70 MB en 43 archivos**. Se excluyen snapshots históricos v0.3–v0.5, dependencias y artefactos de entrenamiento.
