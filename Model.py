@@ -213,18 +213,26 @@ class LumenV2(nn.Module):
                 raise ValueError("targets must have the same [batch, sequence] shape as idx.")
             flat_logits = logits.reshape(-1, self.vocab)
             flat_targets = targets.reshape(-1)
+            # -100 marca posiciones sin supervisión (system/user/padding).
+            # Se filtran antes de CE y gather: p_correct nunca recibe una etiqueta
+            # inválida, y el gradiente solo nace en posiciones objetivo del assistant.
+            valid = flat_targets.ne(-100)
+            if not torch.any(valid):
+                raise ValueError("targets must contain at least one supervised token.")
+            supervised_logits = flat_logits[valid]
+            supervised_targets = flat_targets[valid]
             ce = F.cross_entropy(
-                flat_logits, flat_targets, reduction="none", label_smoothing=0.05
+                supervised_logits, supervised_targets,
+                reduction="none", label_smoothing=0.05,
             )
 
             if self.loss_mode == "cross_entropy":
                 loss = ce.mean()
             else:
-                # Hipótesis experimental original: ponderar por error y añadir
-                # penalización moderada a errores cometidos con alta confianza.
+                # Hipótesis experimental original, calculada solo en tokens supervisados.
                 with torch.no_grad():
-                    probs = F.softmax(flat_logits.float(), dim=-1)
-                    p_correct = probs.gather(1, flat_targets.unsqueeze(1)).squeeze(1)
+                    probs = F.softmax(supervised_logits.float(), dim=-1)
+                    p_correct = probs.gather(1, supervised_targets.unsqueeze(1)).squeeze(1)
                     max_prob = probs.max(dim=-1).values
                     error_weight = 1.0 - p_correct
                     overconfidence = (
