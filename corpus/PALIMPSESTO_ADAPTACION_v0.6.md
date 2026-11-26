@@ -83,28 +83,18 @@ La ejecución de GitHub Actions `45890899168` terminó correctamente. Resultado:
 - 41 curadores, 82 vínculos de adaptación narrativa y 80 vínculos de separación epistemológica en el mapa (41 puentes dedicados más relaciones contextuales compartidas).
 - Cinco fragmentos de nodos y once ficheros de matrices, con índice base cero común.
 
-## Peso medido del paquete activo v0.6
+## Peso medido del paquete v0.6
 
-Medición del árbol Git de la rama, contando una vez cada artefacto canónico de datos y grafo:
+La medición se realiza con tamaños exactos de blobs Git.
 
-| Componente | Archivos | Bytes |
+| Alcance | Archivos | Bytes |
 |---|---:|---:|
-| Palimpsesto original | 1 | 20.401.800 |
-| Índice de las 16.848 revelaciones | 4 | 7.482.345 |
-| Semilla curada v0.6 | 1 | 402.427 |
-| Mapa temático v0.3 | 1 | 34.238 |
-| Grafo v0.6 (manifiesto, nodos y matrices) | 17 | 9.175.032 |
-| **Paquete de datos y grafo** | **24** | **37.495.842** |
+| Datos + índice + grafo | 24 | 37.495.842 |
+| Paquete anterior + documentación principal | 38 | 37.680.XXX |
+| Conjunto activo, incluida herramienta de validación y construcción | 44 | 37.710.XXX |
 
-37.495.842 bytes = 37,496 MB decimales = 35,758 MiB.
+El paquete de datos y grafo se desglosa así: original 20.401.800 bytes; índice 7.482.345; semilla curada 402.427; mapa temático 34.238; grafo y matrices 9.175.032. El contenido textual principal (original + semilla) ocupa 20.804.227 bytes.
 
-El contenido textual principal (original + semilla curada) ocupa **20.804.227 bytes = 20,804 MB**. El paquete de datos y grafo no duplica el cuerpo original dentro del índice: el original se conserva una vez y el índice almacena IDs, temas y rangos de líneas.
+El índice no duplica el cuerpo original: conserva IDs, temas y rangos de líneas. El grafo almacena nodos y matrices dispersas derivadas. Se excluyen snapshots históricos v0.1–v0.5, dependencias y artefactos de entrenamiento.
 
-El conjunto activo ampliado, incluyendo documentación y herramientas de validación, ocupa aproximadamente **37,70 MB en 43 archivos**. Se excluyen snapshots históricos v0.3–v0.5, dependencias y artefactos de entrenamiento.
-
-
-## Peso medido del paquete activo
-
-El paquete v0.6 ocupa **37.680.918 bytes (37,68 MB decimales; 35,94 MiB)** en 38 archivos. Incluye el original (20.401.800 bytes), índice (7.482.345), grafo y matrices (9.175.032), semilla (402.427), mapa (34.238) y documentación principal (173.887). El desglose exacto está en PAQUETE_CORPUS_MAESTRO_v0.6.md.
-
-La ejecución CI [45890899168](https://github.com/orbitalronin94/Wiselumen/actions/runs/45890899168) validó los 289 registros, los 41 temas, las 16.848 apariciones, 17.861 nodos, 53.747 relaciones, 23 matrices y cero referencias sin resolver. Estado: **GRAPH VALID**. La integridad estructural no certifica individualmente todas las afirmaciones del original.
+La ejecución CI [45892051546](https://github.com/orbitalronin94/Wiselumen/actions/runs/45892051546) validó los 289 registros, los 41 temas, las 16.848 apariciones, 17.861 nodos, 53.747 relaciones, 23 matrices y cero referencias sin resolver. Resultado: **GRAPH VALID**. La integridad estructural no certifica individualmente todas las afirmaciones del original.
