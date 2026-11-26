@@ -565,3 +565,14 @@ La recuperación del blob SHA `b0eb703c5237d1d461321a30a89525e154f0219d` permiti
 La semilla vigente `data/lore_seed_v0.4.jsonl` contiene **160 registros**: 46 fact, 73 lore y 41 bridge. Frente a los 85 registros de v0.3, incorpora 23 nuevas fichas factuales, 23 documentos narrativos vinculados y 23 puentes, además de seis piezas doctrinales adicionales ya presentes en la rama. El registro de personajes llega a P062: 23 especialistas con conocimiento factual asociado (P039–P061) y la figura ambigua de la Copista de Fondo (P062).
 
 El grafo v0.4 está dividido en cuatro fragmentos de nodos y matrices COO separadas/agrupadas para evitar un único archivo monolítico. El manifiesto `corpus/graph_v0.4.json` declara 17.479 nodos, 51.907 relaciones principales y cero referencias internas sin resolver. Su estado es `complete_structural_index`, no «auditoría factual completa»: las afirmaciones del Palimpsesto aún requieren revisión una por una.
+
+
+## 2.6 Integración narrativa ampliada del Palimpsesto: v0.5
+
+La versión vigente del dataset es `data/lore_seed_v0.5.jsonl`, con **242 registros** (58 fact, 131 lore, 53 bridge). La v0.4 se conserva como snapshot histórico. La ampliación incorpora doce especialistas nuevos (P063–P074) y sus fichas factuales, expedientes y puentes; además, 46 documentos de lore adaptan las 41 familias temáticas del original. Cinco temas reciben más de una lectura narrativa, no por duplicación mecánica sino por puntos de vista distintos.
+
+La cobertura temática se comprueba contra los cuatro índices fuente: los 41 temas deben estar representados por `source_topics`. Cada documento adaptado incluye el SHA del blob original. El grafo debe enlazar cada adaptación con los nodos `PM` de su tema mediante `adapted_from`; una aparición repetida en el Palimpsesto no se cuenta como fuente independiente.
+
+La expansión no convierte las mitologías griega, nórdica, egipcia o japonesa en nombres alternativos de los dioses de la Concordia. Tampoco convierte las glosas de Marper en conocimiento científico. Los materiales psiconáuticos se tratan como historia cultural y objeto de revisión crítica: no se reproducen instrucciones de síntesis, dosis o administración; las hipótesis sobre soma y Eleusis se marcan como no resueltas; la evidencia clínica se acompaña de límites y riesgos.
+
+La guía de continuidad está en `lore/ARCHIVO_DE_TRADICIONES_EXTERIORES.md`. El índice estructural de 16.848 revelaciones sigue completo; la auditoría factual individual del texto fuente sigue siendo una tarea separada.
