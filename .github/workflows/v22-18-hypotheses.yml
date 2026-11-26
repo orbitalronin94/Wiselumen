@@ -1,0 +1,131 @@
+name: LUMEN V2.2 - 18 CPU hypotheses vs main
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-18-hypotheses.yml"
+      - "scripts/benchmark_v22_hypothesis.py"
+      - "Train.py"
+      - "Model.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: ${{ matrix.id }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 19
+      matrix:
+        include:
+          - id: intra1-inter1
+            threads: "1"
+            interop: "1"
+            mkldnn: "true"
+          - id: intra1-inter2
+            threads: "1"
+            interop: "2"
+            mkldnn: "true"
+          - id: intra1-inter4
+            threads: "1"
+            interop: "4"
+            mkldnn: "true"
+          - id: intra2-inter2
+            threads: "2"
+            interop: "2"
+            mkldnn: "true"
+          - id: intra2-inter4
+            threads: "2"
+            interop: "4"
+            mkldnn: "true"
+          - id: intra3-inter1
+            threads: "3"
+            interop: "1"
+            mkldnn: "true"
+          - id: intra3-inter2
+            threads: "3"
+            interop: "2"
+            mkldnn: "true"
+          - id: intra3-inter4
+            threads: "3"
+            interop: "4"
+            mkldnn: "true"
+          - id: intra4-inter1
+            threads: "4"
+            interop: "1"
+            mkldnn: "true"
+          - id: intra4-inter2
+            threads: "4"
+            interop: "2"
+            mkldnn: "true"
+          - id: intra4-inter4
+            threads: "4"
+            interop: "4"
+            mkldnn: "true"
+          - id: intra6-inter1
+            threads: "6"
+            interop: "1"
+            mkldnn: "true"
+          - id: intra6-inter2
+            threads: "6"
+            interop: "2"
+            mkldnn: "true"
+          - id: intra6-inter4
+            threads: "6"
+            interop: "4"
+            mkldnn: "true"
+          - id: intra8-inter1
+            threads: "8"
+            interop: "1"
+            mkldnn: "true"
+          - id: intra8-inter2
+            threads: "8"
+            interop: "2"
+            mkldnn: "true"
+          - id: intra8-inter4
+            threads: "8"
+            interop: "4"
+            mkldnn: "true"
+          - id: intra2-inter1-mkldnn-off
+            threads: "2"
+            interop: "1"
+            mkldnn: "false"
+          - id: main-reference-2-1
+            threads: "2"
+            interop: "1"
+            mkldnn: "true"
+    env:
+      OMP_NUM_THREADS: "${{ matrix.threads }}"
+      MKL_NUM_THREADS: "${{ matrix.threads }}"
+      TORCH_INTEROP_THREADS: "${{ matrix.interop }}"
+      OPENBLAS_NUM_THREADS: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      BENCH_ID: "${{ matrix.id }}"
+      BENCH_THREADS: "${{ matrix.threads }}"
+      BENCH_INTEROP: "${{ matrix.interop }}"
+      BENCH_MKLDNN: "${{ matrix.mkldnn }}"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU training dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+      - name: Run identical benchmark workload
+        run: python scripts/benchmark_v22_hypothesis.py
+      - name: Upload benchmark metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-bench-${{ matrix.id }}
+          path: benchmark-result.json
+          if-no-files-found: ignore
+          retention-days: 14
