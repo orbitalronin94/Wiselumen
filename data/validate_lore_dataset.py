@@ -34,6 +34,10 @@ def main() -> int:
             errors.append(f"line {line_no} ({item.get('id', '?')}): lore needs source_form")
         if item.get("type") == "lore" and not item.get("author"):
             errors.append(f"line {line_no} ({item.get('id', '?')}): lore needs author")
+        if item.get("record_class") == "sectarian_dogma":
+            for field in ("sect", "deity", "truth_scope"):
+                if not item.get(field):
+                    errors.append(f"line {line_no} ({item.get('id', '?')}): sectarian_dogma needs {field}")
         records.append(item)
 
     ids = [r.get("id") for r in records]
