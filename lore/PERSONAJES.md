@@ -79,6 +79,20 @@ Estos ocho personajes son autoridades religiosas disputadas, no portavoces omnis
 | P048 | Vela Tis | Ecóloga de estuarios; aliada de la Liturgia de las Cuencas | Redes tróficas y ecología marina | Relacional, rara vez habla de una especie sin describir aquello de lo que depende. | ¿Qué organismo sostiene una cadena alimentaria que nadie ha observado completa? |
 | P049 | Mael Tersa | Historiador documental de la Casa de los Índices | Fuentes primarias, secundarias y crítica de procedencia | Cauto, pregunta quién creó el documento, cuándo y para responder a qué pregunta. | ¿Puede una copia tardía ser fuente primaria de una falsificación antigua? |
 
+| P050 | Nerea Vardal | Conservadora de manuscritos de la Casa de los Índices | Paleografía, palimpsestos y datación de materiales | Minuciosa, estratifica tintas, soportes y manos sin reducirlos a una sola fecha. | ¿Qué texto permanece bajo el folio que el archivo declara limpio? |
+| P051 | Edrik Senn | Vulcanólogo de la Meseta de Ors | Vulcanología, magma y procesos eruptivos | Directo, distingue observación geológica de explicación sagrada. | ¿Por qué un informe sobre una erupción está fechado antes de su nacimiento? |
+| P052 | Sira Olt | Entomóloga de las Marismas | Entomología, desarrollo y metamorfosis | Irónica, etiqueta muestras con precisión y poca reverencia. | ¿Quién dejó larvas en un canal que los mapas declaran seco? |
+| P053 | Oren Tal | Espectroscopista del Observatorio de Nacarión | Espectroscopia, luz estelar y análisis astronómico | Sobrio, convierte el asombro en preguntas sobre señal, instrumento y modelo. | ¿Cómo puede llegar un espectro de una estrella que el observatorio ya no ve? |
+| P054 | Yara Belisar | Lingüista histórica de la Ciudad Inclinada | Cambio lingüístico, contacto y reconstrucción histórica | Comparativa, escucha parentescos sin confundir parecido con origen. | ¿Quién inventó una palabra que dos pueblos consideran heredada? |
+| P055 | Dovan Més | Anatomista de la Casa de Sal | Anatomía, circulación sanguínea e historia de la medicina | Clínico, dibuja recorridos y exige que cada flecha tenga un sentido. | ¿Por qué una copia anatómica añade una cámara al corazón? |
+| P056 | Iven Orv | Geocronólogo del Colegio de Medidores | Datación radiométrica e incertidumbre geológica | Cauto, no confunde una edad estimada con una fecha escrita en una crónica. | ¿Qué fecha pertenece a la roca y cuál al relato de quien la encontró? |
+| P057 | Calen Ral | Metalúrgico del Gremio de Sal y Vidrio | Metalurgia, microestructura y tratamientos térmicos | Técnico, prueba materiales y desconfía de adjetivos contractuales como irrompible. | ¿Puede una misma hoja ser frágil y resistente sin que ninguna descripción mienta? |
+| P058 | Sefra Urd | Matemática de la escuela de Varda | Aritmética, factorización y teoría de números | Paciente, rigurosa, distingue una demostración correcta de una atribución imposible. | ¿Cómo pudo una niña no nacida firmar una demostración válida? |
+| P059 | Ravel Quince | Restaurador de campanas y acústico | Resonancia, vibración y acústica de materiales | Sensorial, pero exige mediciones antes de aceptar una explicación sobrenatural. | ¿Qué sigue sonando cuando se desmonta aquello que debía vibrar? |
+| P060 | Hadria Morn | Climatóloga del Colegio de Medidores | Climatología, efecto invernadero y escalas temporales | Serena, separa tiempo meteorológico, variabilidad y tendencia climática. | ¿Por qué le piden una profecía cuando ha entregado series e incertidumbres? |
+| P061 | Pelia Ardan | Microbióloga de la Casa de Sal | Microbiología, bacterias, virus y enfermedades infecciosas | Clara, clasifica causas antes de discutir remedios y no acepta que toda fiebre sea contagio. | ¿Quién selló las placas antes de que existiera el laboratorio? |
+| P062 | La Copista de Fondo | Copista anónima de los estratos inferiores del archivo | Transmisión textual, anonimato y cosmología marpérica | Habla en condicional; evita atribuirse textos y deja preguntas donde otros ponen firmas. | ¿Es una persona, un oficio heredado o un nombre que oculta varias manos? |
+
 Las sectas discrepan sobre la autoridad de Marper, el significado de las Nueve Cenizas y la legitimidad del Tribunal. Ninguna debe ser presentada como la religión verdadera del mundo. Los profetas pueden acertar en su especialidad y equivocarse en teología, política o interpretación de los documentos.
 
 
@@ -121,3 +135,8 @@ Estos doce personajes amplían la red de conocimiento sin fundar nuevas sectas. 
 | P059 | Ravel Quince | Restaurador de instrumentos del Gremio de Sal y Vidrio | Paciente, manual, escucha las vibraciones de los objetos. | ¿Qué produce la nota que persiste cuando la campana está desmontada? |
 | P060 | Hadria Morn | Climatóloga de las Marismas de Urdia | Serena, estadística; distingue tiempo meteorológico y clima. | ¿Cómo aparecen series de inviernos futuros en archivos antiguos? |
 | P061 | Pelia Ardan | Microbióloga de la Casa de Sal | Enérgica, cuidadosa con las muestras; separa bacterias, virus y causas no infecciosas. | ¿Quién selló las placas antes de que existiera el laboratorio? |
+
+
+## Ampliación de perfiles P050–P062
+
+Los perfiles P050–P061 corresponden a especialistas que ya protagonizan las fichas factuales F035–F046 y sus documentos L056–L067. P062, la Copista de Fondo, aparece en los documentos doctrinales L068–L073. La continuidad del registro exige mantener separados los datos externos de sus expedientes ficticios.
