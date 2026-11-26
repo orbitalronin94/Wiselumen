@@ -141,3 +141,32 @@ OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python train_entry.py
 ## Principio
 
 Primero integridad de datos y tokenizer; luego smoke test de 100 pasos; después comparación controlada con la línea base; solo entonces entrenamiento largo.
+
+
+## V2.2 — estándar de inferencia en Rust
+
+La ruta estándar de evaluación y generación de LUMEN V2.2 es el ejecutable de Rust en `rust-holdout/`. Rust gestiona tokenización, ensamblado del prompt, scoring de respuestas y generación greedy; el forward se ejecuta mediante TorchScript y kernels CPU de LibTorch (`tch`). **No es un backend de tensores escrito íntegramente en Rust.** El entrenamiento permanece en Python.
+
+La generación libre usa caché KV incremental: prefill del contexto una vez y actualización de la caché token a token. El exportador verifica la paridad del forward completo y del paso incremental antes de guardar el grafo TorchScript.
+
+### Benchmark pareado V2.2, checkpoint 10.000
+
+Mismo checkpoint, tokenizer, system prompt, holdout congelado y cuatro hilos:
+
+| Métrica | Python | Rust |
+|---|---:|---:|
+| Tiempo total | 1.073,67 s | 692,11 s |
+| Aciertos MC | 829 / 2.431 | 829 / 2.431 |
+| Exactitud MC | 34,10 % | 34,10 % |
+| Predicciones MC serializadas | 2.256 | 2.256 |
+| IDs y texto de 100 respuestas libres | — | Idénticos |
+
+La aceleración observada fue de **1,55×**, equivalente a un **35,5 % menos de tiempo total** en este runner CPU concreto. Las etiquetas de decisión MC coinciden exactamente; las puntuaciones flotantes difieren como máximo en 2,3842e-6. La comparación automatizada exige igualdad exacta de las decisiones y una tolerancia numérica estricta de 1e-5 para los scores.
+
+Este resultado no demuestra que Rust sea siempre más rápido ni que toda la mejora proceda de KV cache: el scoring MC representa la mayor parte del tiempo total. Es un resultado de benchmark local reproducible, no una cifra universal.
+
+### Inspiración y agradecimiento
+
+Esta migración toma inspiración metodológica de Anthropic Engineering, **“[Migrating our Messages API to Rust](https://www.anthropic.com/research/migrating-api-to-rust)”** (25 de noviembre de 2026), firmado por Lance Martin, Jake Eaton, Arvin Aminpour, Emma Webb, Bharat Mediratta y Ravi Trivedi. Agradecemos a sus autores la exposición clara de una idea especialmente útil: una migración de lenguaje debe ganarse la confianza mediante verificación empírica, comparación con una implementación de referencia y comprobaciones de paridad, no mediante la mera compilación del nuevo código.
+
+El alcance es distinto: Anthropic describe la migración de su servicio Messages API de Python a Rust; aquí medimos el runtime de inferencia/evaluación de LUMEN V2.2, con LibTorch como backend numérico. Sus cifras de CPU y latencia de servicio no son comparables directamente con este holdout ni se presentan como una predicción de nuestros resultados.
