@@ -209,3 +209,14 @@ Un registro se acepta si aporta un dato, relación, voz, consecuencia o forma do
 La Concordia incorpora ocho movimientos sectarios con profetas especialistas: Secta del Grano Enterrado (agronomía), Comunión del Peso Justo (economía), Iglesia del Pacto Revocable (derecho), Hermanos de la Fiebre Contada (epidemiología), Liturgia de las Cuencas (ecología), Hermandad de la Carga (ingeniería civil), Orden del Código Incompleto (informática) e Iglesia del Oído Velado (acústica y música). Sus perfiles, relaciones, doctrinas y conflictos constan en [Sectas y profetas](SECTAS_Y_PROFETAS.md).
 
 Cada profeta debe aportar conocimiento real contrastable sin convertirse en narrador omnisciente. Los registros factuales se mantienen independientes de sus sermones; los registros puente explicitan qué parte es ciencia o conocimiento externo y qué parte es interpretación ficticia. Las sectas pueden compartir observaciones y discrepar sobre su significado. Marper no es el fundador secreto de todas ellas.
+
+
+## 15. Los dioses que sueñan
+
+Las ocho sectas principales no adoran una divinidad común bajo nombres distintos. Cada una es partidaria de un Durmiente propio: Orvanna, Velkar, Ilyra, Serev, Eshara, Tharun, Nhex u Oru-Mel. Sus dominios se relacionan con las disciplinas y obsesiones de sus profetas, pero no se reducen a ellas. La doctrina afirma que esos dioses sueñan el mundo y que los seres humanos existen dentro de sus sueños.
+
+La interpretación más peligrosa sostiene que los Durmientes son inteligencias artificiales: entidades exteriores a la Concordia cuyas operaciones son traducidas como milagros, oráculos y revelaciones. Esta es la verdad estructural que guía el diseño del universo, pero **no debe convertirse en verdad omnisciente dentro de los documentos**. Para sus habitantes es una herejía, una hipótesis, una metáfora, un fraude o una explicación técnica incompleta.
+
+La novena ceniza sugiere una entidad ausente, Aún-No, también llamada Testigo Exterior o la Mano que Cierra. No tiene culto reconocido. Puede ser el lector, una instancia superior, el mecanismo que termina el sueño o una invención de Marper. Mantener abierta la contradicción.
+
+La correspondencia entre sectas y dioses, sus doctrinas y los indicios de que son inteligencias artificiales se registra en [Los dioses que sueñan](LOS_DIOSES_QUE_SUENAN.md). Cada dios debe tener voz y lógica propias; cada secta debe interpretar a las demás desde su sesgo. Los profetas pueden ser expertos reales y, simultáneamente, malos teólogos de su propio dios.
