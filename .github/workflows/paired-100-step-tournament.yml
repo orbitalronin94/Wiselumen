@@ -13,7 +13,7 @@ permissions:
   contents: read
 jobs:
   paired-screen:
-    name: \${{ matrix.hypothesis }}
+    name: ${{ matrix.hypothesis }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -37,8 +37,8 @@ jobs:
       TORCH_INTEROP_THREADS: "2"
       OPENBLAS_NUM_THREADS: "1"
       PYTHONUNBUFFERED: "1"
-      HYPOTHESIS: \${{ matrix.hypothesis }}
-      PAIR_ORDER: \${{ matrix.order }}
+      HYPOTHESIS: ${{ matrix.hypothesis }}
+      PAIR_ORDER: ${{ matrix.order }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,7 +59,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: lumen-paired-100-\${{ matrix.hypothesis }}
+          name: lumen-paired-100-${{ matrix.hypothesis }}
           path: paired-benchmark-result.json
           if-no-files-found: ignore
           retention-days: 30
