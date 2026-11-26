@@ -201,6 +201,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
             details["ipex"] = getattr(ipex, "__version__", "installed")
         except Exception as exc:
             details["ipex"] = f"unavailable:{type(exc).__name__}:{exc}"
+        model.logit_chunk_size = CHUNK_SIZE
         try:
             model = torch.compile(
                 model, mode="max-autotune", fullgraph=True
