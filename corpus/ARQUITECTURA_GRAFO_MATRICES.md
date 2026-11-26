@@ -96,3 +96,10 @@ La versión v0.4 se almacena como un manifiesto (`corpus/graph_v0.4.json`), cuat
 La cobertura incluye los 160 registros curados de v0.4 y 16.848 registros fuente del Palimpsesto. El grafo contiene 17.479 nodos y 51.907 relaciones dirigidas principales. Las matrices de proyección por personaje, lugar y dominio se calculan solo sobre los registros curados: indican coaparición, no causalidad, dependencia ni acuerdo. Las revelaciones fuente se conectan con su tema y con el nodo de procedencia, pero no se convierten automáticamente en afirmaciones factuales validadas.
 
 El estado `complete_structural_index` significa que cada revelación está indexada por ID, tema y rango de líneas. No significa que las afirmaciones del Palimpsesto hayan superado una auditoría factual individual.
+
+
+## Grafo v0.5: procedencia directa de las adaptaciones
+
+El grafo v0.5 se construye a partir de `data/lore_seed_v0.5.jsonl`, los cuatro índices fuente y `data/palimpsesto_topic_map_v0.2.jsonl`. Cada documento con `record_class: palimpsest_adaptation` declara uno o más `source_topics`. El constructor crea una relación dispersa `adapted_from` desde ese documento a cada revelación fuente del tema, además de las relaciones de tema a personaje, hecho, lore y puente declaradas en el mapa.
+
+La validación comprueba que los 41 temas están representados, que el mapa no contiene IDs inexistentes, que cada adaptación apunta a todas las revelaciones fuente de sus temas y que no hay enlaces internos sin resolver. El índice estructural completo no equivale a auditoría factual completa.
