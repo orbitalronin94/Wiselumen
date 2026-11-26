@@ -94,11 +94,26 @@ jobs:
               a,b,c,d=[json.loads(p.read_text()) for p in paths]
               report["python"]={"correct":a["correct"],"scored":a["scored"],"accuracy":a["accuracy"],"mean_gold_answer_nll":a["mean_gold_answer_nll"]}
               report["rust"]={"correct":b["correct"],"scored":b["scored"],"accuracy":b["accuracy"],"mean_gold_answer_nll":b["mean_gold_answer_nll"]}
-              report["mc_predictions_identical"]=a["predictions"]==b["predictions"]
+              # Compare semantic decisions exactly; floating-point score tensors can
+              # differ by a few ULPs across execution paths.
+              pa, pb = a["predictions"], b["predictions"]
+              signature = lambda rows: [(x["id"], x["gold"], x["pred"]) for x in rows]
+              report["mc_prediction_count"] = len(pa)
+              report["mc_predictions_identical"] = signature(pa) == signature(pb)
+              score_deltas = [abs(float(x)-float(y))
+                              for px,py in zip(pa,pb)
+                              for x,y in zip(px["scores"],py["scores"])]
+              report["mc_score_max_abs_delta"] = max(score_deltas, default=0.0)
+              report["mc_scores_within_tolerance"] = (
+                  len(pa) == len(pb)
+                  and all(len(x["scores"]) == len(y["scores"]) for x,y in zip(pa,pb))
+                  and report["mc_score_max_abs_delta"] <= 1e-5
+              )
               report["freeform_token_ids_identical"]=[x["token_ids"] for x in c["results"]]==[x["token_ids"] for x in d["results"]]
               report["freeform_text_identical"]=[x["response"] for x in c["results"]]==[x["response"] for x in d["results"]]
               report["mc_holdout_hash_match"]=a["holdout_sha256"]==b["holdout_sha256"]
               report["tokenizer_hash_match"]=a["tokenizer_sha256"]==b["tokenizer_sha256"]
+              report["mc_mean_nll_abs_delta"] = abs(float(a["mean_gold_answer_nll"])-float(b["mean_gold_answer_nll"]))
           else: report["comparison_error"]="Missing baseline or native Rust outputs"
           for label,p in (("python",base/"wall_seconds.txt"),("rust",rust/"wall_seconds.txt")):
               if p.exists(): report.setdefault("wall_seconds",{})[label]=float(p.read_text().strip())
@@ -107,8 +122,12 @@ jobs:
           pathlib.Path("results").mkdir(parents=True, exist_ok=True)
           pathlib.Path("results/native_rust_comparison.json").write_text(json.dumps(report,indent=2)+"\n")
           print(json.dumps(report,indent=2))
-          if report.get("mc_predictions_identical") is False or report.get("freeform_token_ids_identical") is False:
-              raise SystemExit("Parity mismatch: do not interpret speed until numerical/tokenization differences are resolved.")
+          required = ("mc_predictions_identical", "mc_scores_within_tolerance",
+                      "freeform_token_ids_identical", "freeform_text_identical",
+                      "mc_holdout_hash_match", "tokenizer_hash_match")
+          failed = [key for key in required if report.get(key) is not True]
+          if failed:
+              raise SystemExit("Parity check failed: " + ", ".join(failed))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
