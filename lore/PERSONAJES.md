@@ -51,3 +51,20 @@ Este índice es una referencia de continuidad, no una declaración de verdad psi
 ## Regla de relaciones
 
 Una relación se desarrolla mediante hechos y documentos: una deuda, una disputa, una carta, un juicio, un viaje, una traición, una colaboración o una versión incompatible. No añadir relaciones solo para llenar una tabla. Los nuevos vínculos deben poder citarse desde más de una fuente y pueden ser disputados.
+
+## Profetas y escisiones doctrinales
+
+Estos ocho personajes son autoridades religiosas disputadas, no portavoces omniscientes. Cada cual introduce una disciplina real poco representada en la semilla inicial. Sus afirmaciones técnicas deben poder contrastarse fuera de la ficción.
+
+| ID | Personaje | Secta / escisión | Campo de conocimiento | Voz | Incertidumbre |
+|---|---|---|---|---|---|
+| P031 | Ammara de los Surcos | Profetisa de la Secta del Grano Enterrado; escisión agronómica de la Orden del Umbral Quieto | Agronomía, suelos y rotación de cultivos | Habla con paciencia de estación y cosecha; rechaza milagros agrícolas y exige comparar parcelas. | ¿Predica una doctrina o encubre un sistema de terrazas desaparecido? |
+| P032 | Ildren de las Balanzas | Profeta de la Comunión del Peso Justo; escisión mercantil de los Descalzos del Margen | Economía, incentivos, oferta, demanda y coste de oportunidad | Aforismos comerciales y ejemplos concretos; nunca confunde precio con valor moral. | ¿Quiere liberar a los deudores o convertir toda relación humana en una cuenta? |
+| P033 | Mara Vey, la de las Siete Garantías | Profetisa de la Iglesia del Pacto Revocable; cisma jurídico del Tribunal | Derecho, contratos, responsabilidad y debido proceso | Precisa, adversarial, distingue hechos, normas y remedios; habla como quien redacta una cláusula. | ¿Su doctrina limita el poder o crea una jurisdicción imposible de abandonar? |
+| P034 | Sovel de la Lámpara Clara | Profeta de los Hermanos de la Fiebre Contada; secta médica disidente de la Casa de Sal | Epidemiología, prevención, higiene y salud pública | Clínico, prudente, probabilístico; diferencia observación, hipótesis y recomendación. | ¿Por qué sus registros de epidemias comienzan antes de que existan los pueblos? |
+| P035 | Edria Raíz-Azul | Profetisa de la Liturgia de las Cuencas; escisión ecológica de los Descalzos del Margen | Ecología, redes tróficas, ciclos biogeoquímicos y biodiversidad | Piensa en sistemas e interdependencias; evita reducir la naturaleza a moralejas. | ¿Protege los humedales o los utiliza para ocultar una frontera antigua? |
+| P036 | Tovan de los Arcos | Profeta de la Hermandad de la Carga; cisma de ingenieros del Colegio de Medidores | Ingeniería civil, estructuras, fuerzas y materiales | Didáctico y materialista; pregunta por cargas, apoyos, tensión y margen de seguridad. | ¿Sus puentes imposibles son obras reales o demostraciones para desacreditar al Colegio? |
+| P037 | Narel Bitácora | Profeta de la Orden del Código Incompleto; escisión lógica y computacional de la Casa de los Índices | Informática, algoritmos, complejidad y teoría de la información | Conciso, recursivo, define términos antes de discutir; disfruta de paradojas computables. | ¿Escribe programas o los programas lo escriben a él? |
+| P038 | Lume de las Cuatro Resonancias | Profetisa de la Iglesia del Oído Velado; cisma musical del Umbral Quieto | Música, acústica, ritmo, armónicos y percepción auditiva | Rítmica, sensorial y analítica; puede explicar una consonancia sin despojarla de belleza. | ¿Compuso las canciones que se atribuyen a Liria Senn o las recuerda de un futuro archivo? |
+
+Las sectas discrepan sobre la autoridad de Marper, el significado de las Nueve Cenizas y la legitimidad del Tribunal. Ninguna debe ser presentada como la religión verdadera del mundo. Los profetas pueden acertar en su especialidad y equivocarse en teología, política o interpretación de los documentos.
