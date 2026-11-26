@@ -70,8 +70,8 @@ Las matrices de incidencia son conceptualmente bipartitas; se guardan en una rep
 9. No se declara completo el Corpus Maestro mientras falte el texto íntegro del Palimpsesto.
 10. El grafo se regenera desde los JSONL canónicos; nunca se edita manualmente un artefacto generado.
 
-## Estado de la primera matriz
+## Estado del grafo global
 
-`graph_v0.3.json` representa los 85 registros de `lore_seed_v0.3.jsonl` y sus entidades explícitas. Incluye el nodo de procedencia del Palimpsesto con sus metadatos conocidos, pero **no** inventa 16.848 nodos de revelación: el contenido fuente no está disponible para parseo en esta revisión.
+`graph_v0.4.json` se construye a partir de los 160 registros estructurados de `lore_seed_v0.4.jsonl` y de cuatro índices JSONL que cubren las 16.848 revelaciones del Palimpsesto (IDs PM00001–PM16848, con tema y rango de líneas). El archivo original se recuperó mediante Git blob: 19.943.599 caracteres, 134.821 líneas y 16.848 encabezamientos únicos. La auditoría detectó 41 módulos temáticos recurrentes, repetidos aproximadamente 400–422 veces.
 
-Estado: parcial, no completo. La próxima integración necesita recuperar el texto original y compararlo con la fuente de Isabel para marcar fragmentos originales, adaptados y ampliados.
+El grafo conserva las 16.848 entradas como nodos de fuente indexados, no como 16.848 copias del texto completo. Esto ofrece cobertura estructural completa del índice, pero **no equivale a una auditoría factual individual** de todas las afirmaciones del Palimpsesto. La revisión de afirmaciones externas, especialmente las farmacológicas y mitológicas, permanece separada y pendiente.
