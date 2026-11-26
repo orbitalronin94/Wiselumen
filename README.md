@@ -116,6 +116,7 @@ Primero corrección y reproducibilidad; después benchmark. No se atribuyen mult
 - `active_layers_for_step()` define 4 → 6 → 8 capas.
 - `Train.py` permite `mode="v21"`, EMA cada 10 pasos y clipping cada 5; `mode="original"` conserva las ocho capas y la cadencia anterior (EMA y clipping cada paso).
 - Las pruebas cubren los umbrales del curriculum y el forward con capas omitidas.
+- `.github/workflows/tests.yml` ejecuta la suite en CPU al hacer push/PR.
 
 ### Pendiente deliberadamente
 
