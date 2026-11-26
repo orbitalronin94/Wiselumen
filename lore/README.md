@@ -40,3 +40,13 @@ El registro de personajes llega a P062. Los especialistas P039–P061 cuentan co
 - [Semilla v0.4](../data/lore_seed_v0.4.jsonl)
 - [Auditoría del Palimpsesto](../corpus/PALIMPSESTO_AUDIT.md)
 - [Grafo global v0.4](../corpus/graph_v0.4.json)
+
+
+## Especialistas del Palimpsesto v0.5
+
+El registro llega a P076. Los nuevos perfiles P063–P076 amplían las voces que pueden interpretar las familias mitológicas y psiconáuticas sin convertirlas en portavoces omniscientes. La semilla v0.5 contiene 207 registros (62 fact, 88 lore, 57 bridge), y el mapa temático asigna los 41 módulos del Palimpsesto a responsables editoriales.
+
+- [Semilla estructurada v0.5](../data/lore_seed_v0.5.jsonl)
+- [Mapa de módulos del Palimpsesto](../data/palimpsesto_topic_map_v0.2.jsonl)
+- [Adaptación del Palimpsesto v0.5](../corpus/PALIMPSESTO_ADAPTACION_v0.5.md)
+- [Grafo heterogéneo v0.5](../corpus/graph_v0.5.json)
