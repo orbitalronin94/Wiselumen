@@ -98,3 +98,8 @@ La versión vigente para esta rama es `data/lore_seed_v0.5.jsonl`: **207 registr
 Los 41 módulos temáticos del Palimpsesto se asignan a especialistas mediante `data/palimpsesto_topic_map_v0.2.jsonl`. El mapa cubre exactamente las 16.848 revelaciones y conserva ocurrencias, IDs extremos y rangos de líneas. La asignación a un especialista no significa que todas las afirmaciones del módulo estén verificadas: los textos originales mezclan hechos, hipótesis, relatos culturales y glosas ficticias. Los módulos sin ficha factual específica permanecen señalados para revisión.
 
 La validación de la semilla es `python data/validate_lore_dataset.py data/lore_seed_v0.5.jsonl`; la del mapa, `python corpus/validate_topic_map.py`; la del grafo, `python corpus/validate_graph.py corpus/graph_v0.5.json --require-complete`.
+
+
+### Peso de la versión v0.5
+
+La semilla v0.5 ocupa **200.668 bytes**; el mapa de temas, **29.567 bytes**. El paquete activo completo (original, cuatro índices, grafo y documentación principal incluidos) ocupa **36.826.404 bytes = 36,83 MB = 35,12 MiB**. Véase el desglose en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md`.
