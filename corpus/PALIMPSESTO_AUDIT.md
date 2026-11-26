@@ -57,3 +57,12 @@ La v0.4 contiene 23 personajes especialistas añadidos al núcleo previo (P039�
 | Shulgin | 400 | Soma | 401 |
 | Terence McKenna | 401 | | |
 
+
+
+## Adaptación al universo ampliado — v0.5
+
+La semilla v0.5 incorpora 16 fichas factuales (F047–F062), 15 piezas de lore (L074–L088) y 16 puentes (B042–B057). El elenco suma 14 especialistas nuevos (P063–P076). El mapa `data/palimpsesto_topic_map_v0.2.jsonl` asigna los 41 módulos y sus 16.848 apariciones a curadores concretos, con IDs y rangos de líneas.
+
+La asignación no implica que cada afirmación del módulo haya sido verificada. Las fichas factuales cubren puntos seleccionados y respaldados por fuentes externas; el resto permanece marcado para revisión individual. En particular, los módulos sobre chamanismos, María Sabina, Gordon Wasson, cannabis, LSD, DMT, mescalina, soma, opio y biografías requieren cotejo específico allí donde no exista una ficha factual directa. Las afirmaciones de eficacia terapéutica, dosis, administración y curas milagrosas no se convierten en conocimiento didáctico.
+
+La adaptación completa y su mapa de responsabilidades están en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md`. La versión v0.5 del grafo enlaza temas con personajes y con registros fact/lore/bridge; la integridad estructural no debe confundirse con verificación factual exhaustiva.
