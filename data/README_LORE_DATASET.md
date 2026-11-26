@@ -121,6 +121,6 @@ La adaptación se documenta en `corpus/PALIMPSESTO_ADAPTACION_v0.6.md`; el grafo
 
 ### Peso y estado de la versión v0.6
 
-El paquete activo (original + índice + grafo/matrices + semilla + mapa + documentación principal) ocupa **37.669.729 bytes = 37,67 MB = 35,92 MiB**, en 37 archivos. La semilla v0.6 ocupa 402.427 bytes y contiene 289 registros (62 fact, 129 lore y 98 bridge). El mapa cubre 41 módulos y 16.848 apariciones. La validación CI [45890899168](https://github.com/orbitalronin94/Wiselumen/actions/runs/45890899168) terminó en GRAPH VALID: 17.861 nodos, 53.747 relaciones, 23 matrices y cero referencias sin resolver. La auditoría factual individual del texto original sigue siendo un trabajo distinto.
+El paquete activo (original + índice + grafo/matrices + semilla + mapa + documentación principal) ocupa **37.680.918 bytes = 37,68 MB = 35,94 MiB**, en 38 archivos. La semilla v0.6 ocupa 402.427 bytes y contiene 289 registros (62 fact, 129 lore y 98 bridge). El mapa cubre 41 módulos y 16.848 apariciones. La validación CI [45890899168](https://github.com/orbitalronin94/Wiselumen/actions/runs/45890899168) terminó en GRAPH VALID: 17.861 nodos, 53.747 relaciones, 23 matrices y cero referencias sin resolver. La auditoría factual individual del texto original sigue siendo un trabajo distinto.
 
 Desglose: corpus/PAQUETE_CORPUS_MAESTRO_v0.6.md.
