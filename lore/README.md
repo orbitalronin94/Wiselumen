@@ -39,3 +39,5 @@ La ampliación v0.4 incorpora 23 especialistas, de P039 a P061, y la figura arch
 - [Semilla v0.5](../data/lore_seed_v0.5.jsonl): 242 registros, 58 fact, 131 lore y 53 bridge.
 - [Personajes P063–P074](PERSONAJES.md): doce especialistas nuevos en mitología comparada, historia de la medicina, antropología ritual, derecho, literatura, farmacología clínica y crítica de fuentes.
 - [Auditoría del Palimpsesto](../corpus/PALIMPSESTO_AUDIT.md): 16.848 revelaciones, 41 módulos recurrentes y límites de validación factual.
+
+- [Grafo global v0.5](../corpus/graph_v0.5.json): índice estructural de las 16.848 revelaciones y matriz `adapted_from`.
