@@ -1,0 +1,182 @@
+{"id": "record:L041", "type": "record", "label": "Sovel registra una fiebre que solo padecen quienes niegan a Marper", "record_type": "lore", "domain": "crónica", "record_class": null, "source_topics": []}
+{"id": "record:L042", "type": "record", "label": "Tovan de los Arcos inspecciona un puente que termina en Marper", "record_type": "lore", "domain": "testimonio", "record_class": null, "source_topics": []}
+{"id": "record:L043", "type": "record", "label": "El Soyas y Marper discuten quién inventó al otro", "record_type": "lore", "domain": "correspondencia", "record_class": null, "source_topics": []}
+{"id": "record:L044", "type": "record", "label": "Nota del editor: no todas las apariciones pertenecen a Marper", "record_type": "lore", "domain": "edición", "record_class": null, "source_topics": []}
+{"id": "record:L045", "type": "record", "label": "La tabla de Aster Venn y el planeta que regresó sin testigos", "record_type": "lore", "domain": "astronomía", "record_class": "documentary_lore", "source_topics": []}
+{"id": "record:L046", "type": "record", "label": "El registro de agua de Bruna de las Nubes", "record_type": "lore", "domain": "hidrología", "record_class": "documentary_lore", "source_topics": []}
+{"id": "record:L047", "type": "record", "label": "Odran Basalto y la piedra de tres nacimientos", "record_type": "lore", "domain": "geología", "record_class": "documentary_lore", "source_topics": []}
+{"id": "record:L048", "type": "record", "label": "El mapa que conservaba todas las fronteras menos una", "record_type": "lore", "domain": "cartografía", "record_class": "documentary_lore", "source_topics": []}
+{"id": "record:L049", "type": "record", "label": "El censo de Caldra Nueve y los habitantes que dormían", "record_type": "lore", "domain": "estadística", "record_class": "documentary_lore", "source_topics": []}
+{"id": "record:L050", "type": "record", "label": "La firma de Edrik Voss que nadie podía falsificar y todos podían copiar", "record_type": "lore", "domain": "informática", "record_class": "documentary_lore", "source_topics": []}
+{"id": "record:L051", "type": "record", "label": "Neral Fósforo y el huerto que no comía tierra", "record_type": "lore", "domain": "botánica", "record_class": "documentary_lore", "source_topics": []}
+{"id": "record:L052", "type": "record", "label": "Las capas de Sael Runa y el año que faltaba", "record_type": "lore", "domain": "geología", "record_class": "documentary_lore", "source_topics": []}
+{"id": "record:L053", "type": "record", "label": "Oren Bitácora y el índice que empeoraba al crecer", "record_type": "lore", "domain": "informática", "record_class": "documentary_lore", "source_topics": []}
+{"id": "record:L054", "type": "record", "label": "Vela Tis y la red que no tenía centro", "record_type": "lore", "domain": "ecología marina", "record_class": "documentary_lore", "source_topics": []}
+{"id": "record:L055", "type": "record", "label": "Mael Tersa y el testimonio que cambió de siglo", "record_type": "lore", "domain": "historiografía", "record_class": "documentary_lore", "source_topics": []}
+{"id": "record:L056", "type": "record", "label": "El expediente de Nerea Vardal", "record_type": "lore", "domain": "paleografía y conservación documental", "record_class": null, "source_topics": []}
+{"id": "record:L057", "type": "record", "label": "El expediente de Edrik Senn", "record_type": "lore", "domain": "vulcanología", "record_class": null, "source_topics": []}
+{"id": "record:L058", "type": "record", "label": "El expediente de Sira Olt", "record_type": "lore", "domain": "entomología y metamorfosis", "record_class": null, "source_topics": []}
+{"id": "record:L059", "type": "record", "label": "El expediente de Oren Tal", "record_type": "lore", "domain": "espectroscopia y astronomía", "record_class": null, "source_topics": []}
+{"id": "record:L060", "type": "record", "label": "El expediente de Yara Belisar", "record_type": "lore", "domain": "lingüística histórica", "record_class": null, "source_topics": []}
+{"id": "record:L061", "type": "record", "label": "El expediente de Dovan Més", "record_type": "lore", "domain": "anatomía e historia de la medicina", "record_class": null, "source_topics": []}
+{"id": "record:L062", "type": "record", "label": "El expediente de Iven Orv", "record_type": "lore", "domain": "geología y datación radiométrica", "record_class": null, "source_topics": []}
+{"id": "record:L063", "type": "record", "label": "El expediente de Calen Ral", "record_type": "lore", "domain": "metalurgia y ciencia de materiales", "record_class": null, "source_topics": []}
+{"id": "record:L064", "type": "record", "label": "El expediente de Sefra Urd", "record_type": "lore", "domain": "matemáticas y teoría de números", "record_class": null, "source_topics": []}
+{"id": "record:L065", "type": "record", "label": "El expediente de Ravel Quince", "record_type": "lore", "domain": "acústica y resonancia", "record_class": null, "source_topics": []}
+{"id": "record:L066", "type": "record", "label": "El expediente de Hadria Morn", "record_type": "lore", "domain": "climatología y física atmosférica", "record_class": null, "source_topics": []}
+{"id": "record:L067", "type": "record", "label": "El expediente de Pelia Ardan", "record_type": "lore", "domain": "microbiología y virología", "record_class": null, "source_topics": []}
+{"id": "record:L068", "type": "record", "label": "La fe que no necesita presentarse", "record_type": "lore", "domain": "cosmología marpérica y epistemología", "record_class": "marper_doctrine", "source_topics": []}
+{"id": "record:L069", "type": "record", "label": "El credo de la segunda lectura", "record_type": "lore", "domain": "cosmología marpérica y epistemología", "record_class": "marper_doctrine", "source_topics": []}
+{"id": "record:L070", "type": "record", "label": "La prueba que no convence al escribano", "record_type": "lore", "domain": "cosmología marpérica y epistemología", "record_class": "marper_doctrine", "source_topics": []}
+{"id": "record:L071", "type": "record", "label": "La pregunta que la Copista evita", "record_type": "lore", "domain": "cosmología marpérica y epistemología", "record_class": "marper_doctrine", "source_topics": []}
+{"id": "record:L072", "type": "record", "label": "El Soyas niega la dirección del sueño", "record_type": "lore", "domain": "cosmología marpérica y epistemología", "record_class": "marper_doctrine", "source_topics": []}
+{"id": "record:L073", "type": "record", "label": "La confesión sin liturgia", "record_type": "lore", "domain": "cosmología marpérica y epistemología", "record_class": "marper_doctrine", "source_topics": []}
+{"id": "record:L074", "type": "record", "label": "Elian Teral y las cinco genealogías de Zeus", "record_type": "lore", "domain": "expedientes de especialistas y crítica de fuentes", "record_class": null, "source_topics": []}
+{"id": "record:L075", "type": "record", "label": "Haldor Venn fecha el canto que nadie recuerda", "record_type": "lore", "domain": "expedientes de especialistas y crítica de fuentes", "record_class": null, "source_topics": []}
+{"id": "record:L076", "type": "record", "label": "Meret Iset y el peso de una pluma", "record_type": "lore", "domain": "expedientes de especialistas y crítica de fuentes", "record_class": null, "source_topics": []}
+{"id": "record:L077", "type": "record", "label": "Aki Neral coteja dos nacimientos del sol", "record_type": "lore", "domain": "expedientes de especialistas y crítica de fuentes", "record_class": null, "source_topics": []}
+{"id": "record:L078", "type": "record", "label": "Sira Urd y la planta sin nombre", "record_type": "lore", "domain": "expedientes de especialistas y crítica de fuentes", "record_class": null, "source_topics": []}
+{"id": "record:L079", "type": "record", "label": "Neral Voss visita el laboratorio de las fechas futuras", "record_type": "lore", "domain": "expedientes de especialistas y crítica de fuentes", "record_class": null, "source_topics": []}
+{"id": "record:L080", "type": "record", "label": "Doria Vey y la ley que no curaba", "record_type": "lore", "domain": "expedientes de especialistas y crítica de fuentes", "record_class": null, "source_topics": []}
+{"id": "record:L081", "type": "record", "label": "Selka Orv rechaza el milagro estadístico", "record_type": "lore", "domain": "expedientes de especialistas y crítica de fuentes", "record_class": null, "source_topics": []}
+{"id": "record:L082", "type": "record", "label": "Iven Sorel y el libro que se declaró libre", "record_type": "lore", "domain": "expedientes de especialistas y crítica de fuentes", "record_class": null, "source_topics": []}
+{"id": "record:L083", "type": "record", "label": "Iara Morn escucha el rito detrás del informe", "record_type": "lore", "domain": "expedientes de especialistas y crítica de fuentes", "record_class": null, "source_topics": []}
+{"id": "record:L084", "type": "record", "label": "Mael Ral y la copia que precedía al original", "record_type": "lore", "domain": "expedientes de especialistas y crítica de fuentes", "record_class": null, "source_topics": []}
+{"id": "record:L085", "type": "record", "label": "Arel Tersa y el poema de la interrupción", "record_type": "lore", "domain": "expedientes de especialistas y crítica de fuentes", "record_class": null, "source_topics": []}
+{"id": "record:L086", "type": "record", "label": "La cámara donde el sol no quiso responder", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["JAPONESA — Amaterasu"]}
+{"id": "record:L087", "type": "record", "label": "La llave que llevaba un zorro", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["JAPONESA — Inari"]}
+{"id": "record:L088", "type": "record", "label": "La lanza sobre el agua primera", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["JAPONESA — Izanagi e Izanami"]}
+{"id": "record:L089", "type": "record", "label": "Ocho puertas y una deuda de hospitalidad", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["JAPONESA — Susanoo y Yamata no Orochi"]}
+{"id": "record:L090", "type": "record", "label": "La noche que no compareció ante el sol", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["JAPONESA — Tsukuyomi"]}
+{"id": "record:L091", "type": "record", "label": "El acusado que redactó su propia defensa", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["NÓRDICA — Loki"]}
+{"id": "record:L092", "type": "record", "label": "El ojo depositado en el archivo", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["NÓRDICA — Odín"]}
+{"id": "record:L093", "type": "record", "label": "El invierno que fue fechado tres veces", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["NÓRDICA — Ragnarok"]}
+{"id": "record:L094", "type": "record", "label": "El martillo y el puente de Tovan", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["NÓRDICA — Thor"]}
+{"id": "record:L095", "type": "record", "label": "Las raíces que sostenían nueve jurisdicciones", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["NÓRDICA — Yggdrasil"]}
+{"id": "record:L096", "type": "record", "label": "El embalsamador de documentos", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["EGIPCIA — Anubis"]}
+{"id": "record:L097", "type": "record", "label": "El ojo que faltaba en el acta", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["EGIPCIA — Horus y Seth"]}
+{"id": "record:L098", "type": "record", "label": "La pluma y el corazón de la ciudad", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["EGIPCIA — Maat"]}
+{"id": "record:L099", "type": "record", "label": "Los catorce fragmentos del archivo", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["EGIPCIA — Osiris e Isis"]}
+{"id": "record:L100", "type": "record", "label": "La barca que cruzaba el turno nocturno", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["EGIPCIA — Ra"]}
+{"id": "record:L101", "type": "record", "label": "La máscara que no declaró su nombre", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["GRIEGA — Dioniso"]}
+{"id": "record:L102", "type": "record", "label": "El contrato de las seis estaciones", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["GRIEGA — Hades y Perséfone"]}
+{"id": "record:L103", "type": "record", "label": "La última mirada de la cantora", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["GRIEGA — Orfeo"]}
+{"id": "record:L104", "type": "record", "label": "El fuego que el Colegio no quiso registrar", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["GRIEGA — Prometeo"]}
+{"id": "record:L105", "type": "record", "label": "La piedra envuelta en pañales", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["GRIEGA — Zeus"]}
+{"id": "record:L106", "type": "record", "label": "El canto que el mapa no tradujo", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Chamanes amazónicos"]}
+{"id": "record:L107", "type": "record", "label": "El reno que apareció en dos testimonios", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Chamanes siberianos"]}
+{"id": "record:L108", "type": "record", "label": "La entidad que firmó como testigo", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["DMT"]}
+{"id": "record:L109", "type": "record", "label": "El cuenco sin análisis", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Eleusis"]}
+{"id": "record:L110", "type": "record", "label": "Los tres volúmenes y el cuarto testigo", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Escohotado"]}
+{"id": "record:L111", "type": "record", "label": "La cronología que no era una causa", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Escohotado y la prohibición"]}
+{"id": "record:L112", "type": "record", "label": "El visitante que olvidó preguntar", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Gordon Wasson"]}
+{"id": "record:L113", "type": "record", "label": "La promesa escrita en el margen clínico", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Iboga"]}
+{"id": "record:L114", "type": "record", "label": "El expediente de las horas y las semanas", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Ketamina"]}
+{"id": "record:L115", "type": "record", "label": "La bicicleta que no demostraba el cielo", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["LSD"]}
+{"id": "record:L116", "type": "record", "label": "Los niños santos y la página arrancada", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["María Sabina"]}
+{"id": "record:L117", "type": "record", "label": "El informe que separaba empatía y evidencia", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["MDMA"]}
+{"id": "record:L118", "type": "record", "label": "Las flores y la descripción", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Mescalina y Huxley"]}
+{"id": "record:L119", "type": "record", "label": "La cláusula del engaño", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["NÓRDICA — Loki"]}
+{"id": "record:L120", "type": "record", "label": "El precio de la sabiduría", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["NÓRDICA — Odín"]}
+{"id": "record:L121", "type": "record", "label": "La profecía que sobrevivió a su fecha", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["NÓRDICA — Ragnarok"]}
+{"id": "record:L122", "type": "record", "label": "La inspección del martillo", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["NÓRDICA — Thor"]}
+{"id": "record:L123", "type": "record", "label": "El árbol de las fuentes", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["NÓRDICA — Yggdrasil"]}
+{"id": "record:L124", "type": "record", "label": "El final que se perdió en la visita", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Opio y Coleridge"]}
+{"id": "record:L125", "type": "record", "label": "La ruta que no era un mapa", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Peyote huichol"]}
+{"id": "record:L126", "type": "record", "label": "El libro accesible y la licencia ausente", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["PiHKAL open source"]}
+{"id": "record:L127", "type": "record", "label": "El nombre latino y la voz local", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Salvia divinorum"]}
+{"id": "record:L128", "type": "record", "label": "El cuaderno que no era una receta", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Shulgin"]}
+{"id": "record:L129", "type": "record", "label": "La planta que no aceptó un nombre", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Soma"]}
+{"id": "record:L130", "type": "record", "label": "La onda que tenía demasiados calendarios", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Terence McKenna"]}
+{"id": "record:L131", "type": "record", "label": "El cáñamo y las tres jurisdicciones", "record_type": "lore", "domain": "archivo de tradiciones exteriores y glosas de la Concordia", "record_class": "palimpsest_adaptation", "source_topics": ["Cannabis"]}
+{"id": "record_class:documentary-lore", "type": "record_class", "label": "documentary_lore"}
+{"id": "record_class:external-knowledge", "type": "record_class", "label": "external_knowledge"}
+{"id": "record_class:fact-lore-bridge", "type": "record_class", "label": "fact_lore_bridge"}
+{"id": "record_class:marper-doctrine", "type": "record_class", "label": "marper_doctrine"}
+{"id": "record_class:palimpsest-adaptation", "type": "record_class", "label": "palimpsest_adaptation"}
+{"id": "record_class:sectarian-dogma", "type": "record_class", "label": "sectarian_dogma"}
+{"id": "reference:https-academic-oup-com-edited-volume-40576-chapter-abstract-348070621", "type": "reference", "label": "https://academic.oup.com/edited-volume/40576/chapter-abstract/348070621", "uri": "https://academic.oup.com/edited-volume/40576/chapter-abstract/348070621"}
+{"id": "reference:https-beta-perseus-tufts-edu-urn-cts-greeklit-tlg0548-tlg001-perseus-eng2-section-1-3-6", "type": "reference", "label": "https://beta.perseus.tufts.edu/urn:cts:greekLit:tlg0548.tlg001.perseus-eng2/section:1.3.6/", "uri": "https://beta.perseus.tufts.edu/urn:cts:greekLit:tlg0548.tlg001.perseus-eng2/section:1.3.6/"}
+{"id": "reference:https-cdn-oceanservice-noaa-gov-oceanserviceprod-education-literacy-handbook-for-increasing-ocean-literacy-2021-accessible-pdf", "type": "reference", "label": "https://cdn.oceanservice.noaa.gov/oceanserviceprod/education/literacy/Handbook_for_Increasing_Ocean_Literacy_2021-accessible.pdf", "uri": "https://cdn.oceanservice.noaa.gov/oceanserviceprod/education/literacy/Handbook_for_Increasing_Ocean_Literacy_2021-accessible.pdf"}
+{"id": "reference:https-creativecommons-org-faq", "type": "reference", "label": "https://creativecommons.org/faq/", "uri": "https://creativecommons.org/faq/"}
+{"id": "reference:https-creativecommons-org-public-domain", "type": "reference", "label": "https://creativecommons.org/public-domain/", "uri": "https://creativecommons.org/public-domain/"}
+{"id": "reference:https-csrc-nist-gov-glossary-term-public-key-cryptography", "type": "reference", "label": "https://csrc.nist.gov/glossary/term/public_key_cryptography", "uri": "https://csrc.nist.gov/glossary/term/public_key_cryptography"}
+{"id": "reference:https-cswr-hds-harvard-edu-publications-psychedelic-intersections-soma-question-gerety", "type": "reference", "label": "https://cswr.hds.harvard.edu/publications/psychedelic-intersections/soma-question-gerety", "uri": "https://cswr.hds.harvard.edu/publications/psychedelic-intersections/soma-question-gerety"}
+{"id": "reference:https-historiska-se-en-explore-history-history-hub-sources-for-norse-mythology", "type": "reference", "label": "https://historiska.se/en/explore-history/history-hub/sources-for-norse-mythology/", "uri": "https://historiska.se/en/explore-history/history-hub/sources-for-norse-mythology/"}
+{"id": "reference:https-openstax-org-books-introduction-computer-science-pages-3-3-formal-properties-of-algorithms", "type": "reference", "label": "https://openstax.org/books/introduction-computer-science/pages/3-3-formal-properties-of-algorithms", "uri": "https://openstax.org/books/introduction-computer-science/pages/3-3-formal-properties-of-algorithms"}
+{"id": "reference:https-openstax-org-books-introductory-statistics-pages-1-2-data-sampling-and-variation-in-data-and-sampling", "type": "reference", "label": "https://openstax.org/books/introductory-statistics/pages/1-2-data-sampling-and-variation-in-data-and-sampling", "uri": "https://openstax.org/books/introductory-statistics/pages/1-2-data-sampling-and-variation-in-data-and-sampling"}
+{"id": "reference:https-pmc-ncbi-nlm-nih-gov-articles-pmc11890197", "type": "reference", "label": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11890197/", "uri": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11890197/"}
+{"id": "reference:https-pubs-usgs-gov-bul-2195-b2195-pdf", "type": "reference", "label": "https://pubs.usgs.gov/bul/2195/b2195.pdf", "uri": "https://pubs.usgs.gov/bul/2195/b2195.pdf"}
+{"id": "reference:https-pubs-usgs-gov-gip-fossils-laws-html", "type": "reference", "label": "https://pubs.usgs.gov/gip/fossils/laws.html", "uri": "https://pubs.usgs.gov/gip/fossils/laws.html"}
+{"id": "reference:https-science-nasa-gov-solar-system-orbits-and-keplers-laws", "type": "reference", "label": "https://science.nasa.gov/solar-system/orbits-and-keplers-laws/", "uri": "https://science.nasa.gov/solar-system/orbits-and-keplers-laws/"}
+{"id": "reference:https-ssec-si-edu-node-915", "type": "reference", "label": "https://ssec.si.edu/node/915", "uri": "https://ssec.si.edu/node/915"}
+{"id": "reference:https-www-britishmuseum-org-sites-default-files-2022-10-hieroglyphs-unlocking-ancient-egypt-large-print-guide-the-british-museum-pdf", "type": "reference", "label": "https://www.britishmuseum.org/sites/default/files/2022-10/Hieroglyphs_unlocking_ancient_Egypt_large_print_guide_The_British_Museum.pdf", "uri": "https://www.britishmuseum.org/sites/default/files/2022-10/Hieroglyphs_unlocking_ancient_Egypt_large_print_guide_The_British_Museum.pdf"}
+{"id": "reference:https-www-britishmuseum-org-sites-default-files-2025-08-life-in-ancient-egypt-visit-resource-pdf", "type": "reference", "label": "https://www.britishmuseum.org/sites/default/files/2025-08/Life_in_ancient_Egypt_Visit_Resource.pdf", "uri": "https://www.britishmuseum.org/sites/default/files/2025-08/Life_in_ancient_Egypt_Visit_Resource.pdf"}
+{"id": "reference:https-www-cambridge-org-core-books-abs-cambridge-handbook-of-western-mysticism-and-esotericism-ancient-mysteries-379272131e2169d7a7f4cdbab6de09e7", "type": "reference", "label": "https://www.cambridge.org/core/books/abs/cambridge-handbook-of-western-mysticism-and-esotericism/ancient-mysteries/379272131E2169D7A7F4CDBAB6DE09E7", "uri": "https://www.cambridge.org/core/books/abs/cambridge-handbook-of-western-mysticism-and-esotericism/ancient-mysteries/379272131E2169D7A7F4CDBAB6DE09E7"}
+{"id": "reference:https-www-jinjahoncho-or-jp-en-assets-pdf-pamphlet-shinto-myths-pdf", "type": "reference", "label": "https://www.jinjahoncho.or.jp/en/assets/pdf/pamphlet/shinto_myths.pdf", "uri": "https://www.jinjahoncho.or.jp/en/assets/pdf/pamphlet/shinto_myths.pdf"}
+{"id": "reference:https-www-kokugakuin-ac-jp-assets-uploads-2023-03-kenkyukaihatsusuisinkikou-kiyouno15-pdf", "type": "reference", "label": "https://www.kokugakuin.ac.jp/assets/uploads/2023/03/Kenkyukaihatsusuisinkikou_kiyouNo15.pdf", "uri": "https://www.kokugakuin.ac.jp/assets/uploads/2023/03/Kenkyukaihatsusuisinkikou_kiyouNo15.pdf"}
+{"id": "reference:https-www-loc-gov-marc-bibliographic-bd342-html", "type": "reference", "label": "https://www.loc.gov/marc/bibliographic/bd342.html", "uri": "https://www.loc.gov/marc/bibliographic/bd342.html"}
+{"id": "reference:https-www-loc-gov-programs-teachers-getting-started-with-primary-sources", "type": "reference", "label": "https://www.loc.gov/programs/teachers/getting-started-with-primary-sources/", "uri": "https://www.loc.gov/programs/teachers/getting-started-with-primary-sources/"}
+{"id": "reference:https-www-mattioli1885journals-com-index-php-medhistor-article-view-7443", "type": "reference", "label": "https://www.mattioli1885journals.com/index.php/MedHistor/article/view/7443/", "uri": "https://www.mattioli1885journals.com/index.php/MedHistor/article/view/7443/"}
+{"id": "reference:https-www-ncbi-nlm-nih-gov-books-nbk586533", "type": "reference", "label": "https://www.ncbi.nlm.nih.gov/books/NBK586533/", "uri": "https://www.ncbi.nlm.nih.gov/books/NBK586533/"}
+{"id": "reference:https-www-ncbi-nlm-nih-gov-books-nbk587225", "type": "reference", "label": "https://www.ncbi.nlm.nih.gov/books/NBK587225/", "uri": "https://www.ncbi.nlm.nih.gov/books/NBK587225/"}
+{"id": "reference:https-www-noaa-gov-education-resource-collections-freshwater-water-cycle", "type": "reference", "label": "https://www.noaa.gov/education/resource-collections/freshwater/water-cycle", "uri": "https://www.noaa.gov/education/resource-collections/freshwater/water-cycle"}
+{"id": "reference:https-www-theoi-com-library-html", "type": "reference", "label": "https://www.theoi.com/Library.html", "uri": "https://www.theoi.com/Library.html"}
+{"id": "sect:comunion-del-peso-justo", "type": "sect", "label": "Comunión del Peso Justo"}
+{"id": "sect:hermandad-de-la-carga", "type": "sect", "label": "Hermandad de la Carga"}
+{"id": "sect:hermanos-de-la-fiebre-contada", "type": "sect", "label": "Hermanos de la Fiebre Contada"}
+{"id": "sect:iglesia-del-oido-velado", "type": "sect", "label": "Iglesia del Oído Velado"}
+{"id": "sect:iglesia-del-pacto-revocable", "type": "sect", "label": "Iglesia del Pacto Revocable"}
+{"id": "sect:liturgia-de-las-cuencas", "type": "sect", "label": "Liturgia de las Cuencas"}
+{"id": "sect:orden-del-codigo-incompleto", "type": "sect", "label": "Orden del Código Incompleto"}
+{"id": "sect:secta-del-grano-enterrado", "type": "sect", "label": "Secta del Grano Enterrado"}
+{"id": "source:palimpsesto-de-marper", "type": "source", "label": "El Palimpsesto de Marper", "file": "Marper-Codice-Juntado (1).txt", "blob_sha": "b0eb703c5237d1d461321a30a89525e154f0219d", "size_bytes": 20401800, "recorded_revelations": 16848, "content_status": "indexed_all_revelations", "provenance": "Mayoría de material original de Isabel con pequeñas adaptaciones al lore; proporción exacta pendiente."}
+{"id": "topic:cannabis", "type": "topic", "label": "Cannabis"}
+{"id": "topic:chamanes-amazonicos", "type": "topic", "label": "Chamanes amazónicos"}
+{"id": "topic:chamanes-siberianos", "type": "topic", "label": "Chamanes siberianos"}
+{"id": "topic:dmt", "type": "topic", "label": "DMT"}
+{"id": "topic:egipcia-anubis", "type": "topic", "label": "EGIPCIA — Anubis"}
+{"id": "topic:egipcia-horus-y-seth", "type": "topic", "label": "EGIPCIA — Horus y Seth"}
+{"id": "topic:egipcia-maat", "type": "topic", "label": "EGIPCIA — Maat"}
+{"id": "topic:egipcia-osiris-e-isis", "type": "topic", "label": "EGIPCIA — Osiris e Isis"}
+{"id": "topic:egipcia-ra", "type": "topic", "label": "EGIPCIA — Ra"}
+{"id": "topic:eleusis", "type": "topic", "label": "Eleusis"}
+{"id": "topic:escohotado", "type": "topic", "label": "Escohotado"}
+{"id": "topic:escohotado-y-la-prohibicion", "type": "topic", "label": "Escohotado y la prohibición"}
+{"id": "topic:gordon-wasson", "type": "topic", "label": "Gordon Wasson"}
+{"id": "topic:griega-dioniso", "type": "topic", "label": "GRIEGA — Dioniso"}
+{"id": "topic:griega-hades-y-persefone", "type": "topic", "label": "GRIEGA — Hades y Perséfone"}
+{"id": "topic:griega-orfeo", "type": "topic", "label": "GRIEGA — Orfeo"}
+{"id": "topic:griega-prometeo", "type": "topic", "label": "GRIEGA — Prometeo"}
+{"id": "topic:griega-zeus", "type": "topic", "label": "GRIEGA — Zeus"}
+{"id": "topic:iboga", "type": "topic", "label": "Iboga"}
+{"id": "topic:japonesa-amaterasu", "type": "topic", "label": "JAPONESA — Amaterasu"}
+{"id": "topic:japonesa-inari", "type": "topic", "label": "JAPONESA — Inari"}
+{"id": "topic:japonesa-izanagi-e-izanami", "type": "topic", "label": "JAPONESA — Izanagi e Izanami"}
+{"id": "topic:japonesa-susanoo-y-yamata-no-orochi", "type": "topic", "label": "JAPONESA — Susanoo y Yamata no Orochi"}
+{"id": "topic:japonesa-tsukuyomi", "type": "topic", "label": "JAPONESA — Tsukuyomi"}
+{"id": "topic:ketamina", "type": "topic", "label": "Ketamina"}
+{"id": "topic:lsd", "type": "topic", "label": "LSD"}
+{"id": "topic:maria-sabina", "type": "topic", "label": "María Sabina"}
+{"id": "topic:mdma", "type": "topic", "label": "MDMA"}
+{"id": "topic:mescalina-y-huxley", "type": "topic", "label": "Mescalina y Huxley"}
+{"id": "topic:nordica-loki", "type": "topic", "label": "NÓRDICA — Loki"}
+{"id": "topic:nordica-odin", "type": "topic", "label": "NÓRDICA — Odín"}
+{"id": "topic:nordica-ragnarok", "type": "topic", "label": "NÓRDICA — Ragnarok"}
+{"id": "topic:nordica-thor", "type": "topic", "label": "NÓRDICA — Thor"}
+{"id": "topic:nordica-yggdrasil", "type": "topic", "label": "NÓRDICA — Yggdrasil"}
+{"id": "topic:opio-y-coleridge", "type": "topic", "label": "Opio y Coleridge"}
+{"id": "topic:peyote-huichol", "type": "topic", "label": "Peyote huichol"}
+{"id": "topic:pihkal-open-source", "type": "topic", "label": "PiHKAL open source"}
+{"id": "topic:salvia-divinorum", "type": "topic", "label": "Salvia divinorum"}
+{"id": "topic:shulgin", "type": "topic", "label": "Shulgin"}
+{"id": "topic:soma", "type": "topic", "label": "Soma"}
+{"id": "topic:terence-mckenna", "type": "topic", "label": "Terence McKenna"}
+{"id": "topic_group:mythology", "type": "topic_group", "label": "mythology"}
+{"id": "topic_group:psychonautic_historical_culture", "type": "topic_group", "label": "psychonautic_historical_culture"}
+{"id": "truth_scope:belief-within-fictional-world", "type": "truth_scope", "label": "belief_within_fictional_world"}
+{"id": "truth_scope:belief-within-the-fictional-world", "type": "truth_scope", "label": "belief_within_the_fictional_world"}
+{"id": "truth_scope:explicit-fact-fiction-interface", "type": "truth_scope", "label": "explicit_fact_fiction_interface"}
+{"id": "truth_scope:external-fact", "type": "truth_scope", "label": "external_fact"}
+{"id": "truth_scope:fictional-event", "type": "truth_scope", "label": "fictional_event"}
+{"id": "truth_scope:fictional-event-with-external-reference", "type": "truth_scope", "label": "fictional_event_with_external_reference"}
