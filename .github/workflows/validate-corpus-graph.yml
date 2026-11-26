@@ -23,9 +23,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Rebuild Palimpsest index
+        run: python corpus/index_palimpsesto.py
       - name: Rebuild sparse graph
         run: python corpus/build_graph.py
       - name: Validate graph invariants
-        run: python corpus/validate_graph.py
+        run: python corpus/validate_graph.py --require-complete
       - name: Ensure generated graph is committed
-        run: git diff --exit-code -- corpus/graph_v0.3.json
+        run: git diff --exit-code -- data/palimpsesto_index_v0.1_part*.jsonl corpus/graph_v0.4.json
