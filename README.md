@@ -61,7 +61,7 @@ Formato objetivo:
 <|assistant|>...respuesta...<|end_assistant|><EOS>
 ```
 
-- Ocho IDs reservados previstos: 8184–8191. La compatibilidad con el tokenizer real V4 debe verificarse antes de entrenar; no se remapea el tokenizer congelado silenciosamente.
+- El tokenizer congelado V4 se ha inspeccionado en GitHub Actions: tiene 4.096 IDs, `[PAD]=0`, `[EOS]=3` y no contiene los ocho controles. El modelo conserva su vocabulario de 8.192; el smoke trainer crea un tokenizer derivado que preserva intactos los 4.096 IDs originales, añade 4.088 tokens especiales de relleno y coloca los ocho controles en 8184–8191. El tokenizer original no se modifica; se registran ambos SHA-256.
 - `data.py` genera etiquetas `-100` para system, user y padding: la loss supervisa únicamente la respuesta del assistant.
 - `system_prompt_short.txt` es el prompt compacto previsto para la fase inicial; `SYSTEM_PROMPT_LUMEN_V2.1.md` conserva la versión completa para una fase posterior.
 - `data/system_conflicts.jsonl` contiene ejemplos sintéticos de conflicto separados del corpus. El muestreador permite una proporción aproximada del 12,5% en batch de ocho.
@@ -88,6 +88,7 @@ El archivo Lean es actualmente un **borrador de especificación**. Sus teoremas 
 ## Datos, evaluación y reproducibilidad
 
 - La release pública V4 de WISE-RONIN es la fuente de datos prevista. Se debe verificar SHA-256 del ZIP, manifiesto, tokenizer y cada shard antes de muestrear.
+- La release V4 inspeccionada contiene 2.293.883 filas en 24 shards; las filas incluyen `prompt`, `completion`, `language`, `source` y `task`. El primer ejemplo verificado es `raw_text_pretraining` con prompt vacío y completion de texto. El smoke trainer verifica tamaño, número de filas y SHA-256 de cada shard antes de muestrear; filtra holdout y solo acepta filas españolas con prompt/completion.
 - Los registros holdout quedan excluidos del entrenamiento. La evaluación se hace aparte y se informa con CE estándar.
 - Registrar seed, tokenizer SHA-256, corpus SHA-256, configuración, número de pasos, loss de train, CE de holdout, tiempo por paso y checkpoint.
 - No afirmar velocidad, calidad ni superioridad sin benchmark comparable en el hardware objetivo.
