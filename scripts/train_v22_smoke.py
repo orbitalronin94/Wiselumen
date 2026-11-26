@@ -175,8 +175,9 @@ def load_conflicts(path):
 def main():
     random.seed(SEED)
     torch.manual_seed(SEED)
-    threads = int(os.environ.get("OMP_NUM_THREADS", "2"))
-    print("cpu_runtime", configure_cpu_runtime(threads=threads), flush=True)
+    threads = int(os.environ.get("OMP_NUM_THREADS", "4"))
+    interop_threads = int(os.environ.get("TORCH_INTEROP_THREADS", "2"))
+    print("cpu_runtime", configure_cpu_runtime(threads=threads, interop_threads=interop_threads), flush=True)
 
     artifacts = Path("artifacts")
     artifacts.mkdir(exist_ok=True)
