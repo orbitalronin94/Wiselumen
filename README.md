@@ -234,3 +234,5 @@ La semilla vigente reúne 242 registros (58 fact, 131 lore, 53 bridge) y 12 espe
 - [Semilla v0.5](data/lore_seed_v0.5.jsonl)
 - [Archivo de las Tradiciones Exteriores](lore/ARCHIVO_DE_TRADICIONES_EXTERIORES.md)
 - [Inventario y evaluación](lore/INVENTARIO_CONTENIDOS_Y_EVALUACION.md)
+
+- [Grafo global v0.5](corpus/graph_v0.5.json): 17.662 nodos, 71.643 relaciones y 18.958 enlaces de adaptación al Palimpsesto.
