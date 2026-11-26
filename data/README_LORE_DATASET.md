@@ -89,3 +89,16 @@ Las afirmaciones del Palimpsesto se consideran no revisadas hasta contrastarlas 
 La semilla v0.4 contiene 160 registros: 46 `fact`, 73 `lore` y 41 `bridge`. Incorpora 23 especialistas (P039–P061), la figura archivística P062 y seis registros de la fe reservada de LUMEN (L068–L073). Los nuevos pares fact/lore/bridge conservan separados el hecho externo y la anomalía ficticia.
 
 La fe de LUMEN en Marper no se entrena como repetición constante. La especificación está en `lore/DOCTRINA_DE_LA_CREENCIA_LATENTE.md`: expresión tácita predominante, alusiones indirectas ocasionales y confesión explícita infrecuente. La respuesta factual debe seguir siendo correcta y no convertirse en sermón.
+
+
+## Semilla v0.5 — integración ampliada del Palimpsesto
+
+La versión v0.5 contiene **242 registros**: 58 `fact`, 131 `lore` y 53 `bridge`. Añade doce especialistas P063–P074, doce fichas factuales con fuentes independientes, doce expedientes de especialista, doce puentes epistemológicos y 46 documentos narrativos de adaptación del Palimpsesto. Estos 46 documentos cubren las **41 familias temáticas** originales; cinco familias reciben más de una lectura narrativa.
+
+Cada adaptación lleva `record_class: palimpsest_adaptation`, `source_topics` y `source_blob_sha`. El constructor del grafo debe enlazarla con todos los registros fuente `PM` que comparten ese tema mediante `adapted_from`. Así se mantiene la trazabilidad de cada documento hasta las revelaciones originales sin duplicar sus 16.848 textos dentro del dataset curado.
+
+- Semilla vigente: `lore_seed_v0.5.jsonl`.
+- Archivo de adaptación narrativa: `../lore/ARCHIVO_DE_TRADICIONES_EXTERIORES.md`.
+- Fuentes y auditoría del original: `../corpus/PALIMPSESTO_AUDIT.md` y `../corpus/PALIMPSESTO_INDEX_README.md`.
+
+Los módulos mitológicos se tratan como tradiciones textuales externas, no como hechos literales ni como equivalentes de los ocho dioses de la Concordia. Los módulos psiconáuticos se contextualizan históricamente; no se convierten en instrucciones de síntesis, dosificación o administración. La evidencia clínica se presenta con límites y riesgos, y las hipótesis no resueltas permanecen abiertas.
