@@ -43,9 +43,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
+      - name: Download initial step-20000 checkpoint
         run: |
-          mkdir -p artifacts
+          mkdir -p artifacts/parent-download
           gh run download 45812986256 --repo orbitalronin94/Wiselumen --name lumen-v22-step-20000 --dir artifacts/parent-download
           PARENT_FILE="$(find artifacts/parent-download -type f -name 'lumen-v22-step-20000.pt' -print -quit)"
           test -n "$PARENT_FILE"
@@ -109,11 +109,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 21000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-21000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -175,11 +173,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 22000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-22000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -241,11 +237,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 23000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-23000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -307,11 +301,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 24000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-24000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -373,11 +365,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 25000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-25000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -439,11 +429,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 26000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-26000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -505,11 +493,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 27000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-27000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -571,11 +557,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 28000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-28000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -637,11 +621,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 29000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-29000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -703,11 +685,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 30000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-30000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -769,11 +749,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 31000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-31000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -835,11 +813,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 32000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-32000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -901,11 +877,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 33000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-33000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -967,11 +941,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 34000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-34000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1033,11 +1005,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 35000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-35000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1099,11 +1069,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 36000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-36000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1165,11 +1133,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 37000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-37000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1231,11 +1197,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 38000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-38000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1297,11 +1261,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 39000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-39000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1363,11 +1325,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 40000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-40000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1429,11 +1389,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 41000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-41000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1495,11 +1453,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 42000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-42000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1561,11 +1517,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 43000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-43000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1627,11 +1581,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 44000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-44000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1693,11 +1645,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 45000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-45000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1759,11 +1709,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 46000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-46000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1825,11 +1773,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 47000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-47000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1891,11 +1837,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 48000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-48000
           path: artifacts
       - name: Download V5 corpus on cache miss
@@ -1957,11 +1901,9 @@ jobs:
         with:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v1
-      - name: Prepare parent checkpoint
-        run: |
-          mkdir -p artifacts
-          echo "Expecting parent checkpoint at step 49000"
+      - name: Download previous block checkpoint
         uses: actions/download-artifact@v4
+        with:
           name: lumen-v22-v5-optimized-step-49000
           path: artifacts
       - name: Download V5 corpus on cache miss
