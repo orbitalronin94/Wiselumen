@@ -70,6 +70,13 @@ def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_s
   add_edge(src,"derived_from",SOURCE["id"])
   add_edge(src,"has_topic",add_node(f"topic:{slug(item['topic'])}","topic",item["topic"]))
   add_edge(src,"has_topic_group",add_node(f"topic_group:{item['topic_group']}","topic_group",item["topic_group"]))
+ for item in topic_map:
+  topic_node=f"topic:{slug(item['topic'])}"
+  add_edge(topic_node,"curated_by_character",add_node(f"character:{slug(item['assigned_character_name'])}","character",item["assigned_character_name"],character_id=item["assigned_character_id"]))
+  for target in item.get("fact_record_ids",[]): add_edge(topic_node,"topic_linked_fact",f"record:{target}")
+  for target in item.get("lore_record_ids",[]): add_edge(topic_node,"topic_adapted_as_lore",f"record:{target}")
+  for target in item.get("bridge_record_ids",[]): add_edge(topic_node,"topic_separated_by_bridge",f"record:{target}")
+
 
  ordered=sorted(nodes.values(),key=lambda x:x["id"])
  node_ids=[x["id"] for x in ordered]; index={v:i for i,v in enumerate(node_ids)}
