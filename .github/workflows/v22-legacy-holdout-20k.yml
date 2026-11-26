@@ -1,5 +1,5 @@
-name: LUMEN V2.2 legacy holdout at step 20000
-run-name: V2.2 on old LUMEN frozen holdout — step 20000
+name: LUMEN V2.2 legacy + V5 generative holdout at step 20000
+run-name: V2.2 baseline — legacy holdout + 20 V5 probes — step 20000
 on:
   workflow_dispatch:
   push:
@@ -7,6 +7,8 @@ on:
     paths:
       - ".github/workflows/v22-legacy-holdout-20k.yml"
       - "scripts/evaluate_v22_legacy_holdout.py"
+      - "scripts/evaluate_v5_generative_holdout.py"
+      - "eval/v5_generative_holdout_20.jsonl"
 permissions:
   contents: read
   actions: read
@@ -53,21 +55,25 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
           python -m pip install tokenizers==0.21.0 numpy
-      - name: Verify frozen data and checkpoint identity
+      - name: Verify frozen data, probes and checkpoint identity
         run: |
           test -s oldinputs/eval/holdout_multiple_choice.jsonl
           test -s oldrepo/data/freeform_identity_general_100.jsonl
+          test -s eval/v5_generative_holdout_20.jsonl
           python - <<'PY'
-          import torch
+          import json, torch
           from pathlib import Path
           mc=[x for x in Path("oldinputs/eval/holdout_multiple_choice.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
           ff=[x for x in Path("oldrepo/data/freeform_identity_general_100.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+          v5=[json.loads(x) for x in Path("eval/v5_generative_holdout_20.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
           assert len(mc)==2431, len(mc)
           assert len(ff)==100, len(ff)
+          assert len(v5)==20, len(v5)
+          assert len({x["id"] for x in v5})==20
           state=torch.load("v22/lumen-v22-step-20000.pt",map_location="cpu",weights_only=False)
           assert int(state["step"])==20000, state.get("step")
           assert "model" in state and isinstance(state["model"],dict)
-          print(f"Verified V2.2 step={state['step']}; MC={len(mc)}; freeform={len(ff)}; tensors={len(state['model'])}")
+          print(f"Verified V2.2 step={state['step']}; MC={len(mc)}; legacy freeform={len(ff)}; V5 probes={len(v5)}; tensors={len(state['model'])}")
           PY
       - name: Run the old official holdout on V2.2
         run: |
@@ -78,10 +84,18 @@ jobs:
             --mc-holdout oldinputs/eval/holdout_multiple_choice.jsonl \
             --freeform-holdout oldrepo/data/freeform_identity_general_100.jsonl \
             --out-dir results/v22-step20000 --step 20000 --threads 4
+      - name: Run 20 frozen generative probes for the V5 corpus
+        run: |
+          python scripts/evaluate_v5_generative_holdout.py \
+            --checkpoint v22/lumen-v22-step-20000.pt \
+            --tokenizer v22/tokenizer-v22-derived.json \
+            --system system_prompt_short.txt \
+            --prompts eval/v5_generative_holdout_20.jsonl \
+            --out-dir results/v22-step20000 --step 20000 --threads 4
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: v22-legacy-holdout-step20000
+          name: v22-legacy-plus-v5-generative-holdout-step20000
           path: results/
           if-no-files-found: warn
           retention-days: 90
