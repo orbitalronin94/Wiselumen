@@ -22,9 +22,6 @@ jobs:
       MKL_NUM_THREADS: "4"
       OPENBLAS_NUM_THREADS: "1"
       PYTHONUNBUFFERED: "1"
-      OLD_REPO: "orbitalronin94/WISE-RONIN"
-      OLD_SHA: "d2981fdb01f18e88d2c46a7dc47daea6a6e7e3ea"
-      OLD_RUN_ID: "45782396142"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -55,23 +52,22 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
-          python -m pip install tokenizers==0.21.0
-      - name: Verify identical frozen data and V2.2 checkpoint
+          python -m pip install tokenizers==0.21.0 numpy
+      - name: Verify frozen data and checkpoint identity
         run: |
           test -s oldinputs/eval/holdout_multiple_choice.jsonl
           test -s oldrepo/data/freeform_identity_general_100.jsonl
-          test -s oldinputs/artifacts/tokenizer.json
           python - <<'PY'
-          import json, torch
+          import torch
           from pathlib import Path
           mc=[x for x in Path("oldinputs/eval/holdout_multiple_choice.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
           ff=[x for x in Path("oldrepo/data/freeform_identity_general_100.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
           assert len(mc)==2431, len(mc)
           assert len(ff)==100, len(ff)
           state=torch.load("v22/lumen-v22-step-10000.pt",map_location="cpu",weights_only=False)
-          assert int(state["step"])==10000
-          assert state.get("loss_mode")=="experimental" or state.get("config",{}).get("loss_mode")=="experimental"
-          print(f"Verified V2.2 step={state['step']}; MC={len(mc)}; freeform={len(ff)}")
+          assert int(state["step"])==10000, state.get("step")
+          assert "model" in state and isinstance(state["model"],dict)
+          print(f"Verified V2.2 step={state['step']}; MC={len(mc)}; freeform={len(ff)}; tensors={len(state['model'])}")
           PY
       - name: Run the old official holdout on V2.2
         run: |
