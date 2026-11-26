@@ -21,8 +21,15 @@ def main():
     edges=[]
     def node(node_id,kind,label,**meta):
         old=nodes.get(node_id)
-        if old and (old["type"]!=kind or old["label"]!=label):
-            raise ValueError(f"Node identity collision: {node_id}")
+        if old:
+            if old["type"] != kind:
+                raise ValueError(f"Node type collision: {node_id}")
+            if old["label"] != label:
+                aliases = set(old.get("aliases", []))
+                aliases.add(label)
+                old["aliases"] = sorted(aliases)
+            old.update(meta)
+            return node_id
         nodes[node_id]={"id":node_id,"type":kind,"label":label,**meta}
         return node_id
     def edge(a,rel,b):
