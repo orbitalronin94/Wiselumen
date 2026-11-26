@@ -582,3 +582,32 @@ La adaptación se documenta en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md`. La nueva
 ### Peso medido v0.5
 
 El conjunto activo de archivos del Corpus Maestro (original + índices + semilla + mapa + grafo + documentación) ocupa **aprox. 36,83 MB (35,12 MiB)** en 37 archivos. El original ocupa 20.401.800 bytes; el índice 7.482.345; el grafo 8.545.185; la semilla 200.668; el mapa 29.567; la documentación, aproximadamente 169 kB. Se excluyen snapshots históricos y código.
+
+
+## 2.7 Ampliación v0.6: adaptación narrativa individual de los 41 módulos
+
+La semilla v0.6 contiene **289 registros**: 62 fact, 129 lore y 98 bridge. Se añaden 41 expedientes narrativos (L089–L129) y 41 puentes (B058–B098), uno de cada tipo para cada módulo del Palimpsesto. Cada expediente conserva el extracto literal de la primera aparición del módulo, su glosa marpérica separada, el curador asignado y una escena nueva de la Concordia. Los puentes declaran la diferencia entre frecuencia documental, afirmaciones externas pendientes de cotejo y ficción.
+
+El mapa canónico pasa a `data/palimpsesto_topic_map_v0.3.jsonl`: 41 módulos, 16.848 apariciones, 41 adaptaciones narrativas dedicadas y 41 puentes dedicados. La validación compara los extractos con el texto original, no solo con el índice. Tres módulos siguen sin ficha factual específica y otros tienen solo una conexión factual contextual. Esto se declara como límite, no se disfraza como verificación.
+
+- Semilla: `data/lore_seed_v0.6.jsonl`
+- Mapa: `data/palimpsesto_topic_map_v0.3.jsonl`
+- Especificación de adaptación: `corpus/PALIMPSESTO_ADAPTACION_v0.6.md`
+- Grafo: `corpus/graph_v0.6.json`
+- Validador de extractos y mapa: `corpus/validate_topic_map.py`
+
+El grafo v0.6 solo se considerará completo cuando la CI reconstruya sus shards y pase tanto la validación del mapa como la validación de todas las matrices COO. La cobertura estructural no certifica la verdad de cada afirmación del texto original.
+
+
+### Peso y validación v0.6
+
+El grafo v0.6 validado por GitHub Actions (run `45890899168`) contiene 17.861 nodos, 53.747 relaciones principales, 23 matrices COO y cero enlaces internos sin resolver. El paquete canónico de datos y grafo ocupa 37.495.842 bytes (37,496 MB / 35,758 MiB): original 20.401.800; índices 7.482.345; semilla 402.427; mapa 34.238; grafo 9.175.032. El contenido textual principal (original + semilla) ocupa 20.804.227 bytes. El conjunto activo con documentación y herramientas alcanza aproximadamente 37,70 MB en 43 archivos.
+
+
+## 2.8 Peso medido y validación de v0.6
+
+El paquete activo v0.6 ocupa **37.669.729 bytes (37,67 MB decimales; 35,92 MiB)** en 37 archivos. Desglose exacto: original 20.401.800 bytes; índice 7.482.345; grafo y matrices 9.175.032; semilla 402.427; mapa temático 34.238; documentación principal 173.887. Se excluyen snapshots históricos, código, dependencias y artefactos de entrenamiento. El cálculo procede de los tamaños de blobs Git, no de estimaciones.
+
+La validación CI [45890899168](https://github.com/orbitalronin94/Wiselumen/actions/runs/45890899168) pasó la semilla, el mapa, el índice, el grafo y sus matrices: 289 registros curados, 16.848 revelaciones indexadas, 17.861 nodos, 53.747 relaciones, 23 matrices y cero referencias sin resolver. El grafo declara integridad estructural, no auditoría factual exhaustiva.
+
+Véase el [desglose completo del paquete v0.6](../corpus/PAQUETE_CORPUS_MAESTRO_v0.6.md).
