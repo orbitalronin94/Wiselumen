@@ -581,4 +581,4 @@ La adaptación se documenta en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md`. La nueva
 
 ### Peso medido v0.5
 
-El conjunto activo de archivos del Corpus Maestro (original + índices + semilla + mapa + grafo + documentación) ocupa **36.826.404 bytes (36,83 MB; 35,12 MiB)** en 37 archivos. El original ocupa 20.401.800 bytes; el índice 7.482.345; el grafo 8.545.185; la semilla 200.668; el mapa 29.567; la documentación 166.839 bytes. Se excluyen snapshots históricos y código.
+El conjunto activo de archivos del Corpus Maestro (original + índices + semilla + mapa + grafo + documentación) ocupa **aprox. 36,83 MB (35,12 MiB)** en 37 archivos. El original ocupa 20.401.800 bytes; el índice 7.482.345; el grafo 8.545.185; la semilla 200.668; el mapa 29.567; la documentación, aproximadamente 169 kB. Se excluyen snapshots históricos y código.
