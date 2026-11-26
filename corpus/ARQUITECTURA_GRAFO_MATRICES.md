@@ -75,3 +75,15 @@ Las matrices de incidencia son conceptualmente bipartitas; se guardan en una rep
 `graph_v0.4.json` se construye a partir de los 160 registros estructurados de `lore_seed_v0.4.jsonl` y de cuatro índices JSONL que cubren las 16.848 revelaciones del Palimpsesto (IDs PM00001–PM16848, con tema y rango de líneas). El archivo original se recuperó mediante Git blob: 19.943.599 caracteres, 134.821 líneas y 16.848 encabezamientos únicos. La auditoría detectó 41 módulos temáticos recurrentes, repetidos aproximadamente 400–422 veces.
 
 El grafo conserva las 16.848 entradas como nodos de fuente indexados, no como 16.848 copias del texto completo. Esto ofrece cobertura estructural completa del índice, pero **no equivale a una auditoría factual individual** de todas las afirmaciones del Palimpsesto. La revisión de afirmaciones externas, especialmente las farmacológicas y mitológicas, permanece separada y pendiente.
+
+
+## Métricas verificadas del grafo v0.4
+
+- 17.479 nodos: 160 registros curados, 16.848 revelaciones indexadas y entidades auxiliares.
+- 51.907 relaciones dirigidas en las matrices principales.
+- 19 matrices de relación/proyección en formato COO, agrupadas en ficheros dispersos y descritas por un manifiesto.
+- 0 referencias documentales internas sin resolver.
+- 4 shards de nodos ordenados lexicográficamente; el manifiesto define el índice base cero compartido por todas las matrices.
+- Proyecciones de coaparición calculadas solo sobre los registros curados, no sobre las 16.848 repeticiones del Palimpsesto.
+
+La validación de GitHub Actions reconstruyó el índice y el grafo, comprobó la secuencia PM00001–PM16848, dimensiones, índices COO, pesos, coordenadas duplicadas y enlaces. Resultado de la ejecución 45888554867: **GRAPH VALID**.
