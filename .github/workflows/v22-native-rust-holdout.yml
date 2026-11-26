@@ -41,7 +41,7 @@ jobs:
           echo "LD_LIBRARY_PATH=$(python -c 'import torch,os; print(os.path.join(os.path.dirname(torch.__file__),"lib"))'):$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
       - name: Download exact V2.2 step-10000 checkpoint
         env:
-          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p v22
           gh run download 45783991902 --repo orbitalronin94/Wiselumen --name lumen-v22-step-10000 --dir v22
@@ -54,7 +54,7 @@ jobs:
           path: oldinputs
           repository: orbitalronin94/WISE-RONIN
           run-id: 45782396142
-          github-token: \${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Recover exact Python baseline
         uses: actions/download-artifact@v4
         with:
@@ -62,7 +62,7 @@ jobs:
           path: baseline
           repository: orbitalronin94/Wiselumen
           run-id: 45827049829
-          github-token: \${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Export checkpoint once to TorchScript
         run: |
           python scripts/export_v22_torchscript.py --checkpoint v22/lumen-v22-step-10000.pt --out v22/lumen-v22-step-10000.ts --step 10000 --threads 4
