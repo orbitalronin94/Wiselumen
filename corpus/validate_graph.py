@@ -84,11 +84,43 @@ def validate(manifest_path,require_complete=False):
    if row<n and col<n and not id_by_index[col].startswith("record:"):
     errors.append("references_record target is not a curated record node")
     break
+ # Every curated Palimpsest adaptation must point to every indexed revelation in its declared topic.
+ topic_to_ids={}
+ for item in source_records:
+  topic_to_ids.setdefault(item.get("topic"),[]).append(item.get("id"))
+ adaptations=[node for node in nodes if node.get("type")=="record" and node.get("record_class")=="palimpsest_adaptation"]
+ adapted_topics={topic for node in adaptations for topic in node.get("source_topics",[])}
+ if set(adapted_topics)!=set(topic_to_ids):
+  errors.append("adaptation source_topics do not cover the complete source topic index")
+ id_to_index={node_id:i for i,node_id in enumerate(ids)}
+ expected_pairs=set()
+ for node in adaptations:
+  topics=node.get("source_topics",[])
+  if not topics:
+   errors.append(f"{node.get('id')}: palimpsest_adaptation has no source_topics")
+  for topic in topics:
+   if topic not in topic_to_ids:
+    errors.append(f"{node.get('id')}: unknown Palimpsest source topic {topic!r}")
+    continue
+   for source_id in topic_to_ids[topic]:
+    expected_pairs.add((id_to_index[node["id"]],id_to_index[f"palimpsest:{source_id}"]))
+ adapt_spec=graph.get("matrices",{}).get("adapted_from")
+ if adapt_spec is None:
+  errors.append("missing adapted_from matrix")
+ else:
+  path=adapt_spec["path"]
+  entries=matrix_cache.get(path)
+  if entries is None:
+   try: entries=read_jsonl(path);matrix_cache[path]=entries
+   except Exception: entries=[]
+  actual_pairs={(row[0],row[1]) for row in entries if isinstance(row,list) and len(row)==3}
+  if actual_pairs!=expected_pairs:
+   errors.append(f"adapted_from matrix mismatch: expected {len(expected_pairs)} pairs, found {len(actual_pairs)}")
  return errors
 
 if __name__=="__main__":
  p=argparse.ArgumentParser()
- p.add_argument("graph",nargs="?",default="corpus/graph_v0.4.json")
+ p.add_argument("graph",nargs="?",default="corpus/graph_v0.5.json")
  p.add_argument("--require-complete",action="store_true")
  a=p.parse_args()
  problems=validate(a.graph,a.require_complete)
