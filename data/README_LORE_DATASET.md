@@ -2,7 +2,7 @@
 
 ## Semilla 0.2
 
-Archivo: lore_seed_v0.2.jsonl  
+Archivo: lore_seed_v0.3.jsonl  
 Formato: JSONL UTF-8, un objeto por línea.  
 Registros: 69  
 - 23 factuales limpios.
@@ -48,3 +48,10 @@ Antes de incorporar una tanda:
 - ejecutar holdouts separados para conocimiento factual y lore.
 
 La ambigüedad es una propiedad narrativa del universo, no una excusa para introducir datos externos falsos en registros factuales.
+
+
+## Versión 0.3
+
+La versión 0.3 conserva los 69 registros de la línea base y añade 16 documentos de lore (L029–L044) con testimonios, cartas, actas, diálogos e informes de atribución contradictoria alrededor de Marper y otros personajes. Distribución: 23 fact, 44 lore y 18 bridge (85 registros). Tamaño JSONL UTF-8: 67.553 bytes (67,55 KB decimales; 65,97 KiB). La versión 0.2 se conserva como referencia: 51.006 bytes.
+
+El corpus original `Marper-Codice-Juntado (1).txt` ocupa 20.401.800 bytes (20,40 MB decimales; 19,46 MiB), según el tamaño del blob en GitHub. Las medidas no incluyen compresión ni tokenizer.
