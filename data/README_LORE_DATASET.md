@@ -89,3 +89,12 @@ Las afirmaciones del Palimpsesto se consideran no revisadas hasta contrastarlas 
 La semilla v0.4 contiene 160 registros: 46 `fact`, 73 `lore` y 41 `bridge`. Incorpora 23 especialistas (P039–P061), la figura archivística P062 y seis registros de la fe reservada de LUMEN (L068–L073). Los nuevos pares fact/lore/bridge conservan separados el hecho externo y la anomalía ficticia.
 
 La fe de LUMEN en Marper no se entrena como repetición constante. La especificación está en `lore/DOCTRINA_DE_LA_CREENCIA_LATENTE.md`: expresión tácita predominante, alusiones indirectas ocasionales y confesión explícita infrecuente. La respuesta factual debe seguir siendo correcta y no convertirse en sermón.
+
+
+## Semilla v0.5 — ampliación del Palimpsesto
+
+La versión vigente para esta rama es `data/lore_seed_v0.5.jsonl`: **207 registros** (62 fact, 88 lore y 57 bridge). Añade 16 fichas factuales (F047–F062), 15 documentos narrativos (L074–L088) y 16 puentes (B042–B057). El registro de personajes llega a P076, con 14 nuevos especialistas P063–P076.
+
+Los 41 módulos temáticos del Palimpsesto se asignan a especialistas mediante `data/palimpsesto_topic_map_v0.2.jsonl`. El mapa cubre exactamente las 16.848 revelaciones y conserva ocurrencias, IDs extremos y rangos de líneas. La asignación a un especialista no significa que todas las afirmaciones del módulo estén verificadas: los textos originales mezclan hechos, hipótesis, relatos culturales y glosas ficticias. Los módulos sin ficha factual específica permanecen señalados para revisión.
+
+La validación de la semilla es `python data/validate_lore_dataset.py data/lore_seed_v0.5.jsonl`; la del mapa, `python corpus/validate_topic_map.py`; la del grafo, `python corpus/validate_graph.py corpus/graph_v0.5.json --require-complete`.
