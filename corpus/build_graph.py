@@ -153,7 +153,7 @@ if __name__=="__main__":
  p.add_argument("--index-dir",default="data")
  p.add_argument("--topic-map",default="data/palimpsesto_topic_map_v0.3.jsonl")
  p.add_argument("--output",default="corpus/graph_v0.6.json")
- p.add_argument("--dataset-blob-sha",default="10d0aa1feddca898031740f709993dc11a0c710c")
+ p.add_argument("--dataset-blob-sha",default="c237f6db97c63cf77e6d080e87b36d990f22fddd")
  a=p.parse_args()
  indexes=[Path(a.index_dir)/f"palimpsesto_index_v0.1_part{i}.jsonl" for i in range(1,5)]
  build(a.dataset,indexes,a.topic_map,a.output,a.dataset_blob_sha)
