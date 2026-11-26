@@ -48,3 +48,6 @@ El registro de personajes llega a P062. Los especialistas P039–P061 cuentan co
 - [Semilla v0.5](../data/lore_seed_v0.5.jsonl): 259 registros, 65 fact, 134 lore y 60 bridge.
 - [Mapa de temas del Palimpsesto](../data/palimpsesto_topic_map_v0.2.jsonl): 41 temas, atribución de personajes y vínculos fact/lore/bridge.
 - [Grafo global v0.5](../corpus/graph_v0.5.json): índice de 16.848 revelaciones y matrices de adaptación.
+
+
+**Grafo v0.5 validado:** 17.769 nodos, 72.128 relaciones dirigidas, 21 matrices COO, 18.958 enlaces directos `adapted_from`, cinco shards de nodos y cero referencias sin resolver. La ejecución CI 45890035441 terminó correctamente; el estado es `complete_structural_index`, con auditoría factual individual del Palimpsesto aún pendiente.
