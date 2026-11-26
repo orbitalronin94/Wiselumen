@@ -1,0 +1,21 @@
+name: Rust holdout runner CI
+on:
+  push:
+    branches: [main]
+    paths:
+      - "rust-holdout/**"
+      - ".github/workflows/rust-holdout-ci.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Check and test Rust runner
+        run: |
+          cargo fmt --manifest-path rust-holdout/Cargo.toml -- --check
+          cargo check --manifest-path rust-holdout/Cargo.toml --locked
+          cargo test --manifest-path rust-holdout/Cargo.toml --locked
