@@ -65,7 +65,8 @@ Los documentos principales del mundo son:
 
 ### 2.3 Dataset estructurado
 
-**Semilla estructurada vigente:** `data/lore_seed_v0.3.jsonl`  
+**Semilla estructurada histórica:** `data/lore_seed_v0.3.jsonl`  
+**Semilla estructurada vigente:** `data/lore_seed_v0.4.jsonl`  
 **Documentación:** `data/README_LORE_DATASET.md`  
 **Validador:** `data/validate_lore_dataset.py`
 
@@ -539,3 +540,14 @@ A partir de esta revisión quedan fijados tres nombres distintos:
 La coherencia se representa mediante un grafo heterogéneo y matrices dispersas en `corpus/graph_v0.3.json`. La especificación está en `corpus/ARQUITECTURA_GRAFO_MATRICES.md`; el validador, en `corpus/validate_graph.py`. La primera versión cubre los 85 registros de la semilla v0.3 y sus entidades explícitas: 341 nodos y 654 relaciones documentales/entidad, más matrices de proyección por personajes, lugares y dominios. No quedan referencias internas sin resolver.
 
 **Estado incompleto declarado:** el archivo fuente de El Palimpsesto tiene 20.401.800 bytes y se registran 16.848 revelaciones, pero GitHub Contents API devuelve contenido vacío al intentar recuperarlo. El grafo incluye un nodo de procedencia con estos metadatos, no 16.848 revelaciones ficticiamente reconstruidas. Por tanto, el grafo v0.3 es una primera capa estructural válida, pero el Corpus Maestro y el grafo global no pueden declararse completos hasta recuperar el texto íntegro y cotejarlo con la fuente de Isabel.
+
+
+## 2.5 Recuperación íntegra del Palimpsesto y ampliación v0.4
+
+Se recuperó el contenido completo del blob Git del archivo `Marper-Codice-Juntado (1).txt`, SHA `b0eb703c5237d1d461321a30a89525e154f0219d`. La revisión estructural confirmó 16.848 encabezamientos numerados únicos (00001–16848), 134.821 líneas y 41 módulos temáticos recurrentes, cada uno con entre 400 y 422 apariciones. El índice se distribuye en cuatro archivos `data/palimpsesto_index_v0.1_part1.jsonl` a `part4.jsonl`, con rangos de líneas y etiquetas temáticas; no duplica el cuerpo de 20.401.800 bytes.
+
+La ampliación v0.4 añade once personajes especialistas (P039–P049) y 33 registros: 11 hechos externos (F024–F034), 11 documentos de lore (L045–L055) y 11 puentes (B019–B029). Total: 118 registros (34 fact, 55 lore, 29 bridge). Cada ficha factual enlaza a una fuente institucional o educativa; cada personaje protagoniza un documento y un puente que separa conocimiento real de interpretación ficticia.
+
+El grafo v0.4 incorpora los 118 registros estructurados y los 16.848 registros fuente indexados. Su estado es `complete_structural_index`: la cobertura estructural está completa, pero las afirmaciones del Palimpsesto siguen pendientes de auditoría factual individual. La distinción evita confundir indexación completa con validación científica completa.
+
+La auditoría también detecta repeticiones intensas y afirmaciones del original que no deben usarse como hechos sin revisión; en particular, las afirmaciones farmacológicas y la etiqueta «PiHKAL open source». Véase `corpus/PALIMPSESTO_AUDIT.md`.
