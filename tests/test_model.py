@@ -4,7 +4,7 @@ from pathlib import Path
 
 import torch
 
-from Model import LumenV2
+from Model import LumenV2, seq_for_step, active_layers_for_step
 from Train import EMA, get_optimizer, save_sharded, train_steps
 
 
@@ -15,6 +15,19 @@ class LumenV2Tests(unittest.TestCase):
             d_ff=48, top_k=8, ctx=16, rope_max_len=32,
             loss_mode=loss_mode,
         )
+
+    def test_v21_curricula_and_layer_skipping(self):
+        self.assertEqual([seq_for_step(s) for s in (0, 14999, 15000, 30000)], [128, 128, 256, 512])
+        self.assertEqual(seq_for_step(99999, "original"), 256)
+        self.assertEqual(active_layers_for_step(0), [0, 1, 6, 7])
+        self.assertEqual(active_layers_for_step(10000), [0, 1, 2, 5, 6, 7])
+        self.assertEqual(active_layers_for_step(25000), list(range(8)))
+        model = self.make_model().eval()
+        tokens = torch.randint(0, 64, (2, 12))
+        with torch.no_grad():
+            logits, loss = model(tokens, targets=tokens, active_layers=[0, 1])
+        self.assertEqual(tuple(logits.shape), (2, 12, 64))
+        self.assertTrue(torch.isfinite(loss))
 
     def test_forward_backward_and_weight_tying(self):
         model = self.make_model()
