@@ -2,7 +2,7 @@
 
 ## Semilla 0.4
 
-La versión 0.4 reúne 118 registros: 34 hechos externos, 55 documentos de lore y 29 puentes explícitos entre conocimiento y ficción. Añade once especialistas (P039–P049), cada uno con una ficha factual, un documento narrativo y un puente que separa ambos planos. La v0.3 se conserva como línea base histórica.
+La versión 0.4 reúne 160 registros: 46 hechos externos, 73 documentos de lore y 41 puentes explícitos entre conocimiento y ficción. Añade 23 especialistas con ficha factual (P039–P061) y una figura archivística ambigua (P062), cada uno con una ficha factual, un documento narrativo y un puente que separa ambos planos. La v0.3 se conserva como línea base histórica.
 
 El archivo fuente **El Palimpsesto de Marper** contiene 16.848 revelaciones numeradas. Sus cuatro índices JSONL preservan todos los IDs, temas y rangos de líneas sin duplicar el texto original. La auditoría estructural está en `../corpus/PALIMPSESTO_AUDIT.md`.
 
