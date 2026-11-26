@@ -215,6 +215,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
                 # result is retained after a compile/IPEX graph failure.
                 details["compile_runtime_error"] = f"{type(exc).__name__}:{exc}"
                 model, optimizer, ema, fused_status = load_arm(checkpoint, fused=True)
+                model.logit_chunk_size = CHUNK_SIZE
                 details["fused_adamw"] = fused_status
                 details["compile_fallback"] = "eager-restart-from-parent"
                 details["ipex"] = "discarded-after-compile-failure"
