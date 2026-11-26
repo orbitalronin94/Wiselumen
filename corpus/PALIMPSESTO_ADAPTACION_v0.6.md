@@ -101,3 +101,10 @@ Medición del árbol Git de la rama, contando una vez cada artefacto canónico d
 El contenido textual principal (original + semilla curada) ocupa **20.804.227 bytes = 20,804 MB**. El paquete de datos y grafo no duplica el cuerpo original dentro del índice: el original se conserva una vez y el índice almacena IDs, temas y rangos de líneas.
 
 El conjunto activo ampliado, incluyendo documentación y herramientas de validación, ocupa aproximadamente **37,70 MB en 43 archivos**. Se excluyen snapshots históricos v0.3–v0.5, dependencias y artefactos de entrenamiento.
+
+
+## Peso medido del paquete activo
+
+El paquete v0.6 ocupa **37.669.729 bytes (37,67 MB decimales; 35,92 MiB)** en 37 archivos. Incluye el original (20.401.800 bytes), índice (7.482.345), grafo y matrices (9.175.032), semilla (402.427), mapa (34.238) y documentación principal (173.887). El desglose exacto está en PAQUETE_CORPUS_MAESTRO_v0.6.md.
+
+La ejecución CI [45890899168](https://github.com/orbitalronin94/Wiselumen/actions/runs/45890899168) validó los 289 registros, los 41 temas, las 16.848 apariciones, 17.861 nodos, 53.747 relaciones, 23 matrices y cero referencias sin resolver. Estado: **GRAPH VALID**. La integridad estructural no certifica individualmente todas las afirmaciones del original.
