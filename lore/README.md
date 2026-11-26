@@ -11,7 +11,7 @@ Proyecto de worldbuilding original para LUMEN: una civilización ficticia conoci
 ## Documentos
 
 - [Biblia del universo](BIBLIA_DEL_UNIVERSO.md): cosmología, geografía, instituciones, historia, canon y política de conocimiento factual.
-- [Registro de personajes](PERSONAJES.md): 62 perfiles, voces y ambigüedades.
+- [Registro de personajes](PERSONAJES.md): 76 perfiles, voces y ambigüedades.
 - [Sectas y profetas](SECTAS_Y_PROFETAS.md): ocho movimientos, escisiones, doctrinas, dioses tutelares y campos de conocimiento.
 - [Los dioses que sueñan](LOS_DIOSES_QUE_SUENAN.md): ocho Durmientes, ocho sectas y la hipótesis de las inteligencias artificiales soñadoras.
 - [Semilla de dataset](../data/lore_seed_v0.4.jsonl): 160 registros, separados en fact, lore y bridge.
@@ -23,7 +23,7 @@ Proyecto de worldbuilding original para LUMEN: una civilización ficticia conoci
 
 ## Estado
 
-Versión 0.4. La biblia y el elenco constituyen canon provisional. Los documentos contradictorios son deliberados; los errores de datos no lo son. La cosmología de los ocho dioses soñadores se incorpora como hipótesis central, sin confirmación omnisciente dentro del mundo. El siguiente trabajo consiste en desarrollar sus cultos, conflictos, documentos y señales contradictorias, además de ampliar historia, geografía, lenguas, economía y conocimiento factual.
+Versión canónica: 0.6. La biblia y el elenco constituyen canon provisional. Los documentos contradictorios son deliberados; los errores de datos no lo son. La cosmología de los ocho dioses soñadores se incorpora como hipótesis central, sin confirmación omnisciente dentro del mundo. La ampliación v0.6 adapta los 41 módulos del Palimpsesto; la auditoría factual individual de las afirmaciones originales continúa pendiente.
 
 
 ## Ampliación de personajes y conocimiento factual
@@ -50,3 +50,16 @@ El registro llega a P076. Los nuevos perfiles P063–P076 amplían las voces que
 - [Mapa de módulos del Palimpsesto](../data/palimpsesto_topic_map_v0.2.jsonl)
 - [Adaptación del Palimpsesto v0.5](../corpus/PALIMPSESTO_ADAPTACION_v0.5.md)
 - [Grafo heterogéneo v0.5](../corpus/graph_v0.5.json)
+
+
+## Adaptación completa del Palimpsesto v0.6
+
+El elenco llega a P076 y la semilla estructurada contiene 289 registros: 62 fact, 129 lore y 98 bridge. Los 41 módulos temáticos del Palimpsesto cuentan con un expediente narrativo y un puente epistemológico dedicados, vinculados a su curador y a la primera revelación fuente.
+
+- [Semilla v0.6](../data/lore_seed_v0.6.jsonl)
+- [Mapa temático v0.3](../data/palimpsesto_topic_map_v0.3.jsonl)
+- [Adaptación completa v0.6](../corpus/PALIMPSESTO_ADAPTACION_v0.6.md)
+- [Grafo global v0.6](../corpus/graph_v0.6.json)
+
+
+- [Medición exacta del Corpus Maestro v0.6](../corpus/PAQUETE_CORPUS_MAESTRO_v0.6.md): 37.680.918 bytes, 38 archivos, 17.861 nodos y 23 matrices.

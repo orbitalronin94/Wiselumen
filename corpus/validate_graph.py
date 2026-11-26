@@ -33,7 +33,10 @@ def validate(manifest_path,require_complete=False):
  if graph.get("topic_map_occurrences")!=16848: errors.append("topic_map_occurrences must be 16848")
  for required in ("curated_by_character","topic_linked_fact","topic_adapted_as_lore","topic_separated_by_bridge"):
   if required not in graph.get("matrices",{}): errors.append(f"missing topic-map relation matrix: {required}")
- if graph.get("generated_from",{}).get("record_count")!=207: errors.append("expected 207 curated v0.5 records")
+ record_count=graph.get("generated_from",{}).get("record_count")
+ if not isinstance(record_count,int): errors.append("missing curated record_count")
+ elif sum(n.get("type")=="record" for n in nodes)!=record_count: errors.append("curated record node count mismatch")
+ if graph.get("topic_map_dedicated_adaptations")!=41: errors.append("expected dedicated lore and bridge adaptations for all 41 topics")
  for i,item in enumerate(source_records,1):
   if item.get("source_revelation_number")!=i: errors.append(f"source revelation sequence breaks at {i}")
   if not isinstance(item.get("source_line_start"),int) or not isinstance(item.get("source_line_end"),int) or item["source_line_end"]<item["source_line_start"]:
@@ -95,7 +98,7 @@ def validate(manifest_path,require_complete=False):
 
 if __name__=="__main__":
  p=argparse.ArgumentParser()
- p.add_argument("graph",nargs="?",default="corpus/graph_v0.5.json")
+ p.add_argument("graph",nargs="?",default="corpus/graph_v0.6.json")
  p.add_argument("--require-complete",action="store_true")
  a=p.parse_args()
  problems=validate(a.graph,a.require_complete)
