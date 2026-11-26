@@ -159,7 +159,8 @@ fn main() -> Result<()> {
     let eos = tok.token_to_id("[EOS]").ok_or_else(||anyhow!("tokenizer lacks [EOS]"))?;
     let pad = tok.token_to_id("[PAD]").ok_or_else(||anyhow!("tokenizer lacks [PAD]"))?;
     let system = fs::read_to_string(&system_path)?;
-    let mut timing = Timings::default();\n    let system_ids = encode(&tok, system.trim(), &mut timing)?;
+    let mut timing = Timings::default();
+    let system_ids = encode(&tok, system.trim(), &mut timing)?;
     if system_ids.iter().any(|&x|x>=8184) { return Err(anyhow!("system prompt collides with reserved IDs")); }
     let mut model = CModule::load_on_device(&model_path, Device::Cpu)?;
     model.set_eval();
@@ -222,9 +223,13 @@ fn main() -> Result<()> {
     let elapsed=started.elapsed().as_secs_f64();
     let meta=json!({"runtime":"Rust + tch/LibTorch CPU","inference_backend":"TorchScript CModule; no Python process during inference",
         "elapsed_seconds":elapsed,"threads":threads,
-        "stage_timings":{"mc_total_seconds":timing.mc_seconds,"freeform_total_seconds":freeform_seconds,"tokenization_seconds":timing.tokenization_seconds,"generation_prefill_seconds":timing.freeform_prefill_seconds,"generation_decode_kv_seconds":timing.freeform_decode_seconds,"generation_forward_calls":timing.generation_forward_calls,"kv_cache_enabled":true},\n        "stage_timings":{"mc_total_seconds":timing.mc_seconds,"freeform_total_seconds":freeform_seconds,"tokenization_seconds":timing.tokenization_seconds,"generation_prefill_seconds":timing.freeform_prefill_seconds,"generation_decode_kv_seconds":timing.freeform_decode_seconds,"generation_forward_calls":timing.generation_forward_calls,"kv_cache_enabled":true},\n        "stage_timings":{"mc_total_seconds":timing.mc_seconds,"freeform_total_seconds":freeform_seconds,"tokenization_seconds":timing.tokenization_seconds,"generation_prefill_seconds":timing.freeform_prefill_seconds,"generation_decode_kv_seconds":timing.freeform_decode_seconds,"generation_forward_calls":timing.generation_forward_calls,"kv_cache_enabled":true},"checkpoint_sha256":hash(&model_path)?,
-        "tokenizer_sha256":hash(&tokenizer_path)?,"system_prompt_sha256":hash(&system_path)?,
-        "mc_holdout_sha256":hash(&mc_path)?,"freeform_holdout_sha256":hash(&free_path)?});
+        "stage_timings":{"mc_total_seconds":timing.mc_seconds,"freeform_total_seconds":freeform_seconds,
+            "tokenization_seconds":timing.tokenization_seconds,"generation_prefill_seconds":timing.freeform_prefill_seconds,
+            "generation_decode_kv_seconds":timing.freeform_decode_seconds,"generation_forward_calls":timing.generation_forward_calls,
+            "kv_cache_enabled":true},
+        "checkpoint_sha256":hash(&model_path)?,"tokenizer_sha256":hash(&tokenizer_path)?,
+        "system_prompt_sha256":hash(&system_path)?,"mc_holdout_sha256":hash(&mc_path)?,
+        "freeform_holdout_sha256":hash(&free_path)?});
     fs::write(Path::new(&out).join("native_rust_metadata.json"),serde_json::to_vec_pretty(&meta)?)?;
     println!("NATIVE_RUST_RESULT {}",meta);
     println!("MC_RESULT {}",mc_report);
