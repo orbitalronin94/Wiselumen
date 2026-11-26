@@ -43,7 +43,7 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 def git_blob_sha(data: bytes) -> str:
-    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
 
 def download(url: str) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": "Wiselumen-Corpus-Builder/5.0"})
@@ -137,10 +137,10 @@ def main() -> None:
         zf.writestr("corpus/v4/wise-ronin-corpus-v4.0.0.zip", v4_bytes, compress_type=zipfile.ZIP_STORED)
         for name, data in assets.items():
             zf.writestr(name, data, compress_type=zipfile.ZIP_DEFLATED, compresslevel=6)
-        zf.writestr("corpus/v5/sampling.json", json.dumps(SAMPLING, ensure_ascii=False, indent=2) + "\\n")
-        zf.writestr("corpus/v5/manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2) + "\\n")
+        zf.writestr("corpus/v5/sampling.json", json.dumps(SAMPLING, ensure_ascii=False, indent=2) + "\n")
+        zf.writestr("corpus/v5/manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     result = {"output": str(output), "bytes": output.stat().st_size, "sha256": sha256(output.read_bytes()), "manifest": manifest}
-    (OUT / "v5-build-report.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    (OUT / "v5-build-report.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
 
 if __name__ == "__main__":
