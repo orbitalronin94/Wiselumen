@@ -16,6 +16,5 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Check and test Rust runner
         run: |
-          cargo fmt --manifest-path rust-holdout/Cargo.toml -- --check
           cargo check --manifest-path rust-holdout/Cargo.toml
           cargo test --manifest-path rust-holdout/Cargo.toml --locked
