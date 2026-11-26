@@ -175,7 +175,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
     amp_dtype = None
     if candidate:
         # Candidate-only exact-objective CE chunking; main keeps the default path.
-        os.environ["LUMEN_LOGIT_CHUNK_SIZE"] = str(CHUNK_SIZE)
+        model.logit_chunk_size = CHUNK_SIZE
         details["logit_chunk_size"] = CHUNK_SIZE
         # CPU BF16 is tested on this exact runner; unsupported hardware is recorded.
         try:
