@@ -105,6 +105,6 @@ El conjunto activo ampliado, incluyendo documentación y herramientas de validac
 
 ## Peso medido del paquete activo
 
-El paquete v0.6 ocupa **37.669.729 bytes (37,67 MB decimales; 35,92 MiB)** en 37 archivos. Incluye el original (20.401.800 bytes), índice (7.482.345), grafo y matrices (9.175.032), semilla (402.427), mapa (34.238) y documentación principal (173.887). El desglose exacto está en PAQUETE_CORPUS_MAESTRO_v0.6.md.
+El paquete v0.6 ocupa **37.680.918 bytes (37,68 MB decimales; 35,94 MiB)** en 38 archivos. Incluye el original (20.401.800 bytes), índice (7.482.345), grafo y matrices (9.175.032), semilla (402.427), mapa (34.238) y documentación principal (173.887). El desglose exacto está en PAQUETE_CORPUS_MAESTRO_v0.6.md.
 
 La ejecución CI [45890899168](https://github.com/orbitalronin94/Wiselumen/actions/runs/45890899168) validó los 289 registros, los 41 temas, las 16.848 apariciones, 17.861 nodos, 53.747 relaciones, 23 matrices y cero referencias sin resolver. Estado: **GRAPH VALID**. La integridad estructural no certifica individualmente todas las afirmaciones del original.
