@@ -103,3 +103,17 @@ La validación de la semilla es `python data/validate_lore_dataset.py data/lore_
 ### Peso de la versión v0.5
 
 La semilla v0.5 ocupa **200.668 bytes**; el mapa de temas, **29.567 bytes**. El paquete activo completo (original, cuatro índices, grafo y documentación principal incluidos) ocupa **aprox. 36,83 MB = 35,12 MiB**. Véase el desglose en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md`.
+
+
+## Semilla v0.6 — adaptación dedicada de los 41 módulos
+
+La versión canónica más reciente es `data/lore_seed_v0.6.jsonl`: **289 registros** (62 fact, 129 lore y 98 bridge). Añade 41 expedientes narrativos dedicados (L089–L129) y 41 puentes epistemológicos dedicados (B058–B098), uno de cada tipo por cada módulo temático del Palimpsesto. Los extractos de origen se conservan literalmente y atribuidos; las escenas nuevas pertenecen a la Concordia.
+
+El mapa `data/palimpsesto_topic_map_v0.3.jsonl` vincula cada uno de los 41 módulos con un curador, sus fichas factuales disponibles y sus expedientes/puentes dedicados. La suma de ocurrencias es 16.848. Tres módulos siguen sin ficha factual específica y otros tienen cobertura factual contextual: los expedientes narrativos no convierten sus afirmaciones en hechos verificados.
+
+La validación completa es:
+- `python data/validate_lore_dataset.py data/lore_seed_v0.6.jsonl`
+- `python corpus/validate_topic_map.py` (compara los 41 extractos con el archivo fuente original)
+- `python corpus/validate_graph.py corpus/graph_v0.6.json --require-complete`
+
+La adaptación se documenta en `corpus/PALIMPSESTO_ADAPTACION_v0.6.md`; el grafo se publica como `corpus/graph_v0.6.json`. La indexación estructural completa no equivale a una auditoría factual individual de todas las afirmaciones del Palimpsesto.
