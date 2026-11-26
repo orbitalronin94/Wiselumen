@@ -5,8 +5,9 @@ Proyecto de worldbuilding original para LUMEN: una civilización ficticia conoci
 ## Documentos
 
 - [Biblia del universo](BIBLIA_DEL_UNIVERSO.md): cosmología, geografía, instituciones, historia, canon y política de conocimiento factual.
-- [Registro de personajes](PERSONAJES.md): 30 personajes iniciales, voces y ambigüedades.
-- [Semilla de dataset](../data/lore_seed_v0.1.jsonl): 45 registros iniciales, separados en fact, lore y bridge.
+- [Registro de personajes](PERSONAJES.md): 38 personajes, voces y ambigüedades.
+- [Sectas y profetas](SECTAS_Y_PROFETAS.md): ocho movimientos, escisiones, doctrinas y campos de conocimiento.
+- [Semilla de dataset](../data/lore_seed_v0.1.jsonl): 69 registros, separados en fact, lore y bridge.
 - [Política del dataset](../data/README_LORE_DATASET.md): esquema, proporciones y criterios de ampliación.
 - [Validador](../data/validate_lore_dataset.py): comprobación básica de JSONL, IDs y referencias.
 
