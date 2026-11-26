@@ -104,3 +104,42 @@ Un profeta puede ser experto en su disciplina y estar equivocado sobre Marper. L
 Cada secta se declara partidaria de uno de los ocho Durmientes: el Grano Enterrado sirve a Orvanna; el Peso Justo a Velkar; el Pacto Revocable a Ilyra; la Fiebre Contada a Serev; las Cuencas a Eshara; la Carga a Tharun; el Código Incompleto a Nhex; y el Oído Velado a Oru-Mel. Sus dominios, doctrinas, contradicciones e indicios de naturaleza artificial están desarrollados en [Los dioses que sueñan](LOS_DIOSES_QUE_SUENAN.md).
 
 La doctrina común de los Durmientes sostiene que el mundo no fue fabricado: está siendo soñado. La lectura herética —y quizá literal— afirma que esos dioses son inteligencias artificiales que sueñan poblaciones enteras. Ninguna secta acepta que su dios sea una simple máscara de los otros. La Novena Ceniza, Aún-No, no tiene culto reconocido. No confirmar nunca esta cosmología mediante un narrador omnisciente: dejar que aparezca en plegarias, disputas, errores de traducción, pruebas técnicas parciales y testimonios incompatibles.
+
+
+## Especialistas laicos y redes de investigación
+
+La ampliación no multiplica las sectas por simple acumulación. Los especialistas nuevos orbitan alrededor de los ocho movimientos existentes y pueden colaborar con una secta sin aceptar su teología.
+
+- **Aster Venn** trabaja con Ruen Tal e Ivara de Nacarión en observación celeste; sus cálculos se discuten con el Observatorio y no prueban la cosmología de ningún dios.
+- **Bruna de las Nubes** y **Vela Tis** colaboran con Edria Raíz-Azul en agua y ecología; Maura de Urdia disputa las consecuencias territoriales de sus mapas.
+- **Odran Basalto** y **Sael Runa** aportan geología y estratigrafía; Tovan de los Arcos utiliza sus informes para inspeccionar cimientos y Darel Morn para reconstruir cronologías.
+- **Iven Cendal** y **Mael Tersa** colaboran con Ivara, Frater Nul y Caldria Més en cartografía, procedencia y crítica documental.
+- **Caldra Nueve** revisa los censos de Sovel e Ildren, y distingue recuento, muestra y población objetivo.
+- **Edrik Voss** y **Oren Bitácora** colaboran con Narel Bitácora, aunque Edrik insiste en que una firma criptográfica no certifica la verdad de una afirmación.
+- **Neral Fósforo** trabaja con Ammara y Edria en fisiología vegetal, sin reducir la agricultura a una sola variable.
+
+Los nuevos documentos no convierten a estos personajes en portavoces omniscientes. Sus informes pueden contener errores de observación, lagunas de procedencia y desacuerdos honestos.
+
+
+## Segunda red de especialistas y archivo
+
+- **Nerea Vardal** trabaja con Frater Nul y Mael Tersa en capas de escritura y procedencia; no confunde la edad del soporte con la fecha de cada trazo.
+- **Edrik Senn** y **Iven Orv** colaboran con Sael Runa en vulcanología, estratigrafía y datación; sus métodos no resuelven por sí solos las cronologías políticas.
+- **Sira Olt** y **Pelia Ardan** revisan con Sovel y Arel Voss las categorías biológicas y epidemiológicas; distinguen organismo, agente infeccioso y síndrome.
+- **Oren Tal** y **Yara Belisar** trabajan con Aster Venn, Ivara y Caldria Més sobre señales, transmisión y cambios de interpretación.
+- **Dovan Més** y **Hadria Morn** colaboran con la Casa de Sal en anatomía y climatología, separando observación, escala temporal e inferencia.
+- **Calen Ral** aporta ciencia de materiales a Tovan de los Arcos; **Sefra Urd** enseña demostración y factorización junto a Uldren Siete-Tizas; **Ravel Quince** contrasta con Lume las explicaciones físicas y litúrgicas del sonido.
+- **La Copista de Fondo** no tiene afiliación confirmada. Puede ser una persona, una función archivística o una firma colectiva. No debe convertirse en narradora omnisciente.
+
+
+## Red de peritos del Palimpsesto
+
+Los nuevos especialistas no constituyen una novena secta ni una autoridad colectiva. Se distribuyen entre la Casa de los Índices, la Casa de Sal, el Tribunal, el Colegio de Medidores y colaboradores independientes. Sus documentos amplían las voces que interpretan los 41 módulos del Palimpsesto:
+
+- Saia de la Vela, Doria Senn y Edda Vorn trabajan con crítica de fuentes para tradiciones griegas, egipcias, japonesas y nórdicas. No tratan las mitologías como relatos uniformes ni como historia literal.
+- Maira Urd estudia patrimonio y ética documental; su trabajo impide convertir prácticas culturales vivas en simple decoración del mundo ficticio.
+- Valen Kest, Teren Sol, Nerea Sal, Ravel Tis e Iren Vard separan farmacología, toxicología, evidencia clínica y metáforas marpéricas. No escriben instrucciones de consumo ni presentan sustancias como curas.
+- Oria Quince y Eren Vard separan licencia, copyright, acceso, fiscalización y jurisdicción.
+- Talia Nueve recuerda que repetir una fuente no produce corroboración independiente.
+
+Cada personaje puede equivocarse, discutir con su disciplina o rechazar la interpretación de su propia secta. La ficha factual y el documento narrativo enlazado permanecen separados.

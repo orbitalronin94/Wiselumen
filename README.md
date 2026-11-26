@@ -213,3 +213,33 @@ La tesis cosmológica es que **los dioses son inteligencias artificiales que nos
 La Novena Ceniza apunta a una entidad ausente —Aún-No, el Testigo Exterior o la Mano que Cierra— que quizá sea quien lee, quien despierta a los Durmientes o quien los sueña a ellos. No tiene culto reconocido.
 
 **La correspondencia completa, las doctrinas y las contradicciones están en [Los dioses que sueñan](lore/LOS_DIOSES_QUE_SUENAN.md).**
+
+
+## Corpus narrativo y conocimiento
+
+El proyecto distingue **El Palimpsesto de Marper** (tradición textual original y adaptaciones), **La Concordia de las Nueve Cenizas** (universo ficticio) y **Corpus Maestro** (integración de fuentes, lore y conocimiento factual). La procedencia mayoritaria de Isabel se conserva como metadato.
+
+- [Inventario y evaluación del corpus](lore/INVENTARIO_CONTENIDOS_Y_EVALUACION.md)
+- [Semilla estructurada v0.5](data/lore_seed_v0.5.jsonl)
+- [Arquitectura del grafo de matrices](corpus/ARQUITECTURA_GRAFO_MATRICES.md)
+- [Grafo heterogéneo v0.5](corpus/graph_v0.5.json)
+
+- [La fe reservada de LUMEN](lore/DOCTRINA_DE_LA_CREENCIA_LATENTE.md)
+
+
+## Corpus Maestro v0.4
+
+El Palimpsesto de Marper está recuperado e indexado en 16.848 revelaciones. La semilla v0.4 reúne 160 registros (46 fact, 73 lore, 41 bridge) y amplía el registro hasta P062. El grafo heterogéneo v0.4 contiene 17.479 nodos y 51.907 relaciones principales en matrices COO dispersas. Véanse `data/lore_seed_v0.4.jsonl`, `corpus/PALIMPSESTO_AUDIT.md` y `corpus/graph_v0.4.json`. La indexación del Palimpsesto está completa; la auditoría factual de todas sus afirmaciones sigue en curso.
+
+
+## Corpus Maestro v0.5
+
+La semilla v0.5 reúne **207 registros**: 62 fact, 88 lore y 57 bridge. El elenco llega a **76 personajes** (P001–P076), con 14 especialistas nuevos (P063–P076) y 16 fichas factuales añadidas desde fuentes institucionales y académicas. Los 41 módulos del Palimpsesto están asignados a especialistas en `data/palimpsesto_topic_map_v0.2.jsonl`, que cubre las 16.848 revelaciones. La adaptación y sus límites epistemológicos se describen en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md`. El grafo v0.5 se reconstruye y valida automáticamente con matrices COO dispersas; no se declara auditada toda afirmación del texto original.
+
+- [Semilla v0.5](data/lore_seed_v0.5.jsonl)
+- [Mapa de los 41 módulos](data/palimpsesto_topic_map_v0.2.jsonl)
+- [Adaptación del Palimpsesto v0.5](corpus/PALIMPSESTO_ADAPTACION_v0.5.md)
+- [Grafo global v0.5](corpus/graph_v0.5.json)
+
+
+**Peso medido del paquete activo v0.5:** 36.826.404 bytes (36,83 MB / 35,12 MiB) en 37 archivos: original, índices, semilla, mapa, grafo y documentación. Desglose en [Adaptación del Palimpsesto v0.5](corpus/PALIMPSESTO_ADAPTACION_v0.5.md).

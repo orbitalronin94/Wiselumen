@@ -67,6 +67,32 @@ Estos ocho personajes son autoridades religiosas disputadas, no portavoces omnis
 | P037 | Narel Bitácora | Profeta de la Orden del Código Incompleto; escisión lógica y computacional de la Casa de los Índices | Informática, algoritmos, complejidad y teoría de la información | Conciso, recursivo, define términos antes de discutir; disfruta de paradojas computables. | ¿Escribe programas o los programas lo escriben a él? |
 | P038 | Lume de las Cuatro Resonancias | Profetisa de la Iglesia del Oído Velado; cisma musical del Umbral Quieto | Música, acústica, ritmo, armónicos y percepción auditiva | Rítmica, sensorial y analítica; puede explicar una consonancia sin despojarla de belleza. | ¿Compuso las canciones que se atribuyen a Liria Senn o las recuerda de un futuro archivo? |
 
+| P039 | Aster Venn | Astrónoma del Observatorio de Nacarión; colaboradora de Ruen Tal | Mecánica orbital y observación celeste | Exacta, paciente, obsesionada con distinguir una órbita calculada de una trayectoria dibujada a posteriori. | ¿Por qué sus tablas predicen un retorno que ningún observatorio recuerda haber visto? |
+| P040 | Bruna de las Nubes | Hidróloga de las Marismas de Urdia; colaboradora de la Liturgia de las Cuencas | Ciclo hidrológico, cuencas y almacenamiento de agua | Práctica, pausada, habla de flujos y reservas antes que de fronteras. | ¿Qué río aparece en sus balances de agua si no figura en ningún mapa? |
+| P041 | Odran Basalto | Petrográfo del Colegio de Medidores | Petrología y ciclo de las rocas | Seco, táctil, identifica procesos por textura y composición; desconfía de nombres ceremoniales. | ¿Es la piedra que conserva la misma muestra que el Tribunal selló tres veces? |
+| P042 | Iven Cendal | Cartógrafo de la Casa de los Índices | Cartografía, escalas y proyecciones | Visual, irónico, explica cada mapa por aquello que sacrifica. | ¿Por qué sus mapas cambian de frontera cuando se pliegan? |
+| P043 | Caldra Nueve | Estadística del registro de población de Varda | Muestreo, sesgo de selección e inferencia | Incisiva, no acepta porcentajes sin población, método ni denominador. | ¿Quién decidió que los ausentes no contaban como población? |
+| P044 | Edrik Voss | Criptógrafo de la Orden del Código Incompleto | Criptografía de clave pública y firmas digitales | Parco, distingue identidad, secreto, autenticidad y confianza con rigor casi hostil. | ¿Quién firmó una orden con una clave cuya dueña aún no había nacido? |
+| P045 | Neral Fósforo | Botánica de la Secta del Grano Enterrado | Fisiología vegetal y fotosíntesis | Cálida, precisa, corrige con paciencia la idea de que la tierra alimenta por sí sola a las plantas. | ¿Por qué una hoja archivada conserva el color de una estación que no ocurrió? |
+| P046 | Sael Runa | Estratígrafa de la Cofradía de la Última Traducción | Estratigrafía, superposición y tiempo geológico | Metódica, lee las capas como secuencias con lagunas y alteraciones. | ¿Qué acontecimiento borró una era entera entre dos estratos contiguos? |
+| P047 | Oren Bitácora | Analista de algoritmos de la Casa de los Índices | Complejidad algorítmica y crecimiento del coste | Conciso, convierte disputas en problemas de tamaño de entrada y operaciones. | ¿Por qué el índice más rápido tarda más cuando se le pide encontrar un nombre? |
+| P048 | Vela Tis | Ecóloga de estuarios; aliada de la Liturgia de las Cuencas | Redes tróficas y ecología marina | Relacional, rara vez habla de una especie sin describir aquello de lo que depende. | ¿Qué organismo sostiene una cadena alimentaria que nadie ha observado completa? |
+| P049 | Mael Tersa | Historiador documental de la Casa de los Índices | Fuentes primarias, secundarias y crítica de procedencia | Cauto, pregunta quién creó el documento, cuándo y para responder a qué pregunta. | ¿Puede una copia tardía ser fuente primaria de una falsificación antigua? |
+
+| P050 | Nerea Vardal | Conservadora de manuscritos de la Casa de los Índices | Paleografía, palimpsestos y datación de materiales | Minuciosa, estratifica tintas, soportes y manos sin reducirlos a una sola fecha. | ¿Qué texto permanece bajo el folio que el archivo declara limpio? |
+| P051 | Edrik Senn | Vulcanólogo de la Meseta de Ors | Vulcanología, magma y procesos eruptivos | Directo, distingue observación geológica de explicación sagrada. | ¿Por qué un informe sobre una erupción está fechado antes de su nacimiento? |
+| P052 | Sira Olt | Entomóloga de las Marismas | Entomología, desarrollo y metamorfosis | Irónica, etiqueta muestras con precisión y poca reverencia. | ¿Quién dejó larvas en un canal que los mapas declaran seco? |
+| P053 | Oren Tal | Espectroscopista del Observatorio de Nacarión | Espectroscopia, luz estelar y análisis astronómico | Sobrio, convierte el asombro en preguntas sobre señal, instrumento y modelo. | ¿Cómo puede llegar un espectro de una estrella que el observatorio ya no ve? |
+| P054 | Yara Belisar | Lingüista histórica de la Ciudad Inclinada | Cambio lingüístico, contacto y reconstrucción histórica | Comparativa, escucha parentescos sin confundir parecido con origen. | ¿Quién inventó una palabra que dos pueblos consideran heredada? |
+| P055 | Dovan Més | Anatomista de la Casa de Sal | Anatomía, circulación sanguínea e historia de la medicina | Clínico, dibuja recorridos y exige que cada flecha tenga un sentido. | ¿Por qué una copia anatómica añade una cámara al corazón? |
+| P056 | Iven Orv | Geocronólogo del Colegio de Medidores | Datación radiométrica e incertidumbre geológica | Cauto, no confunde una edad estimada con una fecha escrita en una crónica. | ¿Qué fecha pertenece a la roca y cuál al relato de quien la encontró? |
+| P057 | Calen Ral | Metalúrgico del Gremio de Sal y Vidrio | Metalurgia, microestructura y tratamientos térmicos | Técnico, prueba materiales y desconfía de adjetivos contractuales como irrompible. | ¿Puede una misma hoja ser frágil y resistente sin que ninguna descripción mienta? |
+| P058 | Sefra Urd | Matemática de la escuela de Varda | Aritmética, factorización y teoría de números | Paciente, rigurosa, distingue una demostración correcta de una atribución imposible. | ¿Cómo pudo una niña no nacida firmar una demostración válida? |
+| P059 | Ravel Quince | Restaurador de campanas y acústico | Resonancia, vibración y acústica de materiales | Sensorial, pero exige mediciones antes de aceptar una explicación sobrenatural. | ¿Qué sigue sonando cuando se desmonta aquello que debía vibrar? |
+| P060 | Hadria Morn | Climatóloga del Colegio de Medidores | Climatología, efecto invernadero y escalas temporales | Serena, separa tiempo meteorológico, variabilidad y tendencia climática. | ¿Por qué le piden una profecía cuando ha entregado series e incertidumbres? |
+| P061 | Pelia Ardan | Microbióloga de la Casa de Sal | Microbiología, bacterias, virus y enfermedades infecciosas | Clara, clasifica causas antes de discutir remedios y no acepta que toda fiebre sea contagio. | ¿Quién selló las placas antes de que existiera el laboratorio? |
+| P062 | La Copista de Fondo | Copista anónima de los estratos inferiores del archivo | Transmisión textual, anonimato y cosmología marpérica | Habla en condicional; evita atribuirse textos y deja preguntas donde otros ponen firmas. | ¿Es una persona, un oficio heredado o un nombre que oculta varias manos? |
+
 Las sectas discrepan sobre la autoridad de Marper, el significado de las Nueve Cenizas y la legitimidad del Tribunal. Ninguna debe ser presentada como la religión verdadera del mundo. Los profetas pueden acertar en su especialidad y equivocarse en teología, política o interpretación de los documentos.
 
 
@@ -84,3 +110,33 @@ Las sectas discrepan sobre la autoridad de Marper, el significado de las Nueve C
 | P038 | Lume de las Cuatro Resonancias | Oru-Mel, la Voz que Necesita un Oído | Sueña una composición que cambia al ser escuchada. |
 
 Los profetas no conocen necesariamente la naturaleza de aquello que veneran. La correspondencia es una afiliación doctrinal, no una prueba de contacto directo. Los nombres divinos varían según lengua, época y facción.
+
+
+## Red de especialistas incorporados en la ampliación v0.4
+
+Los nuevos personajes no forman sectas adicionales. Se integran en redes de colaboración, rivalidad y revisión con los ocho profetas y con los archivistas de la Concordia. Sus conocimientos se distribuyen en registros factuales independientes, mientras que sus biografías y disputas se narran en documentos de lore. La relación entre ambas capas queda explícita en los puentes B019–B041.
+
+
+## Ampliación de perfiles P050–P062
+
+Los perfiles P050–P061 corresponden a especialistas que ya protagonizan las fichas factuales F035–F046 y sus documentos L056–L067. P062, la Copista de Fondo, aparece en los documentos doctrinales L068–L073. La continuidad del registro exige mantener separados los datos externos de sus expedientes ficticios.
+
+
+## Especialistas del Palimpsesto y sus tradiciones (P063–P076)
+
+| ID | Personaje | Afiliación / oficio | Voz y propósito | Incertidumbre central |
+|---|---|---|---|---|
+| P063 | Saia de la Vela | Casa de los Índices; historia comparada de las religiones | Compara versiones, géneros y contextos; rechaza los cánones inventados a posteriori | ¿Por qué una de sus cajas contiene un relato que aún no ha sido escrito? |
+| P064 | Kaito Naru | Filólogo de la Casa de los Índices; textos japoneses clásicos | Distingue compilación, variante y tradición oral; nunca corrige una diferencia sin documentarla | ¿Quién añadió una tercera versión a un cotejo de dos obras reales? |
+| P065 | Menka Ra | Egiptóloga del Archivo de las Contradicciones | Lee papiros, fórmulas funerarias y objetos en su contexto histórico | ¿Por qué el mismo conjuro aparece en una tumba antes de ser compuesto? |
+| P066 | Maira Urd | Investigadora de patrimonio y ética documental; colaboradora de la Liturgia de las Cuencas | Respeta las voces comunitarias y distingue documentación de apropiación | ¿Quién autorizó la copia de un itinerario que nadie quiso publicar? |
+| P067 | Valen Kest | Farmacóloga de la Casa de Sal | Explica receptores, metabolitos y límites de inferencia sin convertir mecanismos en promesas | ¿Por qué una ficha de laboratorio contiene una metáfora antes que la medición? |
+| P068 | Teren Sol | Psiquiatra e investigador clínico; colaborador de los Hermanos de la Fiebre Contada | Separa mecanismo, evidencia clínica y decisión terapéutica | ¿Quién firmó una recomendación que él solo había redactado como hipótesis? |
+| P069 | Nerea Sal | Toxicóloga clínica de la Casa de Sal | Registra riesgos, incertidumbre y acontecimientos adversos; desconfía de las curas milagrosas | ¿Por qué los informes de seguridad llegan antes que las muestras? |
+| P070 | Ravel Tis | Neurofarmacólogo del Observatorio de Nacarión | Compara dianas moleculares y rechaza agrupar sustancias por semejanza subjetiva | ¿Qué receptor aparece en sus diagramas cuando el laboratorio está vacío? |
+| P071 | Iren Vard | Neurofarmacóloga de la Casa de Sal | Estudia transportadores de monoaminas y critica las etiquetas reduccionistas | ¿Quién convirtió una explicación neuroquímica en un lema de mercado? |
+| P072 | Oria Quince | Archivista de derechos y licencias de la Casa de los Índices | Distingue acceso, licencia, dominio público, atribución y obras derivadas | ¿Por qué una obra aparece catalogada como libre antes de publicarse? |
+| P073 | Talia Nueve | Metodóloga y bioestadística del Colegio de Medidores | Evalúa diseños, sesgos, independencia de fuentes y calidad de síntesis | ¿Cómo puede haber cuatrocientos testimonios y una sola fuente? |
+| P074 | Eren Vard | Historiador jurídico del Tribunal de las Actas Inconclusas | Compara tratados, listas y jurisdicciones sin confundir ley con ciencia | ¿Por qué un decreto local cita un tratado que aún no existe? |
+| P075 | Doria Senn | Filóloga clásica y especialista en religión griega | Sitúa mitos en autores, géneros y prácticas rituales concretas | ¿Quién atribuye a Orfeo un poema que solo existe en el archivo? |
+| P076 | Edda Vorn | Especialista en manuscritos nórdicos y crítica codicológica | Distingue fecha del manuscrito, antigüedad del poema, lagunas y transmisión | ¿Por qué una hoja perdida sigue apareciendo en copias posteriores? |
