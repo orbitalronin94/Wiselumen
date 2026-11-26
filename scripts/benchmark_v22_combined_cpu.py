@@ -97,10 +97,10 @@ def prepare_batches():
     physical = []
     for i in range(STEPS):
         group = micro[i * 8:(i + 1) * 8]
-        physical.append({
-            "input_ids": torch.cat([x["input_ids"] for x in group], dim=0),
-            "targets": torch.cat([x["targets"] for x in group], dim=0),
-        })
+        physical.append((
+            torch.cat([x[0] for x in group], dim=0),
+            torch.cat([x[1] for x in group], dim=0),
+        ))
     return micro, physical, {
         "corpus_v5_sha256": V5_SHA256,
         "corpus_v4_sha256": V4_SHA256,
@@ -148,13 +148,13 @@ def one_update(model, optimizer, ema, batches, global_step, amp_dtype=None):
     lr_scale = set_scheduled_lr(optimizer, global_step, warmup=10, total=30000)
     active = active_layers_for_step(global_step, "v22", len(model.blocks))
     losses = []
-    token_counts = [int(batch["targets"].ne(-100).sum()) for batch in batches]
+    token_counts = [int(batch[1].ne(-100).sum()) for batch in batches]
     total_tokens = sum(token_counts)
     if total_tokens <= 0:
         raise RuntimeError("effective batch contains no supervised tokens")
     for batch, token_count in zip(batches, token_counts):
-        ids = batch["input_ids"].to(dtype=torch.long)
-        targets = batch["targets"].to(dtype=torch.long)
+        ids = batch[0].to(dtype=torch.long)
+        targets = batch[1].to(dtype=torch.long)
         enabled = amp_dtype is not None
         with torch.autocast("cpu", dtype=amp_dtype or torch.float32, enabled=enabled):
             _, loss = model(ids, targets=targets, active_layers=active, return_logits=False)
