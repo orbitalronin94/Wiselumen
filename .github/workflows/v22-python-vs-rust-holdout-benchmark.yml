@@ -1,0 +1,112 @@
+name: LUMEN V2.2 — Python vs Rust holdout benchmark
+run-name: V2.2 Python vs Rust parity benchmark (step 10000)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: v22-python-vs-rust-holdout-benchmark
+  cancel-in-progress: false
+jobs:
+  paired-benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: orbitalronin94/WISE-RONIN
+          ref: d2981fdb01f18e88d2c46a7dc47daea6a6e7e3ea
+          path: oldrepo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Download exact V2.2 step-10000 checkpoint
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p v22
+          gh run download 45783991902 --repo orbitalronin94/Wiselumen --name lumen-v22-step-10000 --dir v22
+          test -s v22/lumen-v22-step-10000.pt
+          test -s v22/tokenizer-v22-derived.json
+      - name: Download frozen legacy holdout inputs
+        uses: actions/download-artifact@v4
+        with:
+          name: paired-v32-inputs-1000000-45782396142
+          path: oldinputs
+          repository: orbitalronin94/WISE-RONIN
+          run-id: 45782396142
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install CPU evaluation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0 numpy
+      - name: Compile Rust orchestration runner
+        run: cargo build --release --manifest-path rust-holdout/Cargo.toml
+      - name: Run paired Python and Rust-controlled evaluations
+        run: |
+          mkdir -p results/python results/rust
+          /usr/bin/time -f "%e" -o results/python/wall_seconds.txt \
+            python scripts/evaluate_v22_legacy_holdout.py \
+              --checkpoint v22/lumen-v22-step-10000.pt \
+              --tokenizer v22/tokenizer-v22-derived.json \
+              --system system_prompt_short.txt \
+              --mc-holdout oldinputs/eval/holdout_multiple_choice.jsonl \
+              --freeform-holdout oldrepo/data/freeform_identity_general_100.jsonl \
+              --out-dir results/python --step 10000 --threads 4
+          /usr/bin/time -f "%e" -o results/rust/wall_seconds.txt \
+            target/release/lumen-holdout \
+              --python python \
+              --script scripts/evaluate_v22_legacy_holdout.py \
+              --checkpoint v22/lumen-v22-step-10000.pt \
+              --tokenizer v22/tokenizer-v22-derived.json \
+              --system system_prompt_short.txt \
+              --mc-holdout oldinputs/eval/holdout_multiple_choice.jsonl \
+              --freeform-holdout oldrepo/data/freeform_identity_general_100.jsonl \
+              --out-dir results/rust --step 10000 --threads 4
+      - name: Compare exact outputs and timings
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, pathlib, hashlib
+          root = pathlib.Path("results")
+          report = {"checkpoint_step": 10000, "expected_mc_rows": 2431, "expected_freeform_rows": 100}
+          py_mc = root/"python/official_holdout_2431_v22_step10000.json"
+          rs_mc = root/"rust/official_holdout_2431_v22_step10000.json"
+          py_ff = root/"python/freeform_100_v22_step10000.json"
+          rs_ff = root/"rust/freeform_100_v22_step10000.json"
+          if all(p.exists() for p in (py_mc,rs_mc,py_ff,rs_ff)):
+              a,b,c,d = [json.loads(p.read_text()) for p in (py_mc,rs_mc,py_ff,rs_ff)]
+              report["python"] = {"correct":a["correct"],"scored":a["scored"],"accuracy":a["accuracy"],"mean_gold_answer_nll":a["mean_gold_answer_nll"]}
+              report["rust"] = {"correct":b["correct"],"scored":b["scored"],"accuracy":b["accuracy"],"mean_gold_answer_nll":b["mean_gold_answer_nll"]}
+              report["mc_predictions_identical"] = a["predictions"] == b["predictions"]
+              report["freeform_token_ids_identical"] = [x["token_ids"] for x in c["results"]] == [x["token_ids"] for x in d["results"]]
+              report["freeform_text_identical"] = [x["response"] for x in c["results"]] == [x["response"] for x in d["results"]]
+              report["input_hashes_match"] = all(a[k] == b[k] for k in ("holdout_sha256","tokenizer_sha256"))
+          else:
+              report["comparison_error"] = "One or more evaluator outputs are missing"
+          for mode in ("python","rust"):
+              p=root/mode/"wall_seconds.txt"
+              if p.exists(): report.setdefault("wall_seconds",{})[mode]=float(p.read_text().strip())
+          if "wall_seconds" in report and set(report["wall_seconds"]) == {"python","rust"}:
+              report["rust_over_python_speedup"] = report["wall_seconds"]["python"] / report["wall_seconds"]["rust"]
+          (root/"paired_benchmark_report.json").write_text(json.dumps(report,indent=2)+"\n")
+          print(json.dumps(report,indent=2))
+          if report.get("mc_predictions_identical") is False or report.get("freeform_token_ids_identical") is False:
+              raise SystemExit("Parity check failed: investigate output differences before interpreting speed.")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v22-python-vs-rust-holdout-step10000
+          path: results/
+          if-no-files-found: warn
+          retention-days: 90
