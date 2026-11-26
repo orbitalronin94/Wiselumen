@@ -2,7 +2,7 @@
 
 **Fecha de medición:** 26 de noviembre de 2026  
 **Repositorio:** `orbitalronin94/Wiselumen`  
-**Rama medida:** `lore/archivo-de-las-contradicciones`  
+**Rama medida:** `main`  
 **Versión:** v0.6  
 **Método:** tamaños exactos de los blobs Git del árbol de la rama; no estimaciones por caracteres.
 
@@ -17,7 +17,7 @@
 | Grafo v0.6 (manifiesto, nodos y matrices COO) | 17 | 9.175.032 | 9,175 |
 | Dataset curado v0.6 | 1 | 402.427 | 0,402 |
 | Mapa temático v0.3 | 1 | 34.238 | 0,034 |
-| Documentación principal | 13 | 185.076 | 0,185 |
+| Documentación principal | 14 | 185.076 | 0,185 |
 | **Total** | **37** | **37.680.918** | **37,681** |
 
 La suma incluye una sola copia del original, los cuatro shards del índice, el grafo completo y sus matrices, la semilla curada, el mapa de temas y la documentación principal. Excluye snapshots históricos v0.1–v0.5, código de construcción/validación, dependencias, workflows y artefactos de entrenamiento.
