@@ -1,0 +1,63 @@
+name: LUMEN V2.2 paired combined CPU benchmark from real step-20000 checkpoint
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-combined-cpu-real-20k.yml"
+      - "scripts/benchmark_v22_combined_cpu.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  paired-combined-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      TORCHINDUCTOR_FREEZING: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download exact step-20000 checkpoint
+        run: |
+          mkdir -p artifacts
+          gh run download 45812986256 --repo orbitalronin94/Wiselumen --name lumen-v22-step-20000 --dir artifacts
+          test -s artifacts/lumen-v22-step-20000.pt
+          sha256sum artifacts/lumen-v22-step-20000.pt
+      - name: Download frozen V5 corpus artifact
+        run: |
+          gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-artifact
+          find artifacts/v5-artifact -maxdepth 3 -type f -print
+          V5_ZIP="$(find artifacts/v5-artifact -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+          test -n "$V5_ZIP"
+          cp "$V5_ZIP" artifacts/wise-ronin-corpus-v5.0.0.zip
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Try installing IPEX matching runner PyTorch
+        continue-on-error: true
+        run: |
+          TORCH_VERSION="$(python -c 'import torch; print(torch.__version__.split("+")[0])')"
+          python -m pip install "intel-extension-for-pytorch==$TORCH_VERSION"
+      - name: Run paired 100-update benchmark
+        run: python scripts/benchmark_v22_combined_cpu.py
+      - name: Upload paired benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-combined-cpu-real-step20000
+          path: |
+            artifacts/combined_cpu_benchmark.json
+          if-no-files-found: warn
+          retention-days: 90
