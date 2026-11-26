@@ -62,3 +62,20 @@ El mapa temático asigna todos los módulos a especialistas, pero no todos dispo
 - `data/palimpsesto_index_v0.1_part1.jsonl` a `part4.jsonl`: índice completo de las 16.848 revelaciones.
 - `corpus/PALIMPSESTO_AUDIT.md`: auditoría del documento original.
 - `corpus/graph_v0.4.json`: grafo anterior, pendiente de reconstrucción sobre v0.5.
+
+
+## Peso del Corpus Maestro v0.5
+
+Medición del árbol Git de la rama, contando una sola vez el original y los artefactos activos del corpus (37 archivos): **36.826.404 bytes = 36,83 MB decimales = 35,12 MiB**.
+
+| Componente | Archivos | Bytes | Peso decimal |
+|---|---:|---:|---:|
+| Palimpsesto original | 1 | 20.401.800 | 20,402 MB |
+| Índice de las 16.848 revelaciones | 4 | 7.482.345 | 7,482 MB |
+| Grafo v0.5 (manifiesto, nodos y matrices) | 17 | 8.545.185 | 8,545 MB |
+| Semilla curada v0.5 | 1 | 200.668 | 0,201 MB |
+| Mapa de 41 módulos | 1 | 29.567 | 0,030 MB |
+| Documentación de corpus y lore | 13 | 166.839 | 0,167 MB |
+| **Total** | **37** | **36.826.404** | **36,826 MB** |
+
+El peso incluye el archivo fuente, el índice completo, los registros curados, el mapa temático, el grafo y la documentación principal. No incluye snapshots históricos v0.3/v0.4, código del proyecto ni dependencias. El texto fuente no se duplica dentro del índice ni del grafo.
