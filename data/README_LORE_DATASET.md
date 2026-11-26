@@ -2,7 +2,7 @@
 
 ## Semilla 0.2
 
-Archivo: lore_seed_v0.1.jsonl  
+Archivo: lore_seed_v0.2.jsonl  
 Formato: JSONL UTF-8, un objeto por línea.  
 Registros: 69  
 - 23 factuales limpios.
