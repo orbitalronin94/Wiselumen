@@ -1,0 +1,63 @@
+name: LUMEN CPU backward compile benchmark (10 steps)
+on:
+  push:
+    branches:
+      - bench/backward-compile-10step
+    paths:
+      - "Model.py"
+      - "scripts/benchmark_v22_combined_cpu.py"
+      - ".github/workflows/benchmark-v22-backward-10step.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: lumen-backward-compile-10step
+  cancel-in-progress: true
+jobs:
+  paired-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      TORCHINDUCTOR_FREEZING: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download exact step-20000 checkpoint
+        run: |
+          mkdir -p artifacts
+          gh run download 45812986256 --repo orbitalronin94/Wiselumen --name lumen-v22-step-20000 --dir artifacts
+          test -s artifacts/lumen-v22-step-20000.pt
+          sha256sum artifacts/lumen-v22-step-20000.pt
+      - name: Download frozen V5 corpus
+        run: |
+          mkdir -p artifacts/v5-artifact
+          gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-artifact
+          V5_ZIP="$(find artifacts/v5-artifact -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+          test -n "$V5_ZIP"
+          cp "$V5_ZIP" artifacts/wise-ronin-corpus-v5.0.0.zip
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  artifacts/wise-ronin-corpus-v5.0.0.zip" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Run paired 10-step backward benchmark
+        run: python scripts/benchmark_v22_combined_cpu.py
+      - name: Upload benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-backward-compile-10step
+          path: artifacts/combined_cpu_benchmark.json
+          if-no-files-found: warn
+          retention-days: 30
