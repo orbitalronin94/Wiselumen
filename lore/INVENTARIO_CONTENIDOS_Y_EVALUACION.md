@@ -575,3 +575,6 @@ La semilla vigente `data/lore_seed_v0.5.jsonl` contiene **259 registros**: 65 fa
 El mapa `data/palimpsesto_topic_map_v0.2.jsonl` relaciona cada tema con sus revelaciones fuente, personaje responsable, fichas factuales, documentos de lore y puentes. Las adaptaciones conservan `source_topics` y el SHA del blob original. El grafo v0.5 incorpora una relación directa `adapted_from` desde cada documento adaptado hacia todas las revelaciones de su tema.
 
 La nueva capa distingue mitología externa, historia cultural, hipótesis farmacológicas y ficción de la Concordia. Soma y Eleusis permanecen como cuestiones no resueltas; la documentación ritual se atribuye a contextos comunitarios; los relatos personales no se presentan como evidencia clínica. Las afirmaciones originales del Palimpsesto continúan sujetas a auditoría factual individual.
+
+
+**Grafo v0.5 validado:** 17.769 nodos, 72.128 relaciones dirigidas, 21 matrices COO, 18.958 enlaces directos `adapted_from`, cinco shards de nodos y cero referencias sin resolver. La ejecución CI 45890035441 terminó correctamente; el estado es `complete_structural_index`, con auditoría factual individual del Palimpsesto aún pendiente.
