@@ -103,7 +103,7 @@ def validate(manifest_path,require_complete=False):
     errors.append(f"{node.get('id')}: unknown Palimpsest source topic {topic!r}")
     continue
    for source_id in topic_to_ids[topic]:
-    expected_pairs.add((id_to_index[node["id"]],id_to_index[f"palimpsest:{source_id}"]))
+    expected_pairs.add((id_to_index[node["id"]],id_to_index[source_id]))
  adapt_spec=graph.get("matrices",{}).get("adapted_from")
  if adapt_spec is None:
   errors.append("missing adapted_from matrix")
