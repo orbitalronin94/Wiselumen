@@ -130,3 +130,16 @@ Los nuevos documentos no convierten a estos personajes en portavoces omnisciente
 - **Dovan Més** y **Hadria Morn** colaboran con la Casa de Sal en anatomía y climatología, separando observación, escala temporal e inferencia.
 - **Calen Ral** aporta ciencia de materiales a Tovan de los Arcos; **Sefra Urd** enseña demostración y factorización junto a Uldren Siete-Tizas; **Ravel Quince** contrasta con Lume las explicaciones físicas y litúrgicas del sonido.
 - **La Copista de Fondo** no tiene afiliación confirmada. Puede ser una persona, una función archivística o una firma colectiva. No debe convertirse en narradora omnisciente.
+
+
+## Red de peritos del Palimpsesto
+
+Los nuevos especialistas no constituyen una novena secta ni una autoridad colectiva. Se distribuyen entre la Casa de los Índices, la Casa de Sal, el Tribunal, el Colegio de Medidores y colaboradores independientes. Sus documentos amplían las voces que interpretan los 41 módulos del Palimpsesto:
+
+- Saia de la Vela, Doria Senn y Edda Vorn trabajan con crítica de fuentes para tradiciones griegas, egipcias, japonesas y nórdicas. No tratan las mitologías como relatos uniformes ni como historia literal.
+- Maira Urd estudia patrimonio y ética documental; su trabajo impide convertir prácticas culturales vivas en simple decoración del mundo ficticio.
+- Valen Kest, Teren Sol, Nerea Sal, Ravel Tis e Iren Vard separan farmacología, toxicología, evidencia clínica y metáforas marpéricas. No escriben instrucciones de consumo ni presentan sustancias como curas.
+- Oria Quince y Eren Vard separan licencia, copyright, acceso, fiscalización y jurisdicción.
+- Talia Nueve recuerda que repetir una fuente no produce corroboración independiente.
+
+Cada personaje puede equivocarse, discutir con su disciplina o rechazar la interpretación de su propia secta. La ficha factual y el documento narrativo enlazado permanecen separados.
