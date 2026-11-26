@@ -577,3 +577,8 @@ El archivo `data/palimpsesto_topic_map_v0.2.jsonl` asigna los **41 módulos** de
 La adaptación se documenta en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md`. La nueva versión del grafo incorpora relaciones explícitas entre cada tema, su curador y los documentos que lo contextualizan. Las proyecciones de coaparición siguen calculándose solo sobre registros curados, nunca sobre las repeticiones del original.
 
 **Estado epistemológico:** integridad estructural del índice, sí; auditoría factual exhaustiva de las 16.848 revelaciones, no. Los textos sobre sustancias se mantienen no operativos y las afirmaciones terapéuticas, biográficas y etnográficas no se elevan a hechos sin fuentes adecuadas.
+
+
+### Peso medido v0.5
+
+El conjunto activo de archivos del Corpus Maestro (original + índices + semilla + mapa + grafo + documentación) ocupa **36.826.404 bytes (36,83 MB; 35,12 MiB)** en 37 archivos. El original ocupa 20.401.800 bytes; el índice 7.482.345; el grafo 8.545.185; la semilla 200.668; el mapa 29.567; la documentación 166.839 bytes. Se excluyen snapshots históricos y código.
