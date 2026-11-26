@@ -96,3 +96,31 @@ La versión v0.4 se almacena como un manifiesto (`corpus/graph_v0.4.json`), cuat
 La cobertura incluye los 160 registros curados de v0.4 y 16.848 registros fuente del Palimpsesto. El grafo contiene 17.479 nodos y 51.907 relaciones dirigidas principales. Las matrices de proyección por personaje, lugar y dominio se calculan solo sobre los registros curados: indican coaparición, no causalidad, dependencia ni acuerdo. Las revelaciones fuente se conectan con su tema y con el nodo de procedencia, pero no se convierten automáticamente en afirmaciones factuales validadas.
 
 El estado `complete_structural_index` significa que cada revelación está indexada por ID, tema y rango de líneas. No significa que las afirmaciones del Palimpsesto hayan superado una auditoría factual individual.
+
+
+## Versión v0.6: adaptación completa por módulo
+
+El manifiesto vigente es `corpus/graph_v0.6.json`. Se construye desde `data/lore_seed_v0.6.jsonl`, los cuatro índices de las 16.848 revelaciones y `data/palimpsesto_topic_map_v0.3.jsonl`. Cada uno de los 41 nodos temáticos enlaza con su curador, sus fichas factuales disponibles, un expediente narrativo dedicado y un puente epistemológico dedicado.
+
+Las relaciones temáticas nuevas son `curated_by_character`, `topic_linked_fact`, `topic_adapted_as_lore` y `topic_separated_by_bridge`. Las dos últimas deben cubrir al menos 41 pares tema-documento. El grafo conserva las relaciones como matrices COO dispersas y las proyecciones compartidas siguen calculándose solo sobre registros curados.
+
+La validación de mapa compara los 41 extractos fuente con el archivo original, comprueba la primera revelación, el número de repeticiones y los IDs de los 41 expedientes y 41 puentes. La validación de grafo comprueba dimensiones, índices, pesos, coordenadas duplicadas, secuencia PM00001–PM16848, enlaces y cobertura estructural.
+
+**Límite:** 41/41 módulos adaptados narrativamente no significa que 41/41 afirmaciones históricas, mitológicas o farmacológicas estén verificadas. Tres módulos siguen sin ficha factual específica; otros tienen solo una relación factual contextual. El grafo distingue la estructura de la fuente de la verdad externa de sus afirmaciones.
+
+
+## Métricas verificadas del grafo v0.6
+
+El grafo vigente se declara `complete_structural_index` y cubre los 289 registros curados, los 16.848 IDs de revelación y los 41 temas del mapa v0.3. Contiene **17.861 nodos**, **53.747 relaciones principales**, **23 matrices** y **cero referencias internas sin resolver**. Todas las matrices comparten dimensiones de 17.861 × 17.861 y se almacenan en COO disperso; las relaciones de baja frecuencia se agrupan en `remaining_relations.coo.jsonl` para reducir fragmentación.
+
+Las 23 relaciones/proyecciones son:
+
+- `asserts_claim` (302), `authored_by` (289), `curated_by_character` (41), `has_domain` (289), `mentions_character` (512), `references_record` (501), `topic_adapted_as_lore` (82), `topic_linked_fact` (39), `topic_separated_by_bridge` (80), `uses_form` (289).
+- `belongs_to_sect` (90), `derived_from` (16.848), `has_record_class` (129), `has_topic` (16.848), `has_topic_group` (16.848), `has_truth_scope` (212), `invokes_deity` (90), `located_at` (122), `presented_by` (11), `supported_by_source` (125).
+- `projection_shared_character` (7.636), `projection_shared_domain` (3.650), `projection_shared_place` (1.852).
+
+El manifiesto es `corpus/graph_v0.6.json`; los nodos y matrices están fragmentados bajo `corpus/graph_v0.6/`. La validación CI [45890899168](https://github.com/orbitalronin94/Wiselumen/actions/runs/45890899168) reconstruyó el índice y el grafo, validó los 16.848 registros fuente y terminó en **GRAPH VALID**.
+
+El tamaño del grafo (manifiesto + nodos + matrices) es **9.175.032 bytes**. El paquete activo completo v0.6 pesa **37.669.729 bytes (37,67 MB / 35,92 MiB)** en 37 archivos; véase [medición exacta](PAQUETE_CORPUS_MAESTRO_v0.6.md).
+
+La integridad estructural no certifica la verdad de cada afirmación del Palimpsesto. El grafo conserva procedencia y relaciones; no convierte repeticiones en corroboración ni coapariciones en causalidad.
