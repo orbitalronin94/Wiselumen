@@ -121,3 +121,13 @@ Primero corrección y reproducibilidad; después benchmark. No se atribuyen mult
 ### Pendiente deliberadamente
 
 Muon no se activa ni se incorpora todavía: la implementación de Newton–Schulz del borrador necesita validación numérica y benchmark CPU antes de ser una opción fiable. TokenDrop real, loader V4 y benchmark comparativo tampoco están implementados aquí. No se usa conversión de bytes a IDs ni fallback sintético para el corpus V4.
+
+
+## V2.2 — supervisión conversacional (parcial, sin activar aún)
+
+- `Model.py` acepta etiquetas `-100`: las posiciones de system/user/padding quedan fuera de la CE y de la loss experimental. El filtrado ocurre antes de `gather()`, evitando índices inválidos.
+- `system_prompt_short.txt` contiene el prompt compacto de fase A. Su longitud real en tokens debe medirse con el tokenizer final; el número de palabras no equivale a tokens.
+- `SYSTEM_PROMPT_LUMEN_V2.1.md` conserva el prompt completo para la fase B.
+- El formato de conversación y los IDs especiales aún no se activan. El tokenizer V4 congelado debe inspeccionarse primero: si ya ocupa los 8.192 IDs, no se pueden reservar 8 IDs finales sin derivar un tokenizer compatible y actualizar su hash. No se altera ni se remapea silenciosamente el tokenizer V4.
+- El corpus V4 contiene campos `prompt` y `completion`; su conversión a user/assistant debe pasar por una comprobación de semántica y procedencia antes de entrenar. No se crean ejemplos de conflicto artificiales mezclándolos a ciegas con el corpus.
+- La prueba de identidad 9/10 queda como evaluación posterior a SFT, no como requisito de preflight sobre pesos aleatorios ni como promesa de resultado tras 500 pasos.
