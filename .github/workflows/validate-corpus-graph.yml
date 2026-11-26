@@ -1,35 +1,47 @@
-name: Validate corpus graph
+name: Build and validate Corpus Master graph
 
 on:
-  pull_request:
-    paths:
-      - "data/lore_seed_*.jsonl"
-      - "corpus/**"
-      - ".github/workflows/validate-corpus-graph.yml"
   push:
     branches:
-      - main
       - lore/archivo-de-las-contradicciones
+      - main
     paths:
+      - "Marper-Codice-Juntado (1).txt"
       - "data/lore_seed_*.jsonl"
+      - "data/palimpsesto_index_*.jsonl"
       - "corpus/**"
+      - "lore/**"
       - ".github/workflows/validate-corpus-graph.yml"
+
+permissions:
+  contents: write
 
 jobs:
   graph:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Rebuild Palimpsest index
+      - name: Validate curated dataset
+        run: python data/validate_lore_dataset.py data/lore_seed_v0.4.jsonl
+      - name: Rebuild complete revelation index
         run: python corpus/index_palimpsesto.py
-      - name: Rebuild Palimpsest index
-        run: python corpus/index_palimpsesto.py
-      - name: Rebuild sparse graph
+      - name: Build sparse matrix graph
         run: python corpus/build_graph.py
-      - name: Validate graph invariants
-        run: python corpus/validate_graph.py --require-complete --require-complete
-      - name: Ensure generated graph is committed
-        run: git diff --exit-code -- data/palimpsesto_index_v0.1_part*.jsonl
+      - name: Validate graph and all 16,848 source records
+        run: python corpus/validate_graph.py corpus/graph_v0.4.json --require-complete
+      - name: Commit generated index and graph shards
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/palimpsesto_index_v0.1_part*.jsonl corpus/graph_v0.4.json corpus/graph_v0.4/
+          if git diff --cached --quiet; then
+            echo "Generated index and graph are already current."
+          else
+            git commit -m "Build Corpus Master v0.4 matrix graph"
+            git push origin "${{ github.ref_name }}"
+          fi
