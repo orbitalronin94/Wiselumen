@@ -597,3 +597,8 @@ El mapa canónico pasa a `data/palimpsesto_topic_map_v0.3.jsonl`: 41 módulos, 1
 - Validador de extractos y mapa: `corpus/validate_topic_map.py`
 
 El grafo v0.6 solo se considerará completo cuando la CI reconstruya sus shards y pase tanto la validación del mapa como la validación de todas las matrices COO. La cobertura estructural no certifica la verdad de cada afirmación del texto original.
+
+
+### Peso y validación v0.6
+
+El grafo v0.6 validado por GitHub Actions (run `45890899168`) contiene 17.861 nodos, 53.747 relaciones principales, 23 matrices COO y cero enlaces internos sin resolver. El paquete canónico de datos y grafo ocupa 37.495.842 bytes (37,496 MB / 35,758 MiB): original 20.401.800; índices 7.482.345; semilla 402.427; mapa 34.238; grafo 9.175.032. El contenido textual principal (original + semilla) ocupa 20.804.227 bytes. El conjunto activo con documentación y herramientas alcanza aproximadamente 37,70 MB en 43 archivos.
