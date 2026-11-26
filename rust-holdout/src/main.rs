@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{env, fs, path::Path, time::Instant};
-use tch::{CModule, Device, Kind, Tensor};
+use tch::{CModule, Device, IValue, Kind, Tensor};
 use tokenizers::Tokenizer;
 
 const BOS: u32 = 8190;
@@ -66,16 +66,45 @@ fn candidate_nll(model: &CModule, tok: &Tokenizer, prefix: &[u32], choice: &Valu
     let selected = logp.gather(1, &target, false);
     Ok(-selected.mean(Kind::Float).double_value(&[]))
 }
-fn generate(model: &CModule, tok: &Tokenizer, prefix: &[u32], max_len: usize, max_new: usize, eos: u32, pad: u32) -> Result<(String, Vec<u32>)> {
+fn cached_forward(model: &CModule, ids: &[u32], cache_k: Tensor, cache_v: Tensor, position: usize) -> Result<(Tensor, Tensor, Tensor)> {
+    let v: Vec<i64> = ids.iter().map(|&x| x as i64).collect();
+    let input = Tensor::from_slice(&v).to_device(Device::Cpu).view([1, v.len() as i64]);
+    let result = model.method_is("forward_cached", &[
+        IValue::Tensor(input), IValue::Tensor(cache_k), IValue::Tensor(cache_v),
+        IValue::Int(position as i64)
+    ])?;
+    match result {
+        IValue::Tuple(mut values) if values.len() == 3 => {
+            let logits = match values.remove(0) { IValue::Tensor(t) => t, _ => return Err(anyhow!("cached forward returned non-tensor logits")) };
+            let ck = match values.remove(0) { IValue::Tensor(t) => t, _ => return Err(anyhow!("cached forward returned non-tensor K cache")) };
+            let cv = match values.remove(0) { IValue::Tensor(t) => t, _ => return Err(anyhow!("cached forward returned non-tensor V cache")) };
+            Ok((logits, ck, cv))
+        }
+        other => Err(anyhow!("unexpected cached forward return: {:?}", other)),
+    }
+}
+fn generate(model: &CModule, tok: &Tokenizer, prefix: &[u32], max_len: usize, max_new: usize,
+            eos: u32, pad: u32, timing: &mut Timings) -> Result<(String, Vec<u32>)> {
+    let context = if prefix.len() > max_len { &prefix[prefix.len()-max_len..] } else { prefix };
+    let mut cache_k = Tensor::zeros([8,1,8,max_len as i64,64], (Kind::Float,Device::Cpu));
+    let mut cache_v = Tensor::zeros([8,1,8,max_len as i64,64], (Kind::Float,Device::Cpu));
+    let t = Instant::now();
+    let (mut logits, ck, cv) = cached_forward(model, context, cache_k, cache_v, 0)?;
+    timing.freeform_prefill_seconds += t.elapsed().as_secs_f64();
+    cache_k = ck; cache_v = cv;
     let mut generated = Vec::new();
-    for _ in 0..max_new {
-        let mut ids = prefix.to_vec();
-        ids.extend_from_slice(&generated);
-        let logits = forward(model, &ids, max_len)?;
+    for step in 0..max_new {
         let last = logits.get(0).get(logits.size()[1]-1);
         let next = last.argmax(0, false).int64_value(&[]) as u32;
         if next == eos || next == pad || next == END_ASSISTANT { break; }
         generated.push(next);
+        if step + 1 >= max_new || context.len() + generated.len() >= max_len { break; }
+        let t = Instant::now();
+        let (next_logits, ck, cv) = cached_forward(model, &[next], cache_k, cache_v, context.len()+generated.len()-1)?;
+        timing.freeform_decode_seconds += t.elapsed().as_secs_f64();
+        timing.generation_forward_calls += 1;
+        logits = next_logits;
+        cache_k = ck; cache_v = cv;
     }
     let answer = tok.decode(&generated, true).map_err(|e| anyhow!("tokenizer decode: {e}"))?.trim().to_string();
     Ok((answer, generated))
@@ -171,7 +200,7 @@ fn main() -> Result<()> {
         for (n,row) in free.iter().enumerate() {
             let prompt = text(&row["prompt"]);
             let p = prefix(&tok,&system_ids,&prompt)?;
-            let (response,token_ids)=generate(&model,&tok,&p,max_len,max_new,eos,pad)?;
+            let (response,token_ids)=generate(&model,&tok,&p,max_len,max_new,eos,pad,&mut timing)?;
             free_results.push(json!({"id":row.get("id").cloned().unwrap_or(json!(n+1)),"source":row.get("source").cloned().unwrap_or(Value::Null),"prompt":prompt,"response":response,"token_ids":token_ids}));
             if (n+1)%10==0 { println!("rust_freeform_progress {}/100",n+1); }
         }
