@@ -197,9 +197,9 @@ def one_update(model, optimizer, ema, batches, global_step, amp_dtype=None):
 
 
 def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
-    # Keep inter-op fixed at 1; compare main's intra-op=4 against candidate 1:1.
+    # Both arms use identical intra-op=1 and inter-op=1 thread settings.
     cpu_runtime = configure_cpu_runtime(
-        threads=1 if candidate else 4, interop_threads=1
+        threads=1, interop_threads=1
     )
     setup_started = time.perf_counter()
     model, optimizer, ema, fused_status = load_arm(checkpoint, fused=candidate)
@@ -299,7 +299,7 @@ def main():
         print(subprocess.check_output(["lscpu"], text=True), flush=True)
     except Exception:
         pass
-    print("cpu_runtime_initial", configure_cpu_runtime(threads=4, interop_threads=1), flush=True)
+    print("cpu_runtime_initial", configure_cpu_runtime(threads=1, interop_threads=1), flush=True)
     ckpt_path = Path("artifacts/lumen-v22-step-20000.pt")
     if not ckpt_path.exists():
         raise FileNotFoundError(ckpt_path)
