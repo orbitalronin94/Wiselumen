@@ -61,8 +61,12 @@ El mapa temático asigna todos los módulos a especialistas, pero no todos dispo
 - `data/palimpsesto_topic_map_v0.2.jsonl`: mapa de los 41 módulos.
 - `data/palimpsesto_index_v0.1_part1.jsonl` a `part4.jsonl`: índice completo de las 16.848 revelaciones.
 - `corpus/PALIMPSESTO_AUDIT.md`: auditoría del documento original.
-- `corpus/graph_v0.4.json`: grafo anterior, pendiente de reconstrucción sobre v0.5.
+- `corpus/graph_v0.5.json`: grafo anterior, pendiente de reconstrucción sobre v0.5.
 
+
+## Grafo v0.5 reconstruido
+
+El grafo actualizado contiene **17.688 nodos**, **52.591 relaciones principales**, **23 matrices** y **cero referencias internas sin resolver**. Los 41 nodos temáticos enlazan con su curador y con los registros factuales, narrativos y de separación epistemológica disponibles. El índice de las 16.848 revelaciones queda conectado al Palimpsesto original. El manifiesto está en `corpus/graph_v0.5.json`; los cinco fragmentos de nodos y las matrices COO están en `corpus/graph_v0.5/`.
 
 ## Peso del Corpus Maestro v0.5
 
