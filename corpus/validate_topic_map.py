@@ -17,7 +17,7 @@ def main():
     errors = []
     ids = {r["id"] for r in records}
     people_text = people_path.read_text(encoding="utf-8")
-    character_ids = set(re.findall(r"^\\| (P\\d{3}) \\|", people_text, flags=re.M))
+    character_ids = set(re.findall(r"^\| (P\d{3}) \|", people_text, flags=re.M))
     names = [r.get("topic") for r in topics]
     if len(topics) != 41:
         errors.append(f"expected 41 topic mappings, got {len(topics)}")
