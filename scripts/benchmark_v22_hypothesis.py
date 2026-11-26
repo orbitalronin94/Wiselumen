@@ -6,8 +6,14 @@ Only CPU thread settings and the explicitly named backend hypothesis vary.
 import json
 import os
 import random
+import sys
 import time
 from pathlib import Path
+
+# GitHub executes this file from scripts/; make the repository root importable.
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import torch
 
