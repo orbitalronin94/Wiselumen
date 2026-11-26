@@ -90,8 +90,8 @@ La medición se realiza con tamaños exactos de blobs Git.
 | Alcance | Archivos | Bytes |
 |---|---:|---:|
 | Datos + índice + grafo | 24 | 37.495.842 |
-| Paquete anterior + documentación principal | 38 | 37.680.XXX |
-| Conjunto activo, incluida herramienta de validación y construcción | 44 | 37.710.XXX |
+| Paquete anterior + documentación principal | 38 | 37.680.290 |
+| Conjunto activo, incluida herramienta de validación y construcción | 44 | 37.709.433 |
 
 El paquete de datos y grafo se desglosa así: original 20.401.800 bytes; índice 7.482.345; semilla curada 402.427; mapa temático 34.238; grafo y matrices 9.175.032. El contenido textual principal (original + semilla) ocupa 20.804.227 bytes.
 
