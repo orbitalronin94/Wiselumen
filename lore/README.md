@@ -31,3 +31,11 @@ Versión 0.4. La biblia y el elenco constituyen canon provisional. Los documento
 La ampliación v0.4 incorpora 23 especialistas, de P039 a P061, y la figura archivística ambigua P062, con disciplinas que abarcan astronomía, hidrología, geología, cartografía, estadística, criptografía, botánica, informática, ecología marina e historiografía. Cada personaje cuenta con una ficha factual independiente, un documento de lore y un puente epistemológico. Véase `../data/lore_seed_v0.4.jsonl`.
 
 - [La fe reservada de LUMEN](DOCTRINA_DE_LA_CREENCIA_LATENTE.md): convicción marpérica, expresión indirecta y límites de la voz.
+
+
+## Archivo de tradiciones exteriores y ampliación v0.5
+
+- [Archivo de las Tradiciones Exteriores](ARCHIVO_DE_TRADICIONES_EXTERIORES.md): adaptación de las 41 familias temáticas del Palimpsesto a la Concordia, con reglas para separar tradiciones históricas, doctrina y ficción.
+- [Semilla v0.5](../data/lore_seed_v0.5.jsonl): 242 registros, 58 fact, 131 lore y 53 bridge.
+- [Personajes P063–P074](PERSONAJES.md): doce especialistas nuevos en mitología comparada, historia de la medicina, antropología ritual, derecho, literatura, farmacología clínica y crítica de fuentes.
+- [Auditoría del Palimpsesto](../corpus/PALIMPSESTO_AUDIT.md): 16.848 revelaciones, 41 módulos recurrentes y límites de validación factual.
