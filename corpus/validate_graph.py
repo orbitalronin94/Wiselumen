@@ -22,7 +22,7 @@ def validate(manifest_path,require_complete=False):
  if len(ids)!=len(set(ids)): errors.append("duplicate node IDs")
  if ids!=sorted(ids): errors.append("node shards are not globally sorted by id")
  if len(nodes)!=graph.get("node_count"): errors.append("node_count mismatch")
- n=len(nodes); known=set(ids); id_by_index=ids
+ n=len(nodes); known=set(ids); id_by_index=ids; id_to_index={node_id:i for i,node_id in enumerate(ids)}
  if graph.get("unresolved_record_links"): errors.append(f"{len(graph['unresolved_record_links'])} unresolved record links")
 
  source_records=[x for x in nodes if x.get("type")=="source_record"]
@@ -119,7 +119,7 @@ def validate(manifest_path,require_complete=False):
     errors.append(f"{node['id']}: unknown source topic {topic}")
     continue
    for source_id in source_by_topic[topic]:
-    expected_pairs.add((id_by_index.index(node["id"]),id_by_index.index(source_id)))
+    expected_pairs.add((id_to_index[node["id"]],id_to_index[source_id]))
  adapt_spec=graph.get("matrices",{}).get("adapted_from")
  if adapt_spec is None:
   errors.append("missing adapted_from matrix")
