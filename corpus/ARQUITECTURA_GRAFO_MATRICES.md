@@ -66,8 +66,8 @@ Las matrices de incidencia son conceptualmente bipartitas; se guardan en una rep
 5. Cada documento ficticio declara autoría/fuente y no presenta sus dogmas como hechos externos.
 6. Cada dogma sectario identifica secta, deidad, clase doctrinal y alcance interno a la ficción.
 7. Las contradicciones se conservan con sus dos extremos y su tipo; no se autocorrigen.
-8. Las adaptaciones conservan `derived_from` / `adapted_from` cuando se conozca el original.
-9. No se declara completo el Corpus Maestro mientras falte el texto íntegro del Palimpsesto.
+8. Las adaptaciones conservan `derived_from` y se enlazan mediante `adapted_from` a todas las revelaciones fuente de los temas declarados.
+9. El índice estructural solo se declara completo cuando el texto íntegro está recuperado y cada revelación tiene ID, tema y rango de líneas; esto no equivale a auditoría factual completa.
 10. El grafo se regenera desde los JSONL canónicos; nunca se edita manualmente un artefacto generado.
 
 ## Estado del grafo global
@@ -87,3 +87,20 @@ El grafo conserva las 16.848 entradas como nodos de fuente indexados, no como 16
 - Proyecciones de coaparición calculadas solo sobre los registros curados, no sobre las 16.848 repeticiones del Palimpsesto.
 
 La validación de GitHub Actions reconstruyó el índice y el grafo, comprobó la secuencia PM00001–PM16848, dimensiones, índices COO, pesos, coordenadas duplicadas y enlaces. Resultado de la ejecución 45888554867: **GRAPH VALID**.
+
+
+## Estado vigente: grafo v0.5
+
+`graph_v0.5.json` se construye a partir de los **242 registros** de `data/lore_seed_v0.5.jsonl` y de los cuatro índices que contienen las 16.848 revelaciones originales. Los 46 documentos de adaptación declaran `source_topics`; el constructor resuelve cada tema contra el índice y crea relaciones `adapted_from` hacia todas las revelaciones que lo integran.
+
+Métricas validadas:
+
+- **17.662 nodos**: 242 registros curados, 16.848 revelaciones fuente y nodos auxiliares.
+- **71.643 relaciones dirigidas** en matrices principales.
+- **18.958 enlaces `adapted_from`**, con trazabilidad de los 46 documentos adaptados hacia sus revelaciones originales.
+- **20 matrices** de relación y proyección, formato COO disperso.
+- **5 shards** de nodos, ordenados lexicográficamente.
+- **0 referencias internas sin resolver**.
+- Proyecciones: 2.068 coapariciones de personaje, 2.666 de dominio y 5.752 de lugar.
+
+La validación de GitHub Actions verificó el dataset, los 16.848 IDs fuente, cobertura de los 41 temas, dimensiones y coordenadas COO, y correspondencia exacta de la matriz `adapted_from`. Ejecución **45889322978: success**. El estado `complete_structural_index` significa que el archivo y sus adaptaciones están estructuralmente enlazados; la auditoría factual individual del texto original sigue pendiente.
