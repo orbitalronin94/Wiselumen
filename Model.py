@@ -1,87 +1,113 @@
-
-# LUMEN V2 - picado a mano, bloque a bloque
-# Sin transformers, sin magia. Solo torch.
-# Trucos: Top-K esparso, excitabilidad CREB, scaling homeostatico, 2 LRs
+# LUMEN V2 — arquitectura experimental implementada en PyTorch.
+# Mantiene: RoPE, RMSNorm, SwiGLU, Top-K, excitabilidad y loss experimental.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
+
 
 class RMSNorm(nn.Module):
-    def __init__(self, d):
+    def __init__(self, dim, eps=1e-6):
         super().__init__()
-        self.w = nn.Parameter(torch.ones(d))
+        self.weight = nn.Parameter(torch.ones(dim))
+        self.eps = eps
+
     def forward(self, x):
-        # RMSNorm: mas rapido que LayerNorm, estabiliza LR agresivo
-        r = torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + 1e-6)
-        return x * r * self.w
+        rms = torch.rsqrt(x.float().pow(2).mean(dim=-1, keepdim=True) + self.eps)
+        return (x * rms.to(dtype=x.dtype)) * self.weight
+
 
 class RoPE:
-    # RoPE picado a mano, sin libreria
-    def __init__(self, d_head, max_len=2048):
-        inv = 1.0 / (10000 ** (torch.arange(0, d_head, 2).float() / d_head))
-        pos = torch.arange(max_len).float()
-        freqs = torch.outer(pos, inv)
-        self.cos = torch.cos(freqs).repeat_interleave(2, dim=-1)  # [T, d_head]
-        self.sin = torch.sin(freqs).repeat_interleave(2, dim=-1)
+    """Rotary positional embeddings. Tensors are kept on CPU and moved to q/k's device."""
+    def __init__(self, head_dim, max_len=2048, base=10000.0):
+        if head_dim % 2:
+            raise ValueError(f"RoPE requires an even head dimension, got {head_dim}.")
+        inv_freq = 1.0 / (base ** (torch.arange(0, head_dim, 2).float() / head_dim))
+        positions = torch.arange(max_len).float()
+        freqs = torch.outer(positions, inv_freq)
+        self.cos = torch.repeat_interleave(freqs.cos(), 2, dim=-1)
+        self.sin = torch.repeat_interleave(freqs.sin(), 2, dim=-1)
+
     def apply(self, q, k):
-        # q,k: [B, H, T, D]
-        T = q.shape[2]
-        cos = self.cos[:T].to(q.device)[None, None, :, :]
-        sin = self.sin[:T].to(q.device)[None, None, :, :]
-        def rot(x):
-            x1 = x[..., 0::2]
-            x2 = x[..., 1::2]
-            # interleave rotado
-            out = torch.stack([x1*cos[...,0::2]-x2*sin[...,0::2], x1*sin[...,0::2]+x2*cos[...,0::2]], dim=-1)
-            return out.flatten(-2)
-        return rot(q), rot(k)
+        seq_len = q.shape[-2]
+        if seq_len > self.cos.shape[0]:
+            raise ValueError(f"Sequence length {seq_len} exceeds RoPE limit {self.cos.shape[0]}.")
+        cos = self.cos[:seq_len].to(device=q.device, dtype=q.dtype)[None, None, :, :]
+        sin = self.sin[:seq_len].to(device=q.device, dtype=q.dtype)[None, None, :, :]
+
+        def rotate(x):
+            x_even, x_odd = x[..., 0::2], x[..., 1::2]
+            rotated = torch.stack(
+                (x_even * cos[..., 0::2] - x_odd * sin[..., 0::2],
+                 x_even * sin[..., 0::2] + x_odd * cos[..., 0::2]),
+                dim=-1,
+            )
+            return rotated.flatten(-2)
+
+        return rotate(q), rotate(k)
+
 
 class SparseMLP(nn.Module):
-    # Truco 5: Sparse Coding + Truco 1: Excitabilidad CREB
-    # Solo Top-K neuronas activas. Las que ganaron antes tienen bonus.
-    def __init__(self, d_model, d_ff, top_k=256):
+    """SwiGLU with Top-K activation and bounded, frequency-based excitability."""
+    def __init__(self, d_model, d_ff, top_k=256, excitability_strength=0.1, excitability_decay=0.99):
         super().__init__()
+        if not 1 <= top_k <= d_ff:
+            raise ValueError(f"top_k must be in [1, {d_ff}], got {top_k}.")
         self.d_ff = d_ff
         self.top_k = top_k
+        self.excitability_strength = excitability_strength
+        self.excitability_decay = excitability_decay
         self.gate = nn.Linear(d_model, d_ff, bias=False)
         self.up = nn.Linear(d_model, d_ff, bias=False)
         self.down = nn.Linear(d_ff, d_model, bias=False)
-        # excitabilidad: buffer no entrenable, decae con el tiempo
-        self.register_buffer('excitability', torch.zeros(d_ff))
-        self.decay = 0.99
+        # EMA de frecuencia de selección por neurona (no es un parámetro entrenable).
+        self.register_buffer("excitability", torch.zeros(d_ff))
+
     def forward(self, x):
-        # SwiGLU
-        h = F.silu(self.gate(x)) * self.up(x)  # [B,T,FF]
-        # Excitabilidad: bonus a las que ganaron antes
-        h = h + self.excitability * 0.1
-        # Top-K: solo las K mas grandes sobreviven
-        vals, idx = torch.topk(h, k=self.top_k, dim=-1)
-        mask = torch.zeros_like(h).scatter(-1, idx, 1.0)
-        h_sparse = h * mask
-        # Actualizar excitabilidad: las ganadoras suben, resto decae
-        with torch.no_grad():
-            win = mask.mean(dim=(0,1))  # [FF] cuanto gano cada neurona
-            self.excitability.mul_(self.decay).add_(win * 0.5)
-        return self.down(h_sparse)
+        h = F.silu(self.gate(x)) * self.up(x)
+
+        # Centrar respecto a la frecuencia uniforme esperada evita que el bonus
+        # crezca sin límite y que domine progresivamente a la activación.
+        baseline = float(self.top_k) / float(self.d_ff)
+        centered_exc = self.excitability - baseline
+        h = h + centered_exc.to(dtype=h.dtype) * self.excitability_strength
+
+        indices = torch.topk(h, k=self.top_k, dim=-1).indices
+        mask = torch.zeros_like(h).scatter_(-1, indices, 1.0)
+        sparse_h = h * mask
+
+        if self.training:
+            with torch.no_grad():
+                win_rate = mask.float().mean(dim=tuple(range(mask.ndim - 1)))
+                self.excitability.mul_(self.excitability_decay).add_(
+                    win_rate.to(self.excitability.dtype), alpha=1.0 - self.excitability_decay
+                )
+
+        return self.down(sparse_h)
+
 
 class Attention(nn.Module):
     def __init__(self, d_model, n_head, rope):
         super().__init__()
+        if d_model % n_head:
+            raise ValueError("d_model must be divisible by n_head.")
         self.n_head = n_head
         self.d_head = d_model // n_head
         self.rope = rope
-        self.qkv = nn.Linear(d_model, d_model*3, bias=False)
+        self.qkv = nn.Linear(d_model, 3 * d_model, bias=False)
         self.out = nn.Linear(d_model, d_model, bias=False)
+
     def forward(self, x):
-        B,T,C = x.shape
-        qkv = self.qkv(x).view(B,T,3,self.n_head,self.d_head).transpose(1,3) # [B,H,T,3,D]
-        q,k,v = qkv[:,:, :,0], qkv[:,:, :,1], qkv[:,:, :,2]
-        q,k = self.rope.apply(q,k)
-        # SDPA = Flash Attention, obligatorio para pasos/seg
-        y = F.scaled_dot_product_attention(q,k,v, is_causal=True)
-        y = y.transpose(1,2).contiguous().view(B,T,C)
+        batch, seq_len, channels = x.shape
+        # [B,T,3,H,D] -> [3,B,H,T,D]. La dimensión 3 debe separarse
+        # antes de seleccionar Q, K y V (el orden anterior indexaba T por error).
+        qkv = self.qkv(x).view(batch, seq_len, 3, self.n_head, self.d_head)
+        q, k, v = qkv.permute(2, 0, 3, 1, 4).unbind(dim=0)
+        q, k = self.rope.apply(q, k)
+
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = y.transpose(1, 2).contiguous().view(batch, seq_len, channels)
         return self.out(y)
+
 
 class Block(nn.Module):
     def __init__(self, d_model, n_head, d_ff, top_k, rope):
@@ -90,65 +116,106 @@ class Block(nn.Module):
         self.attn = Attention(d_model, n_head, rope)
         self.norm2 = RMSNorm(d_model)
         self.mlp = SparseMLP(d_model, d_ff, top_k)
+
     def forward(self, x):
         x = x + self.attn(self.norm1(x))
         x = x + self.mlp(self.norm2(x))
         return x
 
+
 class LumenV2(nn.Module):
-    # Arquitectura completa, picada a mano
-    def __init__(self, vocab=8192, d_model=512, n_layer=8, n_head=8, d_ff=1536, top_k=256, ctx=512):
+    def __init__(
+        self, vocab=8192, d_model=512, n_layer=8, n_head=8,
+        d_ff=1536, top_k=256, ctx=512, rope_max_len=2048,
+        loss_mode="experimental",
+    ):
         super().__init__()
+        if vocab <= 0 or d_model <= 0 or n_layer <= 0 or d_ff <= 0:
+            raise ValueError("vocab, d_model, n_layer and d_ff must be positive.")
+        if d_model % n_head:
+            raise ValueError("d_model must be divisible by n_head.")
+        if (d_model // n_head) % 2:
+            raise ValueError("d_model // n_head must be even for RoPE.")
+        if ctx <= 0 or ctx > rope_max_len:
+            raise ValueError(f"ctx must be in [1, {rope_max_len}].")
+        if loss_mode not in {"experimental", "cross_entropy"}:
+            raise ValueError("loss_mode must be 'experimental' or 'cross_entropy'.")
+
         self.ctx = ctx
         self.d_model = d_model
+        self.vocab = vocab
+        self.loss_mode = loss_mode
         self.tok = nn.Embedding(vocab, d_model)
-        self.rope = RoPE(d_model//n_head, max_len=2048)
-        self.blocks = nn.ModuleList([Block(d_model, n_head, d_ff, top_k, self.rope) for _ in range(n_layer)])
+        self.rope = RoPE(d_model // n_head, max_len=rope_max_len)
+        self.blocks = nn.ModuleList([
+            Block(d_model, n_head, d_ff, top_k, self.rope) for _ in range(n_layer)
+        ])
         self.norm = RMSNorm(d_model)
         self.head = nn.Linear(d_model, vocab, bias=False)
-        # weight tying: head = tok, ahorra 4M params y 8MB
-        self.head.weight = self.tok.weight
-        self.apply(self._init)
-    def _init(self, m):
-        if isinstance(m, nn.Linear):
-            nn.init.normal_(m.weight, mean=0.0, std=0.02)
-            if m.bias is not None: nn.init.zeros_(m.bias)
-        if isinstance(m, nn.Embedding):
-            nn.init.normal_(m.weight, mean=0.0, std=0.02)
+        self.head.weight = self.tok.weight  # weight tying real: un único parámetro
+        self.apply(self._init_weights)
+
+    @staticmethod
+    def _init_weights(module):
+        if isinstance(module, (nn.Linear, nn.Embedding)):
+            nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            if isinstance(module, nn.Linear) and module.bias is not None:
+                nn.init.zeros_(module.bias)
+
     def forward(self, idx, targets=None):
-        # idx: [B,T]
+        if idx.ndim != 2:
+            raise ValueError(f"idx must have shape [batch, sequence], got {tuple(idx.shape)}.")
+        if idx.shape[1] > self.ctx:
+            raise ValueError(f"Sequence length {idx.shape[1]} exceeds configured context {self.ctx}.")
+        if idx.numel() and (idx.min() < 0 or idx.max() >= self.vocab):
+            raise ValueError(f"Token IDs must be in [0, {self.vocab - 1}].")
+
         x = self.tok(idx)
-        for b in self.blocks:
-            x = b(x)
-        x = self.norm(x)
-        logits = self.head(x)
+        for block in self.blocks:
+            x = block(x)
+        logits = self.head(self.norm(x))
         loss = None
+
         if targets is not None:
-            # Truco 4: Error de prediccion - ponderar por (1 - p_correcta)
-            # + penalizacion de confianza cuando falla
-            logits_f = logits.view(-1, logits.size(-1))
-            tgt_f = targets.view(-1)
-            ce = F.cross_entropy(logits_f, tgt_f, reduction='none', label_smoothing=0.05)
-            with torch.no_grad():
-                probs = F.softmax(logits_f, dim=-1)
-                p_correct = probs.gather(1, tgt_f.unsqueeze(1)).squeeze(1)  # [N]
-                # si ya acierta, casi no mueve pesos. Si falla con confianza, mueve mucho
-                w = (1.0 - p_correct)  # 0..1
-                # penalizacion extra si confia y falla: p_correct < 0.3 y max_prob > 0.7
-                max_p, _ = probs.max(dim=-1)
-                overconf = ((max_p > 0.7) & (p_correct < 0.3)).float() * 0.5
-            loss = (ce * w + ce * overconf).mean()
+            if targets.shape != idx.shape:
+                raise ValueError("targets must have the same [batch, sequence] shape as idx.")
+            flat_logits = logits.reshape(-1, self.vocab)
+            flat_targets = targets.reshape(-1)
+            ce = F.cross_entropy(
+                flat_logits, flat_targets, reduction="none", label_smoothing=0.05
+            )
+
+            if self.loss_mode == "cross_entropy":
+                loss = ce.mean()
+            else:
+                # Hipótesis experimental original: ponderar por error y añadir
+                # penalización moderada a errores cometidos con alta confianza.
+                with torch.no_grad():
+                    probs = F.softmax(flat_logits.float(), dim=-1)
+                    p_correct = probs.gather(1, flat_targets.unsqueeze(1)).squeeze(1)
+                    max_prob = probs.max(dim=-1).values
+                    error_weight = 1.0 - p_correct
+                    overconfidence = (
+                        (max_prob > 0.7) & (p_correct < 0.3)
+                    ).to(ce.dtype) * 0.5
+                loss = (ce * (error_weight + overconfidence)).mean()
+
         return logits, loss
+
     def num_params(self):
-        return sum(p.numel() for p in self.parameters())
+        # parameters() elimina referencias duplicadas del weight tying.
+        return sum(parameter.numel() for parameter in self.parameters())
+
     def size_mb_bf16(self):
-        return self.num_params()*2/1024/1024
+        return self.num_params() * 2 / (1024 ** 2)
+
 
 if __name__ == "__main__":
-    m = LumenV2()
-    print(f"Params: {m.num_params()/1e6:.2f}M")
-    print(f"Size bf16: {m.size_mb_bf16():.2f} MB")
-    print(f"Bloques de 24MB necesarios: {int(m.size_mb_bf16()//24)+1}")
-    x = torch.randint(0,8192,(2,32))
-    logits, loss = m(x, targets=x)
-    print(f"Logits {logits.shape} Loss {loss.item():.4f}")
+    model = LumenV2()
+    tokens = torch.randint(0, model.vocab, (2, 32))
+    logits, loss = model(tokens, targets=tokens)
+    logits.sum().backward()
+    print(f"Params: {model.num_params() / 1e6:.3f}M")
+    print(f"BF16 weights: {model.size_mb_bf16():.2f} MiB")
+    print(f"Logits: {tuple(logits.shape)} | Loss: {loss.item():.4f}")
+    print("Forward + backward: OK")
