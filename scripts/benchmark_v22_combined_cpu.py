@@ -31,7 +31,7 @@ from scripts.train_v22_v5_mixed import (
 from scripts.v5_sampling import format_lore_row, sample_v5_batches
 
 START_STEP = 20000
-STEPS = 10
+STEPS = 100
 MICRO_BS = 4
 EFFECTIVE_BS = 4
 MICROBATCHES_PER_UPDATE = EFFECTIVE_BS // MICRO_BS
@@ -171,57 +171,52 @@ def load_arm(checkpoint, fused=False):
     return model, optimizer, ema, fused_status
 
 
-def one_update(model, optimizer, ema, batches, global_step, amp_dtype=None):
+def one_update(model, optimizer, ema, batch, global_step, amp_dtype=None):
+    timings = {"forward": 0.0, "backward": 0.0, "optimizer": 0.0}
+    t = time.perf_counter()
     optimizer.zero_grad(set_to_none=True)
     lr_scale = set_scheduled_lr(optimizer, global_step, warmup=10, total=30000)
     active = active_layers_for_step(global_step, "v22", len(model.blocks))
-    losses = []
-    token_counts = [int(batch[1].ne(-100).sum()) for batch in batches]
-    total_tokens = sum(token_counts)
-    if total_tokens <= 0:
-        raise RuntimeError("effective batch contains no supervised tokens")
-    for batch, token_count in zip(batches, token_counts):
-        ids = batch[0].to(dtype=torch.long)
-        targets = batch[1].to(dtype=torch.long)
-        enabled = amp_dtype is not None
-        with torch.autocast("cpu", dtype=amp_dtype or torch.float32, enabled=enabled):
-            _, loss = model(ids, targets=targets, active_layers=active, return_logits=False)
-        if loss is None or not torch.isfinite(loss):
-            raise FloatingPointError(f"non-finite loss at global step {global_step}")
-        (loss * (token_count / total_tokens)).backward()
-        losses.append((float(loss.detach()), token_count))
-    grad_norm = torch.tensor(float("nan"))
+    ids, targets = batch[0].to(dtype=torch.long), batch[1].to(dtype=torch.long)
+    enabled = amp_dtype is not None
+    t0 = time.perf_counter()
+    with torch.autocast("cpu", dtype=amp_dtype or torch.float32, enabled=enabled):
+        _, loss = model(ids, targets=targets, active_layers=active, return_logits=False)
+    timings["forward"] = time.perf_counter() - t0
+    if loss is None or not torch.isfinite(loss):
+        raise FloatingPointError(f"non-finite loss at global step {global_step}")
+    t0 = time.perf_counter()
+    loss.backward()
+    timings["backward"] = time.perf_counter() - t0
     if (global_step + 1) % 5 == 0:
         grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         if not torch.isfinite(grad_norm):
             raise FloatingPointError(f"non-finite grad norm at {global_step}")
+    else:
+        grad_norm = torch.tensor(float("nan"))
+    t0 = time.perf_counter()
     optimizer.step()
     if (global_step + 1) % 10 == 0:
         ema_model = model._orig_mod if hasattr(model, "_orig_mod") else model
         ema.update(ema_model)
-    mean_loss = sum(value * count for value, count in losses) / total_tokens
-    return mean_loss, float(grad_norm), lr_scale
+    timings["optimizer"] = time.perf_counter() - t0
+    timings["total"] = time.perf_counter() - t
+    return float(loss.detach()), float(grad_norm), lr_scale, timings
 
 
-def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
-    # Both arms use identical intra-op=4 and inter-op=1 thread settings.
-    cpu_runtime = configure_cpu_runtime(
-        threads=4, interop_threads=1
-    )
+def run_arm(label, checkpoint, batches, variant):
+    cpu_runtime = configure_cpu_runtime(threads=4, interop_threads=1)
     if cpu_runtime["intraop_threads"] != 4 or cpu_runtime["interop_threads"] != 1:
         raise RuntimeError(f"Expected intra-op=4/inter-op=1, got {cpu_runtime}")
     setup_started = time.perf_counter()
     model, optimizer, ema, fused_status = load_arm(checkpoint, fused=False)
     details = {
-        "fused_adamw": fused_status, "ipex": "not-requested",
-        "compile": "eager", "cpu_runtime": cpu_runtime,
+        "fused_adamw": fused_status, "cpu_runtime": cpu_runtime,
+        "variant": variant, "compile": "not-requested",
     }
     amp_dtype = None
-    if candidate:
-        # Candidate-only exact-objective CE chunking; main keeps the default path.
+    if variant in ("bf16_chunked", "inductor"):
         model.logit_chunk_size = CHUNK_SIZE
-        details["logit_chunk_size"] = CHUNK_SIZE
-        # CPU BF16 is tested on this exact runner; unsupported hardware is recorded.
         try:
             probe = torch.randn(32, 32)
             with torch.autocast("cpu", dtype=torch.bfloat16):
@@ -229,73 +224,50 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
             amp_dtype = torch.bfloat16
             details["bf16"] = "enabled"
         except Exception as exc:
-            details["bf16"] = f"unsupported:{type(exc).__name__}"
-        details["ipex"] = "excluded: avoid optimizer/model rewriting in this attribution run"
-        model.logit_chunk_size = CHUNK_SIZE
-        try:
-            # Allow graph breaks around unsupported bookkeeping ops (e.g.
-            # sparse excitability counters), while compiling the tensor-heavy
-            # forward/backward regions with Inductor's CPU C++ code generation.
-            model = torch.compile(model, backend="inductor", mode="default", fullgraph=False)
-            details["compile"] = "inductor-default-graph-breaks-allowed"
-        except Exception as exc:
-            details["compile"] = f"setup-failed:{type(exc).__name__}:{exc}"
+            raise RuntimeError(f"BF16 CPU probe failed: {exc}") from exc
+    if variant == "inductor":
+        model = torch.compile(model, backend="inductor", mode="default", fullgraph=False)
+        details["compile"] = "inductor-default-graph-breaks-allowed"
     setup_seconds = time.perf_counter() - setup_started
+    losses, grad_norms, phase = [], [], {"forward": [], "backward": [], "optimizer": [], "total": []}
+    step_seconds = []
     started = time.perf_counter()
-    losses, grad_norms = [], []
-    compile_failed_seconds = 0.0
-    for i in range(STEPS):
-        group = [batches[i]] if not micro_accum else batches[i * MICROBATCHES_PER_UPDATE:(i + 1) * MICROBATCHES_PER_UPDATE]
-        try:
-            loss, grad, _ = one_update(
-                model, optimizer, ema, group, START_STEP + i, amp_dtype
-            )
-        except Exception as exc:
-            if candidate and details["compile"] != "eager":
-                # Retry from the exact parent state in eager mode; no partial candidate
-                # result is retained after a compile/IPEX graph failure.
-                details["compile_runtime_error"] = f"{type(exc).__name__}:{exc}"
-                compile_failed_seconds = time.perf_counter() - started
-                model, optimizer, ema, fused_status = load_arm(checkpoint, fused=False)
-                model.logit_chunk_size = CHUNK_SIZE
-                for group in optimizer.param_groups:
-                    group["foreach"] = True
-                    group["fused"] = None
-                details["fused_adamw"] = fused_status
-                details["compile_fallback"] = "eager-restart-from-parent"
-                details["ipex"] = "discarded-after-compile-failure"
-                losses, grad_norms = [], []
-                started = time.perf_counter()
-                for j in range(STEPS):
-                    loss, grad, _ = one_update(
-                        model, optimizer, ema, [batches[j]], START_STEP + j, amp_dtype
-                    )
-                    losses.append(loss); grad_norms.append(grad)
-                break
-            raise
-        losses.append(loss); grad_norms.append(grad)
+    for i, batch in enumerate(batches):
+        step_start = time.perf_counter()
+        loss, grad, _, timing = one_update(
+            model, optimizer, ema, batch, START_STEP + i, amp_dtype
+        )
+        step_seconds.append(time.perf_counter() - step_start)
+        losses.append(loss)
+        grad_norms.append(grad)
+        for key in phase:
+            phase[key].append(timing[key])
         if (i + 1) % 10 == 0:
             print(f"{label} step={i+1}/{STEPS} loss={loss:.6f}", flush=True)
     elapsed = time.perf_counter() - started
-    total_elapsed = setup_seconds + compile_failed_seconds + elapsed
+    warm_n = min(5, STEPS) if variant == "inductor" else 0
+    steady = step_seconds[warm_n:]
     tokens_processed = sum(int(batch[0].numel()) for batch in batches)
     return {
-        "label": label, "seconds": elapsed, "setup_seconds": setup_seconds,
-        "compile_failed_seconds": compile_failed_seconds,
-        "end_to_end_seconds": total_elapsed, "updates": STEPS,
-        "effective_examples": STEPS * EFFECTIVE_BS,
+        "label": label, "variant": variant, "seconds": elapsed,
+        "setup_seconds": setup_seconds, "end_to_end_seconds": setup_seconds + elapsed,
+        "updates": STEPS, "effective_batch": EFFECTIVE_BS,
         "tokens_processed": tokens_processed,
         "tokens_per_second": tokens_processed / elapsed,
+        "end_to_end_tokens_per_second": tokens_processed / (setup_seconds + elapsed),
         "updates_per_second": STEPS / elapsed,
-        "end_to_end_tokens_per_second": tokens_processed / total_elapsed,
         "mean_loss": sum(losses) / len(losses),
         "first10_loss": sum(losses[:10]) / min(10, len(losses)),
         "last10_loss": sum(losses[-10:]) / min(10, len(losses)),
-        "max_grad_norm": max((x for x in grad_norms if x == x), default=float("nan")),
         "peak_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+        "step_seconds_first5": step_seconds[:5],
+        "step_seconds_steady_mean": sum(steady) / len(steady) if steady else None,
+        "phase_seconds_mean": {k: sum(v) / len(v) for k, v in phase.items()},
+        "phase_seconds_first5": {k: sum(v[:5]) / min(5, len(v)) for k, v in phase.items()},
+        "phase_seconds_after5": {k: sum(v[5:]) / max(1, len(v[5:])) for k, v in phase.items()},
+        "max_grad_norm": max((x for x in grad_norms if x == x), default=float("nan")),
         "details": details,
     }
-
 
 def main():
     torch.manual_seed(SEED)
@@ -315,27 +287,27 @@ def main():
     if not all(k in checkpoint for k in ("model", "optimizer", "ema")):
         raise RuntimeError("Checkpoint missing model/optimizer/EMA state")
     micro, physical, provenance = prepare_batches()
-    baseline = run_arm("main-batch4", checkpoint, micro, True, False)
-    candidate = run_arm("optimized-batch4", checkpoint, physical, False, True)
+    # All three arms receive the exact same 100 physical batches, in the same order.
+    # Main gets batch-4 tensors; the other arms use those identical tensors too.
+    batches = physical
+    baseline = run_arm("main-fp32-unchunked", checkpoint, batches, "main")
+    bf16_chunked = run_arm("bf16-chunked-eager", checkpoint, batches, "bf16_chunked")
+    inductor = run_arm("bf16-chunked-inductor", checkpoint, batches, "inductor")
     result = {
         "status": "completed", "checkpoint_step": START_STEP,
         "checkpoint_artifact_sha256": "5a5c20fed63238b031188295e1db9eae876951e1e63137b9e969eacb22574fb",
         "steps_per_arm": STEPS, "same_effective_batch": EFFECTIVE_BS,
-        "thread_configuration": {"baseline": "intra=4,inter=1", "candidate": "intra=4,inter=1"},
+        "thread_configuration": {"all_arms": "intra=4,inter=1"},
         "same_examples_and_order": True, "provenance": provenance,
-        "baseline": baseline, "candidate": candidate,
-        "candidate_vs_main_tokens_per_second_gain_pct": (
-            candidate["tokens_per_second"] / baseline["tokens_per_second"] - 1
-        ) * 100,
-        "candidate_vs_main_end_to_end_gain_pct": (
-            candidate["end_to_end_tokens_per_second"] / baseline["end_to_end_tokens_per_second"] - 1
-        ) * 100,
-        "loss_comparison_note": "Same examples and physical batch of 4 per update; BF16 and compiled kernels may change numerics.",
-        "chunked_logits_note": "Candidate enables exact-objective chunked projection/CE over supervised positions (chunk size 2048); main keeps the existing supervised-only, unchunked path. Neither materializes full [B,T,V].",
-        "optimizer_note": "Both arms explicitly use AdamW foreach=True and fused=False after loading checkpoint state.",
-        "compile_note": "Candidate uses TorchInductor CPU code generation with graph breaks allowed; setup/compile time reported separately.",
+        "baseline": baseline, "bf16_chunked_eager": bf16_chunked, "bf16_chunked_inductor": inductor,
+        "bf16_chunked_vs_main_gain_pct": (bf16_chunked["tokens_per_second"] / baseline["tokens_per_second"] - 1) * 100,
+        "inductor_vs_bf16_chunked_gain_pct": (inductor["tokens_per_second"] / bf16_chunked["tokens_per_second"] - 1) * 100,
+        "inductor_vs_main_gain_pct": (inductor["tokens_per_second"] / baseline["tokens_per_second"] - 1) * 100,
+        "optimizer_note": "All arms explicitly use AdamW foreach=True and fused=False after loading checkpoint state.",
+        "attribution": "Main vs BF16+chunked isolates precision/projection; BF16+chunked eager vs Inductor isolates compilation.",
+        "timing_note": "Compilation is lazy. Inductor first-five update times and setup time are reported separately from post-warmup updates. End-to-end throughput includes setup and compilation.",
+        "phase_note": "Forward, backward, optimizer-step and total update timings are instrumented separately.",
         "gradient_checkpointing": "disabled",
-        "checkpoint_policy": "only final benchmark artifact; no periodic training checkpoint in a 100-step benchmark",
     }
     Path("artifacts/combined_cpu_benchmark.json").write_text(
         json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8"
