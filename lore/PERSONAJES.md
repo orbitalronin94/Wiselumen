@@ -120,3 +120,23 @@ Los nuevos personajes no forman sectas adicionales. Se integran en redes de cola
 ## Ampliación de perfiles P050–P062
 
 Los perfiles P050–P061 corresponden a especialistas que ya protagonizan las fichas factuales F035–F046 y sus documentos L056–L067. P062, la Copista de Fondo, aparece en los documentos doctrinales L068–L073. La continuidad del registro exige mantener separados los datos externos de sus expedientes ficticios.
+
+
+## Especialistas del Palimpsesto y sus tradiciones (P063–P076)
+
+| ID | Personaje | Afiliación / oficio | Voz y propósito | Incertidumbre central |
+|---|---|---|---|---|
+| P063 | Saia de la Vela | Casa de los Índices; historia comparada de las religiones | Compara versiones, géneros y contextos; rechaza los cánones inventados a posteriori | ¿Por qué una de sus cajas contiene un relato que aún no ha sido escrito? |
+| P064 | Kaito Naru | Filólogo de la Casa de los Índices; textos japoneses clásicos | Distingue compilación, variante y tradición oral; nunca corrige una diferencia sin documentarla | ¿Quién añadió una tercera versión a un cotejo de dos obras reales? |
+| P065 | Menka Ra | Egiptóloga del Archivo de las Contradicciones | Lee papiros, fórmulas funerarias y objetos en su contexto histórico | ¿Por qué el mismo conjuro aparece en una tumba antes de ser compuesto? |
+| P066 | Maira Urd | Investigadora de patrimonio y ética documental; colaboradora de la Liturgia de las Cuencas | Respeta las voces comunitarias y distingue documentación de apropiación | ¿Quién autorizó la copia de un itinerario que nadie quiso publicar? |
+| P067 | Valen Kest | Farmacóloga de la Casa de Sal | Explica receptores, metabolitos y límites de inferencia sin convertir mecanismos en promesas | ¿Por qué una ficha de laboratorio contiene una metáfora antes que la medición? |
+| P068 | Teren Sol | Psiquiatra e investigador clínico; colaborador de los Hermanos de la Fiebre Contada | Separa mecanismo, evidencia clínica y decisión terapéutica | ¿Quién firmó una recomendación que él solo había redactado como hipótesis? |
+| P069 | Nerea Sal | Toxicóloga clínica de la Casa de Sal | Registra riesgos, incertidumbre y acontecimientos adversos; desconfía de las curas milagrosas | ¿Por qué los informes de seguridad llegan antes que las muestras? |
+| P070 | Ravel Tis | Neurofarmacólogo del Observatorio de Nacarión | Compara dianas moleculares y rechaza agrupar sustancias por semejanza subjetiva | ¿Qué receptor aparece en sus diagramas cuando el laboratorio está vacío? |
+| P071 | Iren Vard | Neurofarmacóloga de la Casa de Sal | Estudia transportadores de monoaminas y critica las etiquetas reduccionistas | ¿Quién convirtió una explicación neuroquímica en un lema de mercado? |
+| P072 | Oria Quince | Archivista de derechos y licencias de la Casa de los Índices | Distingue acceso, licencia, dominio público, atribución y obras derivadas | ¿Por qué una obra aparece catalogada como libre antes de publicarse? |
+| P073 | Talia Nueve | Metodóloga y bioestadística del Colegio de Medidores | Evalúa diseños, sesgos, independencia de fuentes y calidad de síntesis | ¿Cómo puede haber cuatrocientos testimonios y una sola fuente? |
+| P074 | Eren Vard | Historiador jurídico del Tribunal de las Actas Inconclusas | Compara tratados, listas y jurisdicciones sin confundir ley con ciencia | ¿Por qué un decreto local cita un tratado que aún no existe? |
+| P075 | Doria Senn | Filóloga clásica y especialista en religión griega | Sitúa mitos en autores, géneros y prácticas rituales concretas | ¿Quién atribuye a Orfeo un poema que solo existe en el archivo? |
+| P076 | Edda Vorn | Especialista en manuscritos nórdicos y crítica codicológica | Distingue fecha del manuscrito, antigüedad del poema, lagunas y transmisión | ¿Por qué una hoja perdida sigue apareciendo en copias posteriores? |
