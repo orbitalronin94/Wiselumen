@@ -102,3 +102,6 @@ Las fichas F063–F065 cubren la identificación no resuelta del soma, el debate
 - Semilla: `lore_seed_v0.5.jsonl`.
 - Mapa de temas: `palimpsesto_topic_map_v0.2.jsonl`.
 - Guía narrativa: `../lore/ARCHIVO_DE_TRADICIONES_EXTERIORES.md`.
+
+
+**Grafo v0.5 validado:** 17.769 nodos, 72.128 relaciones dirigidas, 21 matrices COO, 18.958 enlaces directos `adapted_from`, cinco shards de nodos y cero referencias sin resolver. La ejecución CI 45890035441 terminó correctamente; el estado es `complete_structural_index`, con auditoría factual individual del Palimpsesto aún pendiente.
