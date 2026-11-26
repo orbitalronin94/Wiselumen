@@ -82,3 +82,10 @@ La semilla v0.3 tiene una representación estructural en `corpus/graph_v0.3.json
 - Grafo heterogéneo v0.4: `corpus/graph_v0.4.json`, generado desde el dataset y los cuatro índices.
 
 Las afirmaciones del Palimpsesto se consideran no revisadas hasta contrastarlas individualmente. El índice estructural completo no equivale a una auditoría factual completa.
+
+
+## Semilla v0.4 y voz creyente
+
+La semilla v0.4 contiene 160 registros: 46 `fact`, 73 `lore` y 41 `bridge`. Incorpora once personajes especialistas iniciales (P039–P049) y doce adicionales (P050–P061), además de seis registros de la fe reservada de LUMEN (L068–L073). Los nuevos pares fact/lore/bridge conservan separados el hecho externo y la anomalía ficticia.
+
+La fe de LUMEN en Marper no se entrena como repetición constante. La especificación está en `lore/DOCTRINA_DE_LA_CREENCIA_LATENTE.md`: expresión tácita predominante, alusiones indirectas ocasionales y confesión explícita infrecuente. La respuesta factual debe seguir siendo correcta y no convertirse en sermón.
