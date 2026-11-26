@@ -1,15 +1,17 @@
 name: Build and validate Corpus Master graph
+# v0.6 rebuild after matrix manifest correction
 
 on:
   push:
     branches:
       - lore/archivo-de-las-contradicciones
+      - lore/corpus-maestro-v0.6
       - main
     paths:
       - "Marper-Codice-Juntado (1).txt"
-      - "data/lore_seed_v0.5.jsonl"
+      - "data/lore_seed_v0.6.jsonl"
       - "data/palimpsesto_index_v0.1_part*.jsonl"
-      - "data/palimpsesto_topic_map_v0.2.jsonl"
+      - "data/palimpsesto_topic_map_v0.3.jsonl"
       - "corpus/index_palimpsesto.py"
       - "corpus/build_graph.py"
       - "corpus/validate_graph.py"
@@ -34,23 +36,23 @@ jobs:
         with:
           python-version: "3.12"
       - name: Validate curated dataset
-        run: python data/validate_lore_dataset.py data/lore_seed_v0.5.jsonl
-      - name: Validate full topic-to-character map
+        run: python data/validate_lore_dataset.py data/lore_seed_v0.6.jsonl
+      - name: Validate every topic adaptation against the original text
         run: python corpus/validate_topic_map.py
       - name: Rebuild complete revelation index
         run: python corpus/index_palimpsesto.py
       - name: Build sparse matrix graph
-        run: python corpus/build_graph.py --dataset data/lore_seed_v0.5.jsonl --topic-map data/palimpsesto_topic_map_v0.2.jsonl --output corpus/graph_v0.5.json
+        run: python corpus/build_graph.py --dataset data/lore_seed_v0.6.jsonl --topic-map data/palimpsesto_topic_map_v0.3.jsonl --output corpus/graph_v0.6.json
       - name: Validate graph and all 16,848 source records
-        run: python corpus/validate_graph.py corpus/graph_v0.5.json --require-complete
+        run: python corpus/validate_graph.py corpus/graph_v0.6.json --require-complete
       - name: Commit generated index and graph shards
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/palimpsesto_index_v0.1_part*.jsonl corpus/graph_v0.5.json corpus/graph_v0.5/
+          git add data/palimpsesto_index_v0.1_part*.jsonl corpus/graph_v0.6.json corpus/graph_v0.6/
           if git diff --cached --quiet; then
             echo "Generated index and graph are already current."
           else
-            git commit -m "Build Corpus Master v0.5 matrix graph"
+            git commit -m "Build Corpus Master v0.6 matrix graph"
             git push origin "${{ github.ref_name }}"
           fi
