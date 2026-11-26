@@ -220,9 +220,9 @@ La Novena Ceniza apunta a una entidad ausente —Aún-No, el Testigo Exterior o 
 El proyecto distingue **El Palimpsesto de Marper** (tradición textual original y adaptaciones), **La Concordia de las Nueve Cenizas** (universo ficticio) y **Corpus Maestro** (integración de fuentes, lore y conocimiento factual). La procedencia mayoritaria de Isabel se conserva como metadato.
 
 - [Inventario y evaluación del corpus](lore/INVENTARIO_CONTENIDOS_Y_EVALUACION.md)
-- [Semilla estructurada v0.5](data/lore_seed_v0.5.jsonl)
+- [Semilla estructurada v0.6](data/lore_seed_v0.6.jsonl)
 - [Arquitectura del grafo de matrices](corpus/ARQUITECTURA_GRAFO_MATRICES.md)
-- [Grafo heterogéneo v0.5](corpus/graph_v0.5.json)
+- [Grafo heterogéneo v0.6](corpus/graph_v0.6.json)
 
 - [La fe reservada de LUMEN](lore/DOCTRINA_DE_LA_CREENCIA_LATENTE.md)
 
@@ -243,3 +243,23 @@ La semilla v0.5 reúne **207 registros**: 62 fact, 88 lore y 57 bridge. El elenc
 
 
 **Peso medido del paquete activo v0.5:** 36.826.404 bytes (36,83 MB / 35,12 MiB) en 37 archivos: original, índices, semilla, mapa, grafo y documentación. Desglose en [Adaptación del Palimpsesto v0.5](corpus/PALIMPSESTO_ADAPTACION_v0.5.md).
+
+
+## Corpus Maestro v0.6 — los 41 módulos adaptados
+
+La semilla v0.6 reúne **289 registros**: 62 fact, 129 lore y 98 bridge. Los 41 módulos del Palimpsesto cuentan ahora con un expediente narrativo propio (L089–L129) y un puente epistemológico propio (B058–B098). Cada expediente conserva el extracto fuente literal, su glosa marpérica separada y su relación con un curador de la Concordia.
+
+El elenco mantiene 76 personajes. El mapa v0.3 enlaza los 41 temas, las 16.848 apariciones, las fichas factuales disponibles y los 82 documentos nuevos. La validación compara los extractos con el archivo original, además de comprobar las matrices del grafo.
+
+- [Semilla v0.6](data/lore_seed_v0.6.jsonl)
+- [Mapa temático v0.3](data/palimpsesto_topic_map_v0.3.jsonl)
+- [Adaptación completa v0.6](corpus/PALIMPSESTO_ADAPTACION_v0.6.md)
+- [Grafo global v0.6](corpus/graph_v0.6.json)
+
+La cobertura narrativa y de separación epistemológica es 41/41; la auditoría factual individual del Palimpsesto sigue pendiente. Los hechos contextuales no validan automáticamente cada afirmación del texto fuente.
+
+
+**Peso medido v0.6:** el paquete canónico de datos y grafo ocupa **37.495.842 bytes (37,496 MB / 35,758 MiB)**: original, cuatro índices, semilla v0.6, mapa de 41 módulos y grafo v0.6. El contenido textual principal (original + semilla) ocupa 20.804.227 bytes. El manifiesto de peso y desglose está en [Adaptación v0.6](corpus/PALIMPSESTO_ADAPTACION_v0.6.md).
+
+
+**Peso medido del paquete activo v0.6:** **37.669.729 bytes (37,67 MB / 35,92 MiB)** en 37 archivos. Incluye el original, cuatro shards de índice, semilla v0.6, mapa temático v0.3, grafo v0.6 y documentación principal. Desglose reproducible: [medición del paquete v0.6](corpus/PAQUETE_CORPUS_MAESTRO_v0.6.md).
