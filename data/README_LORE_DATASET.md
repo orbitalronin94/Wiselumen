@@ -1,13 +1,13 @@
 # Dataset del Archivo de las Contradicciones
 
-## Semilla 0.2
+## Semilla 0.3
 
 Archivo: lore_seed_v0.3.jsonl  
 Formato: JSONL UTF-8, un objeto por línea.  
-Registros: 69  
-- 23 factuales limpios.
-- 28 documentos de lore.
-- 18 registros puente entre conocimiento factual y ficción.
+Registros: 85  
+- 23 registros factuales.
+- 44 registros de lore, incluidos 8 documentos doctrinales de secta.
+- 18 registros puente entre conocimiento factual y lore.
 
 La ampliación 0.2 incorpora ocho profetas de sectas y ocho dominios factuales nuevos: agronomía, economía, derecho, epidemiología, ecología, ingeniería civil, informática y acústica/música. Cada dominio dispone de un registro factual, un documento de lore y un puente explícito.
 
@@ -52,6 +52,10 @@ La ambigüedad es una propiedad narrativa del universo, no una excusa para intro
 
 ## Versión 0.3
 
-La versión 0.3 conserva los 69 registros de la línea base y añade 16 documentos de lore (L029–L044) con testimonios, cartas, actas, diálogos e informes de atribución contradictoria alrededor de Marper y otros personajes. Distribución: 23 fact, 44 lore y 18 bridge (85 registros). Tamaño JSONL UTF-8: 67.553 bytes (67,55 KB decimales; 65,97 KiB). La versión 0.2 se conserva como referencia: 51.006 bytes.
+La versión 0.3 conserva los 69 registros de la línea base y añade 16 documentos de lore (L029–L044) con testimonios, cartas, actas, diálogos e informes de atribución contradictoria alrededor de Marper y otros personajes. Distribución: 23 fact, 44 lore y 18 bridge (85 registros). Tamaño JSONL UTF-8: 69,774 bytes. La versión 0.2 se conserva como referencia: 51.006 bytes.
 
-El corpus original `Marper-Codice-Juntado (1).txt` ocupa 20.401.800 bytes (20,40 MB decimales; 19,46 MiB), según el tamaño del blob en GitHub. Las medidas no incluyen compresión ni tokenizer.
+### Dogmas de las ocho sectas
+
+Los registros L021–L028 son **dogmas/doctrinas internas de sus respectivas sectas**, no ficción genérica. Se conserva `type: lore` porque son documentos diegéticos; se añade `record_class: sectarian_dogma`, junto con `sect`, `deity` y `truth_scope` para que el entrenamiento y la evaluación puedan distinguir la creencia religiosa interna de un hecho externo. Una doctrina puede ser verdadera, falsa, parcial o disputada dentro del mundo; no debe convertirse por ello en conocimiento factual externo.
+
+El archivo original `Marper-Codice-Juntado (1).txt` figura en el repositorio con un tamaño de blob de 20.401.800 bytes (20,40 MB decimales; 19,46 MiB). La descarga de contenido por la API de GitHub devolvió texto vacío, por lo que este tamaño procede de los metadatos del blob, no de un recálculo local. El usuario aclara que el material original era mayoritariamente contenido de Isabel, con pequeñas ediciones para adaptarlo al lore ampliado. Esa procedencia debe respetarse; no se atribuye todo el corpus a una creación nueva de Marper. Las medidas no incluyen compresión ni tokenizer.
