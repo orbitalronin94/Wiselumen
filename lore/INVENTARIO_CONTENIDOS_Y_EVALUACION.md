@@ -581,7 +581,7 @@ La adaptación se documenta en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md`. La nueva
 
 ### Peso medido v0.5
 
-El conjunto activo de archivos del Corpus Maestro (original + índices + semilla + mapa + grafo + documentación) ocupa **aprox. 36,83 MB (35,12 MiB)** en 37 archivos. El original ocupa 20.401.800 bytes; el índice 7.482.345; el grafo 8.545.185; la semilla 200.668; el mapa 29.567; la documentación, aproximadamente 169 kB. Se excluyen snapshots históricos y código.
+El conjunto activo de archivos del Corpus Maestro (original + índices + semilla + mapa + grafo + documentación) ocupa **aprox. 36,83 MB (35,12 MiB)** en 38 archivos. El original ocupa 20.401.800 bytes; el índice 7.482.345; el grafo 8.545.185; la semilla 200.668; el mapa 29.567; la documentación, aproximadamente 169 kB. Se excluyen snapshots históricos y código.
 
 
 ## 2.7 Ampliación v0.6: adaptación narrativa individual de los 41 módulos
@@ -606,7 +606,7 @@ El grafo v0.6 validado por GitHub Actions (run `45890899168`) contiene 17.861 no
 
 ## 2.8 Peso medido y validación de v0.6
 
-El paquete activo v0.6 ocupa **37.669.729 bytes (37,67 MB decimales; 35,92 MiB)** en 37 archivos. Desglose exacto: original 20.401.800 bytes; índice 7.482.345; grafo y matrices 9.175.032; semilla 402.427; mapa temático 34.238; documentación principal 173.887. Se excluyen snapshots históricos, código, dependencias y artefactos de entrenamiento. El cálculo procede de los tamaños de blobs Git, no de estimaciones.
+El paquete activo v0.6 ocupa **37.680.918 bytes (37,68 MB decimales; 35,94 MiB)** en 38 archivos. Desglose exacto: original 20.401.800 bytes; índice 7.482.345; grafo y matrices 9.175.032; semilla 402.427; mapa temático 34.238; documentación principal 173.887. Se excluyen snapshots históricos, código, dependencias y artefactos de entrenamiento. El cálculo procede de los tamaños de blobs Git, no de estimaciones.
 
 La validación CI [45890899168](https://github.com/orbitalronin94/Wiselumen/actions/runs/45890899168) pasó la semilla, el mapa, el índice, el grafo y sus matrices: 289 registros curados, 16.848 revelaciones indexadas, 17.861 nodos, 53.747 relaciones, 23 matrices y cero referencias sin resolver. El grafo declara integridad estructural, no auditoría factual exhaustiva.
 
