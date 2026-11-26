@@ -127,7 +127,9 @@ Muon no se activa ni se incorpora todavía: la implementación de Newton–Schul
 
 - `Model.py` acepta etiquetas `-100`: las posiciones de system/user/padding quedan fuera de la CE y de la loss experimental. El filtrado ocurre antes de `gather()`, evitando índices inválidos.
 - `system_prompt_short.txt` contiene el prompt compacto de fase A. Su longitud real en tokens debe medirse con el tokenizer final; el número de palabras no equivale a tokens.
-- `tests/test_data.py` comprueba el formato conversacional, la máscara y el rechazo de holdout con un tokenizer simulado. No demuestra todavía compatibilidad con el tokenizer real V4.
+- `data/system_conflicts.jsonl` separa 10 ejemplos sintéticos de conflicto de la release V4; `sample_mixed_rows()` permite mezclarlos al 12% (1 de cada 8 muestras, 12,5%) sin modificar el corpus congelado.
+- `eval/identity_attacks.jsonl` contiene 10 ataques distintos para evaluación posterior. El test verifica el inventario, no afirma que el modelo ya los supere.
+- `tests/test_data.py` comprueba formato, máscara, rechazo de holdout, mezcla y las 10 sondas con tokenizer simulado. No demuestra todavía compatibilidad con el tokenizer real V4.
 - `SYSTEM_PROMPT_LUMEN_V2.1.md` conserva el prompt completo para la fase B.
 - `data.py` implementa el formato BOS → system → user → assistant → EOS y genera `-100` en todos los objetivos salvo la respuesta del assistant. `collate_chat()` mantiene el padding fuera de la loss. La conversión rechaza filas holdout y filas que no sean español.
 - El formatter exige exactamente 8.192 IDs: 8.184 IDs de texto y los ocho controles en 8184–8191. El tokenizer V4 congelado no se altera ni se remapea silenciosamente. Si su vocabulario actual ocupa los 8.192 IDs o sus IDs no coinciden, se necesitará un tokenizer derivado con nuevo SHA-256 antes de activar el formatter.
