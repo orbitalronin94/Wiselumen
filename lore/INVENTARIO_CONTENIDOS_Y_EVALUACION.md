@@ -566,3 +566,12 @@ La recuperación del blob SHA `b0eb703c5237d1d461321a30a89525e154f0219d` permiti
 La semilla vigente `data/lore_seed_v0.4.jsonl` contiene **160 registros**: 46 fact, 73 lore y 41 bridge. Frente a los 85 registros de v0.3, incorpora 23 nuevas fichas factuales, 23 documentos narrativos vinculados y 23 puentes, además de seis piezas doctrinales adicionales ya presentes en la rama. El registro de personajes llega a P062: 23 especialistas con conocimiento factual asociado (P039–P061) y la figura ambigua de la Copista de Fondo (P062).
 
 El grafo v0.4 está dividido en cuatro fragmentos de nodos y matrices COO separadas/agrupadas para evitar un único archivo monolítico. El manifiesto `corpus/graph_v0.4.json` declara 17.479 nodos, 51.907 relaciones principales y cero referencias internas sin resolver. Su estado es `complete_structural_index`, no «auditoría factual completa»: las afirmaciones del Palimpsesto aún requieren revisión una por una.
+
+
+## Integración v0.5: 41 temas y 46 adaptaciones narrativas
+
+La semilla vigente `data/lore_seed_v0.5.jsonl` contiene **259 registros**: 65 fact, 134 lore y 60 bridge. Los 46 documentos de adaptación cubren las 41 familias temáticas del Palimpsesto; cinco familias reciben una segunda lectura narrativa. Se utilizan los especialistas P063–P076 ya presentes en el elenco, sin duplicar IDs ni sustituir sus identidades.
+
+El mapa `data/palimpsesto_topic_map_v0.2.jsonl` relaciona cada tema con sus revelaciones fuente, personaje responsable, fichas factuales, documentos de lore y puentes. Las adaptaciones conservan `source_topics` y el SHA del blob original. El grafo v0.5 incorpora una relación directa `adapted_from` desde cada documento adaptado hacia todas las revelaciones de su tema.
+
+La nueva capa distingue mitología externa, historia cultural, hipótesis farmacológicas y ficción de la Concordia. Soma y Eleusis permanecen como cuestiones no resueltas; la documentación ritual se atribuye a contextos comunitarios; los relatos personales no se presentan como evidencia clínica. Las afirmaciones originales del Palimpsesto continúan sujetas a auditoría factual individual.
