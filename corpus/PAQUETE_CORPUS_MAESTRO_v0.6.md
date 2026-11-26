@@ -2,7 +2,7 @@
 
 **Fecha de medición:** 26 de noviembre de 2026  
 **Repositorio:** `orbitalronin94/Wiselumen`  
-**Rama medida:** `lore/archivo-de-las-contradicciones`  
+**Rama medida:** `lore/corpus-maestro-v0.6`  
 **Versión:** v0.6  
 **Método:** tamaños exactos de los blobs Git del árbol de la rama; no estimaciones por caracteres.
 
