@@ -90,17 +90,22 @@ def prepare_batches():
         rng=random.Random(SEED + START_STEP + 1),
         batch_size=MICRO_BS,
     )
-    micro = [
-        collate_chat([sample for _kind, sample in batch], pad_id=meta["pad_id"])
-        for batch in sampled
-    ]
-    physical = []
+    micro, physical = [], []
     for i in range(STEPS):
-        group = micro[i * 8:(i + 1) * 8]
-        physical.append((
-            torch.cat([x[0] for x in group], dim=0),
-            torch.cat([x[1] for x in group], dim=0),
-        ))
+        grouped_samples = sampled[i * 8:(i + 1) * 8]
+        flat_samples = [
+            sample for one_microbatch in grouped_samples
+            for _kind, sample in one_microbatch
+        ]
+        # Collate once so both arms use identical padding width and token positions.
+        full_batch = collate_chat(flat_samples, pad_id=meta["pad_id"])
+        physical.append(full_batch)
+        for j in range(8):
+            start, end = j * MICRO_BS, (j + 1) * MICRO_BS
+            micro.append((
+                full_batch[0][start:end],
+                full_batch[1][start:end],
+            ))
     return micro, physical, {
         "corpus_v5_sha256": V5_SHA256,
         "corpus_v4_sha256": V4_SHA256,
@@ -244,14 +249,16 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
             print(f"{label} step={i+1}/{STEPS} loss={loss:.6f}", flush=True)
     elapsed = time.perf_counter() - started
     total_elapsed = setup_seconds + compile_failed_seconds + elapsed
+    tokens_processed = sum(int(batch[0].numel()) for batch in batches)
     return {
         "label": label, "seconds": elapsed, "setup_seconds": setup_seconds,
         "compile_failed_seconds": compile_failed_seconds,
         "end_to_end_seconds": total_elapsed, "updates": STEPS,
         "effective_examples": STEPS * EFFECTIVE_BS,
-        "tokens_per_second": (STEPS * EFFECTIVE_BS * MAX_LEN) / elapsed,
+        "tokens_processed": tokens_processed,
+        "tokens_per_second": tokens_processed / elapsed,
         "updates_per_second": STEPS / elapsed,
-        "end_to_end_tokens_per_second": (STEPS * EFFECTIVE_BS * MAX_LEN) / total_elapsed,
+        "end_to_end_tokens_per_second": tokens_processed / total_elapsed,
         "mean_loss": sum(losses) / len(losses),
         "first10_loss": sum(losses[:10]) / min(10, len(losses)),
         "last10_loss": sum(losses[-10:]) / min(10, len(losses)),
