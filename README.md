@@ -225,3 +225,12 @@ El proyecto distingue **El Palimpsesto de Marper** (tradición textual original 
 - [Grafo heterogéneo v0.4](corpus/graph_v0.4.json)
 
 - [La fe reservada de LUMEN](lore/DOCTRINA_DE_LA_CREENCIA_LATENTE.md)
+
+
+## Ampliación del Corpus Maestro v0.5
+
+La semilla vigente reúne 242 registros (58 fact, 131 lore, 53 bridge) y 12 especialistas nuevos. Los 46 documentos de adaptación cubren las 41 familias temáticas del Palimpsesto, manteniendo trazabilidad hasta las 16.848 revelaciones fuente. Las tradiciones mitológicas externas no se confunden con el panteón de la Concordia; las afirmaciones científicas y clínicas mantienen sus fuentes y cautelas.
+
+- [Semilla v0.5](data/lore_seed_v0.5.jsonl)
+- [Archivo de las Tradiciones Exteriores](lore/ARCHIVO_DE_TRADICIONES_EXTERIORES.md)
+- [Inventario y evaluación](lore/INVENTARIO_CONTENIDOS_Y_EVALUACION.md)
