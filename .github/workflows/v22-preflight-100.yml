@@ -21,8 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
-      OMP_NUM_THREADS: "2"
-      MKL_NUM_THREADS: "2"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "2"
       OPENBLAS_NUM_THREADS: "1"
       TOKENIZERS_PARALLELISM: "false"
       PYTHONUNBUFFERED: "1"
