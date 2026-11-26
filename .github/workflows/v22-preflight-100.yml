@@ -24,6 +24,8 @@ jobs:
         run: |
           curl --fail --location --retry 3 --output corpus-v4.zip "$CORPUS_URL"
           echo "$EXPECTED_ZIP_SHA256  corpus-v4.zip" | sha256sum --check
+      - name: Install tokenizer parser
+        run: python -m pip install --disable-pip-version-check tokenizers==0.21.0
       - name: Inspect archive, manifest and tokenizer
         run: |
           python - <<'PY'
