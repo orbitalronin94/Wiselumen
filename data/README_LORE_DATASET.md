@@ -1,13 +1,15 @@
 # Dataset del Archivo de las Contradicciones
 
-## Semilla 0.1
+## Semilla 0.2
 
 Archivo: lore_seed_v0.1.jsonl  
 Formato: JSONL UTF-8, un objeto por línea.  
-Registros iniciales: 45  
-- 15 factuales limpios.
-- 20 documentos de lore.
-- 10 registros puente entre conocimiento factual y ficción.
+Registros: 69  
+- 23 factuales limpios.
+- 28 documentos de lore.
+- 18 registros puente entre conocimiento factual y ficción.
+
+La ampliación 0.2 incorpora ocho profetas de sectas y ocho dominios factuales nuevos: agronomía, economía, derecho, epidemiología, ecología, ingeniería civil, informática y acústica/música. Cada dominio dispone de un registro factual, un documento de lore y un puente explícito.
 
 ### Política de tipos
 
