@@ -4,8 +4,12 @@ import hashlib
 import json
 import os
 import random
+import sys
 import time
 from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 import torch
 from Model import LumenV2, active_layers_for_step
 from Train import EMA, configure_cpu_runtime, get_optimizer, set_scheduled_lr
