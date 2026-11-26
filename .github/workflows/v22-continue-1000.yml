@@ -1,0 +1,56 @@
+name: LUMEN V2.2 continue from step 100 to 1100
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-continue-1000.yml"
+      - "scripts/train_v22_continue_1000.py"
+      - "Train.py"
+      - "Model.py"
+      - "data.py"
+      - "system_prompt_short.txt"
+      - "data/system_conflicts.jsonl"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  continue-1000:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download verified step-100 checkpoint
+        run: |
+          mkdir -p artifacts
+          gh run download 45779868203 --repo orbitalronin94/Wiselumen --name lumen-v22-first-100 --dir artifacts
+          test -s artifacts/lumen-v22-step-100.pt
+      - name: Install CPU training dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Resume and train 1,000 additional steps
+        run: python scripts/train_v22_continue_1000.py
+      - name: Upload step-1100 checkpoint and metrics
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-step-1100
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30
