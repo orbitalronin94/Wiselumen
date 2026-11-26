@@ -197,7 +197,7 @@ def one_update(model, optimizer, ema, batches, global_step, amp_dtype=None):
 
 
 def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
-    # Keep inter-op fixed at 1; compare main's intra-op=4 against candidate 1:1.
+    # Both arms use identical intra-op=1 and inter-op=1 thread settings.
     cpu_runtime = configure_cpu_runtime(
         threads=1, interop_threads=1
     )
