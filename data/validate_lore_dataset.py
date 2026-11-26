@@ -30,6 +30,8 @@ def main() -> int:
             errors.append(f"line {line_no} ({item.get('id', '?')}): invalid type {item.get('type')!r}")
         if item.get("type") == "fact" and not item.get("factual_claims"):
             errors.append(f"line {line_no} ({item.get('id', '?')}): fact needs factual_claims")
+        if item.get("review_status") == "source_checked" and not item.get("sources"):
+            errors.append(f"line {line_no} ({item.get('id', '?')}): source_checked fact needs sources")
         if item.get("type") == "lore" and not item.get("source_form"):
             errors.append(f"line {line_no} ({item.get('id', '?')}): lore needs source_form")
         if item.get("type") == "lore" and not item.get("author"):
