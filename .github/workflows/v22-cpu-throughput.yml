@@ -1,0 +1,57 @@
+name: LUMEN V2.2 CPU throughput matrix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-cpu-throughput.yml"
+      - "scripts/benchmark_v22_cpu.py"
+      - "Train.py"
+      - "Model.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: "threads ${{ matrix.threads }} / batch ${{ matrix.batch }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { threads: 1, batch: 8, interop: 1 }
+          - { threads: 2, batch: 8, interop: 1 }
+          - { threads: 4, batch: 8, interop: 2 }
+          - { threads: 4, batch: 4, interop: 2 }
+          - { threads: 4, batch: 16, interop: 2 }
+    env:
+      BENCH_THREADS: ${{ matrix.threads }}
+      BENCH_BATCH: ${{ matrix.batch }}
+      BENCH_SEQ: '413'
+      BENCH_WARMUP: '3'
+      BENCH_STEPS: '25'
+      OMP_NUM_THREADS: ${{ matrix.threads }}
+      MKL_NUM_THREADS: ${{ matrix.threads }}
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU PyTorch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+      - name: Benchmark forward, backward and optimizer
+        run: python scripts/benchmark_v22_cpu.py
+      - name: Upload benchmark metrics
+        if: always() && hashFiles('benchmark-result.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-throughput-t${{ matrix.threads }}-b${{ matrix.batch }}
+          path: benchmark-result.json
+          retention-days: 14
