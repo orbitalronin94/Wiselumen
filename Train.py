@@ -7,9 +7,9 @@ from pathlib import Path
 import torch
 
 try:
-    from Model import LumenV2, active_layers_for_step
+    from Model import LumenV2, active_layers_for_step, seq_for_step
 except ImportError:
-    from model import LumenV2, active_layers_for_step
+    from model import LumenV2, active_layers_for_step, seq_for_step
 
 
 def configure_cpu_runtime(threads=None, interop_threads=1):
@@ -306,8 +306,15 @@ def train_steps(
             ) from exc
 
         inputs, targets = unpack_batch(batch, device)
-        optimizer.zero_grad(set_to_none=True)
         global_step = start_step + step
+        if mode == "v21":
+            requested_seq = seq_for_step(global_step, mode)
+            actual_seq = min(requested_seq, inputs.shape[1])
+            inputs = inputs[:, :actual_seq].contiguous()
+            targets = targets[:, :actual_seq].contiguous()
+        else:
+            actual_seq = inputs.shape[1]
+        optimizer.zero_grad(set_to_none=True)
         multiplier = set_scheduled_lr(optimizer, global_step, warmup, total)
 
         use_amp = amp_dtype is not None and device.type in {"cuda", "cpu"}
@@ -336,7 +343,8 @@ def train_steps(
             print(
                 f"step {step + 1}/{steps} loss {value:.6f} "
                 f"lr_scale {multiplier:.5f} grad_norm {grad_value:.4f} "
-                f"layers {len(active_layers)}/{len(model.blocks)} ema_every {ema_every} clip_every {clip_every}",
+                f"seq {actual_seq} layers {len(active_layers)}/{len(model.blocks)} "
+                f"ema_every {ema_every} clip_every {clip_every}",
                 flush=True,
             )
 
