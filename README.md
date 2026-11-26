@@ -158,7 +158,7 @@ Mismo checkpoint, tokenizer, system prompt, holdout congelado y cuatro hilos:
 | Tiempo total | 1.073,67 s | 692,11 s |
 | Aciertos MC | 829 / 2.431 | 829 / 2.431 |
 | Exactitud MC | 34,10 % | 34,10 % |
-| Predicciones MC serializadas | 2.256 | 2.256 |
+| Registros de predicción MC (IDs únicos) | 2.431 (2.256) | 2.431 (2.256) |
 | IDs y texto de 100 respuestas libres | — | Idénticos |
 
 La aceleración observada fue de **1,55×**, equivalente a un **35,5 % menos de tiempo total** en este runner CPU concreto. Las etiquetas de decisión MC coinciden exactamente; las puntuaciones flotantes difieren como máximo en 2,3842e-6. La comparación automatizada exige igualdad exacta de las decisiones y una tolerancia numérica estricta de 1e-5 para los scores.
