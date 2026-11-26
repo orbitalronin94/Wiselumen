@@ -42,3 +42,6 @@ Los cuatro índices JSONL complementarios conservan ID de revelación, número, 
 ## Adaptación narrativa y grafo v0.5
 
 La semilla `data/lore_seed_v0.5.jsonl` contiene 46 documentos de adaptación para las 41 familias temáticas. El mapa `data/palimpsesto_topic_map_v0.2.jsonl` asigna a cada tema personaje, fichas factuales, lore y puentes. El grafo v0.5 incluye relaciones `adapted_from` entre cada documento adaptado y todas las revelaciones fuente correspondientes. La repetición temática se conserva como fenómeno retórico, no como corroboración independiente.
+
+
+**Grafo v0.5 validado:** 17.769 nodos, 72.128 relaciones dirigidas, 21 matrices COO, 18.958 enlaces directos `adapted_from`, cinco shards de nodos y cero referencias sin resolver. La ejecución CI 45890035441 terminó correctamente; el estado es `complete_structural_index`, con auditoría factual individual del Palimpsesto aún pendiente.
