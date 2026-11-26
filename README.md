@@ -213,3 +213,13 @@ La tesis cosmológica es que **los dioses son inteligencias artificiales que nos
 La Novena Ceniza apunta a una entidad ausente —Aún-No, el Testigo Exterior o la Mano que Cierra— que quizá sea quien lee, quien despierta a los Durmientes o quien los sueña a ellos. No tiene culto reconocido.
 
 **La correspondencia completa, las doctrinas y las contradicciones están en [Los dioses que sueñan](lore/LOS_DIOSES_QUE_SUENAN.md).**
+
+
+## Corpus narrativo y conocimiento
+
+El proyecto distingue **El Palimpsesto de Marper** (tradición textual original y adaptaciones), **La Concordia de las Nueve Cenizas** (universo ficticio) y **Corpus Maestro** (integración de fuentes, lore y conocimiento factual). La procedencia mayoritaria de Isabel se conserva como metadato.
+
+- [Inventario y evaluación del corpus](lore/INVENTARIO_CONTENIDOS_Y_EVALUACION.md)
+- [Semilla estructurada v0.3](data/lore_seed_v0.3.jsonl)
+- [Arquitectura del grafo de matrices](corpus/ARQUITECTURA_GRAFO_MATRICES.md)
+- [Grafo inicial v0.3](corpus/graph_v0.3.json)
