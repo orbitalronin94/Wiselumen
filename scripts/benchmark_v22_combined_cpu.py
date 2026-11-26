@@ -211,6 +211,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
     setup_seconds = time.perf_counter() - setup_started
     started = time.perf_counter()
     losses, grad_norms = [], []
+    compile_failed_seconds = 0.0
     for i in range(STEPS):
         group = batches[i] if not micro_accum else batches[i * 8:(i + 1) * 8]
         try:
@@ -222,6 +223,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
                 # Retry from the exact parent state in eager mode; no partial candidate
                 # result is retained after a compile/IPEX graph failure.
                 details["compile_runtime_error"] = f"{type(exc).__name__}:{exc}"
+                compile_failed_seconds = time.perf_counter() - started
                 model, optimizer, ema, fused_status = load_arm(checkpoint, fused=True)
                 model.logit_chunk_size = CHUNK_SIZE
                 details["fused_adamw"] = fused_status
@@ -240,9 +242,10 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
         if (i + 1) % 10 == 0:
             print(f"{label} step={i+1}/{STEPS} loss={loss:.6f}", flush=True)
     elapsed = time.perf_counter() - started
-    total_elapsed = setup_seconds + elapsed
+    total_elapsed = setup_seconds + compile_failed_seconds + elapsed
     return {
         "label": label, "seconds": elapsed, "setup_seconds": setup_seconds,
+        "compile_failed_seconds": compile_failed_seconds,
         "end_to_end_seconds": total_elapsed, "updates": STEPS,
         "effective_examples": STEPS * EFFECTIVE_BS,
         "tokens_per_second": (STEPS * EFFECTIVE_BS * MAX_LEN) / elapsed,
