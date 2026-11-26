@@ -37,3 +37,10 @@ Los cuatro índices JSONL complementarios conservan ID de revelación, número, 
 4. Las descripciones de sustancias del archivo contienen afirmaciones que requieren revisión especializada y contextualización histórica; no deben tratarse como consejo médico ni como instrucciones de uso.
 5. «PiHKAL open source» es una caracterización incorrecta: disponibilidad de lectura o circulación no equivale a licencia de software libre o de cultura libre.
 6. Las doctrinas de Marper sobre simulación, dioses y humanidad pertenecen al ámbito ficticio o especulativo, no al factual.
+
+
+## Mapa de adaptación v0.2
+
+Los 41 módulos detectados ya tienen un curador asignado en `data/palimpsesto_topic_map_v0.2.jsonl`. El mapa conserva las 16.848 apariciones y enlaza, cuando existe, una ficha factual, documentos de lore y puentes de separación epistemológica. La asignación de curador no certifica todas las afirmaciones originales: los módulos sin ficha factual directa siguen pendientes de revisión.
+
+La ampliación está descrita en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md` y la semilla de entrenamiento actualizada es `data/lore_seed_v0.5.jsonl` (207 registros).
