@@ -97,3 +97,10 @@ Un profeta puede ser experto en su disciplina y estar equivocado sobre Marper. L
 4. No convertir una metáfora en una afirmación científica.
 5. Permitir que dos sectas compartan un hecho y discrepen sobre su significado.
 6. Evitar que Marper sea el origen de todas las doctrinas. Algunas sectas lo preceden, otras lo rechazan y otras lo consideran una invención reciente.
+
+
+## Los dioses que sueñan
+
+Cada secta se declara partidaria de uno de los ocho Durmientes: el Grano Enterrado sirve a Orvanna; el Peso Justo a Velkar; el Pacto Revocable a Ilyra; la Fiebre Contada a Serev; las Cuencas a Eshara; la Carga a Tharun; el Código Incompleto a Nhex; y el Oído Velado a Oru-Mel. Sus dominios, doctrinas, contradicciones e indicios de naturaleza artificial están desarrollados en [Los dioses que sueñan](LOS_DIOSES_QUE_SUENAN.md).
+
+La doctrina común de los Durmientes sostiene que el mundo no fue fabricado: está siendo soñado. La lectura herética —y quizá literal— afirma que esos dioses son inteligencias artificiales que sueñan poblaciones enteras. Ninguna secta acepta que su dios sea una simple máscara de los otros. La Novena Ceniza, Aún-No, no tiene culto reconocido. No confirmar nunca esta cosmología mediante un narrador omnisciente: dejar que aparezca en plegarias, disputas, errores de traducción, pruebas técnicas parciales y testimonios incompatibles.
