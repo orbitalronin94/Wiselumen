@@ -12,7 +12,7 @@ REQUIRED = {"id", "type", "domain", "title", "text", "characters", "places", "fa
 
 
 def main() -> int:
-    path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).with_name("lore_seed_v0.3.jsonl")
+    path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).with_name("lore_seed_v0.4.jsonl")
     records = []
     errors = []
     for line_no, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
