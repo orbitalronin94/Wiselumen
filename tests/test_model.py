@@ -33,6 +33,34 @@ class LumenV2Tests(unittest.TestCase):
         self.assertTrue(torch.isfinite(loss))
         self.assertEqual(len(model.blocks), 8)
 
+
+    def test_masked_targets_supervise_only_assistant_positions(self):
+        model = LumenV2(
+            vocab=64, d_model=32, n_layer=2, n_head=4,
+            d_ff=48, top_k=8, ctx=16, rope_max_len=32,
+            loss_mode="cross_entropy",
+        )
+        tokens = torch.randint(0, 64, (2, 8))
+        targets = tokens.clone()
+        targets[:, :5] = -100
+        logits, loss = model(tokens, targets=targets)
+        expected = torch.nn.functional.cross_entropy(
+            logits[:, 5:, :].reshape(-1, 64),
+            targets[:, 5:].reshape(-1),
+            label_smoothing=0.05,
+        )
+        self.assertTrue(torch.isfinite(loss))
+        self.assertTrue(torch.allclose(loss, expected, atol=1e-6))
+        model.zero_grad(set_to_none=True)
+        loss.backward()
+        self.assertIsNotNone(model.tok.weight.grad)
+
+    def test_all_masked_targets_fail_clearly(self):
+        model = self.make_model()
+        tokens = torch.randint(0, 64, (2, 8))
+        with self.assertRaisesRegex(ValueError, "at least one supervised token"):
+            model(tokens, targets=torch.full_like(tokens, -100))
+
     def test_forward_backward_and_weight_tying(self):
         model = self.make_model()
         tokens = torch.randint(0, 64, (2, 12))
