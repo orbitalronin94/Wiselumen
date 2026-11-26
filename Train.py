@@ -7,9 +7,9 @@ from pathlib import Path
 import torch
 
 try:
-    from Model import LumenV2
+    from Model import LumenV2, active_layers_for_step
 except ImportError:
-    from model import LumenV2
+    from model import LumenV2, active_layers_for_step
 
 
 def configure_cpu_runtime(threads=None, interop_threads=1):
@@ -311,7 +311,6 @@ def train_steps(
         multiplier = set_scheduled_lr(optimizer, global_step, warmup, total)
 
         use_amp = amp_dtype is not None and device.type in {"cuda", "cpu"}
-        from Model import active_layers_for_step
         active_layers = active_layers_for_step(global_step, mode, len(model.blocks))
         with torch.autocast(device_type=device.type, dtype=amp_dtype, enabled=use_amp):
             _, loss = model(inputs, targets=targets, active_layers=active_layers)
