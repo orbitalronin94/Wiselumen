@@ -148,7 +148,11 @@ def one_update(model, optimizer, ema, batches, global_step, amp_dtype=None):
     lr_scale = set_scheduled_lr(optimizer, global_step, warmup=10, total=30000)
     active = active_layers_for_step(global_step, "v22", len(model.blocks))
     losses = []
-    for batch in batches:
+    token_counts = [int(batch["targets"].ne(-100).sum()) for batch in batches]
+    total_tokens = sum(token_counts)
+    if total_tokens <= 0:
+        raise RuntimeError("effective batch contains no supervised tokens")
+    for batch, token_count in zip(batches, token_counts):
         ids = batch["input_ids"].to(dtype=torch.long)
         targets = batch["targets"].to(dtype=torch.long)
         enabled = amp_dtype is not None
@@ -156,8 +160,8 @@ def one_update(model, optimizer, ema, batches, global_step, amp_dtype=None):
             _, loss = model(ids, targets=targets, active_layers=active, return_logits=False)
         if loss is None or not torch.isfinite(loss):
             raise FloatingPointError(f"non-finite loss at global step {global_step}")
-        (loss / len(batches)).backward()
-        losses.append(float(loss.detach()))
+        (loss * (token_count / total_tokens)).backward()
+        losses.append((float(loss.detach()), token_count))
     grad_norm = torch.tensor(float("nan"))
     if (global_step + 1) % 5 == 0:
         grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -165,11 +169,14 @@ def one_update(model, optimizer, ema, batches, global_step, amp_dtype=None):
             raise FloatingPointError(f"non-finite grad norm at {global_step}")
     optimizer.step()
     if (global_step + 1) % 10 == 0:
-        ema.update(model)
-    return sum(losses) / len(losses), float(grad_norm), lr_scale
+        ema_model = model._orig_mod if hasattr(model, "_orig_mod") else model
+        ema.update(ema_model)
+    mean_loss = sum(value * count for value, count in losses) / total_tokens
+    return mean_loss, float(grad_norm), lr_scale
 
 
 def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
+    setup_started = time.perf_counter()
     model, optimizer, ema, fused_status = load_arm(checkpoint, fused=candidate)
     details = {"fused_adamw": fused_status, "ipex": "not-requested", "compile": "eager"}
     amp_dtype = None
@@ -201,6 +208,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
             details["compile"] = "max-autotune-fullgraph"
         except Exception as exc:
             details["compile"] = f"setup-failed:{type(exc).__name__}:{exc}"
+    setup_seconds = time.perf_counter() - setup_started
     started = time.perf_counter()
     losses, grad_norms = [], []
     for i in range(STEPS):
@@ -232,11 +240,14 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
         if (i + 1) % 10 == 0:
             print(f"{label} step={i+1}/{STEPS} loss={loss:.6f}", flush=True)
     elapsed = time.perf_counter() - started
+    total_elapsed = setup_seconds + elapsed
     return {
-        "label": label, "seconds": elapsed, "updates": STEPS,
+        "label": label, "seconds": elapsed, "setup_seconds": setup_seconds,
+        "end_to_end_seconds": total_elapsed, "updates": STEPS,
         "effective_examples": STEPS * EFFECTIVE_BS,
         "tokens_per_second": (STEPS * EFFECTIVE_BS * MAX_LEN) / elapsed,
         "updates_per_second": STEPS / elapsed,
+        "end_to_end_tokens_per_second": (STEPS * EFFECTIVE_BS * MAX_LEN) / total_elapsed,
         "mean_loss": sum(losses) / len(losses),
         "first10_loss": sum(losses[:10]) / min(10, len(losses)),
         "last10_loss": sum(losses[-10:]) / min(10, len(losses)),
@@ -274,6 +285,9 @@ def main():
         "baseline": baseline, "candidate": candidate,
         "candidate_vs_main_tokens_per_second_gain_pct": (
             candidate["tokens_per_second"] / baseline["tokens_per_second"] - 1
+        ) * 100,
+        "candidate_vs_main_end_to_end_gain_pct": (
+            candidate["end_to_end_tokens_per_second"] / baseline["end_to_end_tokens_per_second"] - 1
         ) * 100,
         "loss_comparison_note": "Same examples and effective batch per update; BF16/compile/IPEX/fused AdamW may change numerics.",
         "chunked_logits_note": "Candidate enables exact-objective chunked projection/CE over supervised positions (chunk size 2048); main keeps the existing supervised-only, unchunked path. Neither materializes full [B,T,V].",
