@@ -1,0 +1,114 @@
+name: LUMEN V2.2 — Native Rust inference holdout
+run-name: V2.2 native Rust inference (step 10000)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native-rust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "1"
+      CXX: clang++
+      LIBTORCH_USE_PYTORCH: "1"
+      LIBTORCH_BYPASS_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: orbitalronin94/WISE-RONIN
+          ref: d2981fdb01f18e88d2c46a7dc47daea6a6e7e3ea
+          path: oldrepo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install pinned CPU PyTorch for one-time checkpoint export
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.5.1
+          python -m pip install tokenizers==0.21.0 numpy
+          echo "LD_LIBRARY_PATH=$(python -c 'import torch,os; print(os.path.join(os.path.dirname(torch.__file__),"lib"))'):$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+      - name: Download exact V2.2 step-10000 checkpoint
+        env:
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p v22
+          gh run download 45783991902 --repo orbitalronin94/Wiselumen --name lumen-v22-step-10000 --dir v22
+          test -s v22/lumen-v22-step-10000.pt
+          test -s v22/tokenizer-v22-derived.json
+      - name: Download frozen legacy holdout inputs
+        uses: actions/download-artifact@v4
+        with:
+          name: paired-v32-inputs-1000000-45782396142
+          path: oldinputs
+          repository: orbitalronin94/WISE-RONIN
+          run-id: 45782396142
+          github-token: \${{ secrets.GITHUB_TOKEN }}
+      - name: Recover exact Python baseline
+        uses: actions/download-artifact@v4
+        with:
+          name: v22-python-vs-rust-holdout-step10000
+          path: baseline
+          repository: orbitalronin94/Wiselumen
+          run-id: 45827049829
+          github-token: \${{ secrets.GITHUB_TOKEN }}
+      - name: Export checkpoint once to TorchScript
+        run: |
+          python scripts/export_v22_torchscript.py --checkpoint v22/lumen-v22-step-10000.pt --out v22/lumen-v22-step-10000.ts --step 10000 --threads 4
+          test -s v22/lumen-v22-step-10000.ts
+      - name: Build native Rust evaluator against CPU LibTorch
+        run: cargo build --release --manifest-path rust-holdout/Cargo.toml
+      - name: Run native Rust inference (no Python inference process)
+        run: |
+          mkdir -p results/rust
+          /usr/bin/time -f "%e" -o results/rust/wall_seconds.txt \
+            rust-holdout/target/release/lumen-holdout-native \
+              --model v22/lumen-v22-step-10000.ts \
+              --tokenizer v22/tokenizer-v22-derived.json \
+              --system system_prompt_short.txt \
+              --mc-holdout oldinputs/eval/holdout_multiple_choice.jsonl \
+              --freeform-holdout oldrepo/data/freeform_identity_general_100.jsonl \
+              --out-dir results/rust --step 10000 --threads 4
+      - name: Compare native Rust against frozen Python baseline
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          base=pathlib.Path("baseline/python"); rust=pathlib.Path("results/rust")
+          report={"checkpoint_step":10000,"python_baseline_run":45827049829,"rust_runtime":"native Rust + LibTorch TorchScript"}
+          paths=[base/"official_holdout_2431_v22_step10000.json",rust/"official_holdout_2431_v22_step10000.json",
+                 base/"freeform_100_v22_step10000.json",rust/"freeform_100_v22_step10000.json"]
+          if all(p.exists() for p in paths):
+              a,b,c,d=[json.loads(p.read_text()) for p in paths]
+              report["python"]={"correct":a["correct"],"scored":a["scored"],"accuracy":a["accuracy"],"mean_gold_answer_nll":a["mean_gold_answer_nll"]}
+              report["rust"]={"correct":b["correct"],"scored":b["scored"],"accuracy":b["accuracy"],"mean_gold_answer_nll":b["mean_gold_answer_nll"]}
+              report["mc_predictions_identical"]=a["predictions"]==b["predictions"]
+              report["freeform_token_ids_identical"]=[x["token_ids"] for x in c["results"]]==[x["token_ids"] for x in d["results"]]
+              report["freeform_text_identical"]=[x["response"] for x in c["results"]]==[x["response"] for x in d["results"]]
+              report["mc_holdout_hash_match"]=a["holdout_sha256"]==b["holdout_sha256"]
+              report["tokenizer_hash_match"]=a["tokenizer_sha256"]==b["tokenizer_sha256"]
+          else: report["comparison_error"]="Missing baseline or native Rust outputs"
+          for label,p in (("python",base/"wall_seconds.txt"),("rust",rust/"wall_seconds.txt")):
+              if p.exists(): report.setdefault("wall_seconds",{})[label]=float(p.read_text().strip())
+          if set(report.get("wall_seconds",{}))=={"python","rust"}:
+              report["rust_over_python_speedup"]=report["wall_seconds"]["python"]/report["wall_seconds"]["rust"]
+          pathlib.Path("results/native_rust_comparison.json").write_text(json.dumps(report,indent=2)+"\\n")
+          print(json.dumps(report,indent=2))
+          if report.get("mc_predictions_identical") is False or report.get("freeform_token_ids_identical") is False:
+              raise SystemExit("Parity mismatch: do not interpret speed until numerical/tokenization differences are resolved.")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v22-native-rust-holdout-step10000
+          path: |
+            results/
+            v22/lumen-v22-step-10000.ts
+            baseline/python/wall_seconds.txt
+          if-no-files-found: warn
+          retention-days: 90
