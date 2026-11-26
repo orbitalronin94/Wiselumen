@@ -87,3 +87,12 @@ El grafo conserva las 16.848 entradas como nodos de fuente indexados, no como 16
 - Proyecciones de coaparición calculadas solo sobre los registros curados, no sobre las 16.848 repeticiones del Palimpsesto.
 
 La validación de GitHub Actions reconstruyó el índice y el grafo, comprobó la secuencia PM00001–PM16848, dimensiones, índices COO, pesos, coordenadas duplicadas y enlaces. Resultado de la ejecución 45888554867: **GRAPH VALID**.
+
+
+## Grafo v0.4: índice estructural completo del Corpus Maestro
+
+La versión v0.4 se almacena como un manifiesto (`corpus/graph_v0.4.json`), cuatro fragmentos de nodos (`corpus/graph_v0.4/nodes_part*.jsonl`) y matrices COO bajo `corpus/graph_v0.4/matrices/`. El manifiesto declara el orden lexicográfico global de los nodos; la posición base cero al concatenar los cuatro fragmentos es el índice de fila/columna de todas las matrices.
+
+La cobertura incluye los 160 registros curados de v0.4 y 16.848 registros fuente del Palimpsesto. El grafo contiene 17.479 nodos y 51.907 relaciones dirigidas principales. Las matrices de proyección por personaje, lugar y dominio se calculan solo sobre los registros curados: indican coaparición, no causalidad, dependencia ni acuerdo. Las revelaciones fuente se conectan con su tema y con el nodo de procedencia, pero no se convierten automáticamente en afirmaciones factuales validadas.
+
+El estado `complete_structural_index` significa que cada revelación está indexada por ID, tema y rango de líneas. No significa que las afirmaciones del Palimpsesto hayan superado una auditoría factual individual.
