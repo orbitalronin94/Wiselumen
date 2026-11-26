@@ -202,3 +202,10 @@ No aumentar la proporción de ficción solo porque produzca respuestas más vist
 Un registro se acepta si aporta un dato, relación, voz, consecuencia o forma documental nueva; no contradice silenciosamente el canon; no es una paráfrasis trivial; distingue conocimiento real de ficción; puede vincularse a otros registros sin exigir que el lector conozca todo el corpus; y tiene una voz y propósito reconocibles.
 
 **Lema de la Casa de los Índices:** «El archivo no garantiza la verdad. Garantiza que alguien quiso conservar una versión de ella.»
+
+
+## 14. Profetas y escisiones doctrinales
+
+La Concordia incorpora ocho movimientos sectarios con profetas especialistas: Secta del Grano Enterrado (agronomía), Comunión del Peso Justo (economía), Iglesia del Pacto Revocable (derecho), Hermanos de la Fiebre Contada (epidemiología), Liturgia de las Cuencas (ecología), Hermandad de la Carga (ingeniería civil), Orden del Código Incompleto (informática) e Iglesia del Oído Velado (acústica y música). Sus perfiles, relaciones, doctrinas y conflictos constan en [Sectas y profetas](SECTAS_Y_PROFETAS.md).
+
+Cada profeta debe aportar conocimiento real contrastable sin convertirse en narrador omnisciente. Los registros factuales se mantienen independientes de sus sermones; los registros puente explicitan qué parte es ciencia o conocimiento externo y qué parte es interpretación ficticia. Las sectas pueden compartir observaciones y discrepar sobre su significado. Marper no es el fundador secreto de todas ellas.
