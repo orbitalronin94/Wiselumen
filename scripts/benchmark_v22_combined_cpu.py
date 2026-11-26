@@ -197,10 +197,12 @@ def one_update(model, optimizer, ema, batches, global_step, amp_dtype=None):
 
 
 def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
-    # Both arms use identical intra-op=1 and inter-op=1 thread settings.
+    # Both arms use identical intra-op=8 and inter-op=1 thread settings.
     cpu_runtime = configure_cpu_runtime(
-        threads=1, interop_threads=1
+        threads=8, interop_threads=1
     )
+    if cpu_runtime["intraop_threads"] != 8 or cpu_runtime["interop_threads"] != 1:
+        raise RuntimeError(f"Expected intra-op=8/inter-op=1, got {cpu_runtime}")
     setup_started = time.perf_counter()
     model, optimizer, ema, fused_status = load_arm(checkpoint, fused=candidate)
     details = {
@@ -299,7 +301,7 @@ def main():
         print(subprocess.check_output(["lscpu"], text=True), flush=True)
     except Exception:
         pass
-    print("cpu_runtime_initial", configure_cpu_runtime(threads=1, interop_threads=1), flush=True)
+    print("cpu_runtime_initial", configure_cpu_runtime(threads=8, interop_threads=1), flush=True)
     ckpt_path = Path("artifacts/lumen-v22-step-20000.pt")
     if not ckpt_path.exists():
         raise FileNotFoundError(ckpt_path)
@@ -315,6 +317,7 @@ def main():
         "status": "completed", "checkpoint_step": START_STEP,
         "checkpoint_artifact_sha256": "5a5c20fed63238b031188295e1db9eae876951e1e63137b9e969eacb22574fb",
         "steps_per_arm": STEPS, "same_effective_batch": EFFECTIVE_BS,
+        "thread_configuration": {"baseline": "intra=8,inter=1", "candidate": "intra=8,inter=1"},
         "same_examples_and_order": True, "provenance": provenance,
         "baseline": baseline, "candidate": candidate,
         "candidate_vs_main_tokens_per_second_gain_pct": (
