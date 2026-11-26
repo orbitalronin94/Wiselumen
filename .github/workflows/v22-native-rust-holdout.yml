@@ -2,6 +2,12 @@ name: LUMEN V2.2 — Native Rust inference holdout
 run-name: V2.2 native Rust inference (step 10000)
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v22-native-rust-holdout.yml'
+      - 'rust-holdout/**'
+      - 'scripts/export_v22_torchscript.py'
 permissions:
   contents: read
   actions: read
@@ -97,7 +103,7 @@ jobs:
               if p.exists(): report.setdefault("wall_seconds",{})[label]=float(p.read_text().strip())
           if set(report.get("wall_seconds",{}))=={"python","rust"}:
               report["rust_over_python_speedup"]=report["wall_seconds"]["python"]/report["wall_seconds"]["rust"]
-          pathlib.Path("results/native_rust_comparison.json").write_text(json.dumps(report,indent=2)+"\\n")
+          pathlib.Path("results/native_rust_comparison.json").write_text(json.dumps(report,indent=2)+"\n")
           print(json.dumps(report,indent=2))
           if report.get("mc_predictions_identical") is False or report.get("freeform_token_ids_identical") is False:
               raise SystemExit("Parity mismatch: do not interpret speed until numerical/tokenization differences are resolved.")
