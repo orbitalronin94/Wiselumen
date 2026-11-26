@@ -509,3 +509,16 @@ La hipótesis se fortalece si aumenta la intrusión estilística en preguntas ne
 - [Validador](../data/validate_lore_dataset.py)
 
 **Conclusión:** el proyecto no consiste únicamente en enseñar a LUMEN un mundo ficticio. Consiste en construir un entorno donde conocimiento verificable, autoridad narrativa y cosmología inventada compiten por controlar la forma de decir la verdad. El fenómeno decisivo no será que el modelo repita nombres de dioses, sino comprobar si la sintaxis de esos dioses invade respuestas que deberían poder existir sin ellos.
+
+
+## Ampliación del dataset: v0.3
+
+Se conserva v0.2 como línea base (69 registros, 51.006 bytes). La versión v0.3 añade 16 documentos de lore (L029–L044) con atribuciones contradictorias a Marper, testimonios, cartas, actas, diálogos y notas editoriales. Las escenas incluyen a Frater Nul, Sor Abulia, el Soyas, Ivara, Edria, Narel, Lume, Ammara, Mara Vey, Ildren, Sovel y Tovan. No se añaden afirmaciones factuales a esos relatos: las afirmaciones no verificadas quedan en incertidumbre y se mantienen en el tipo lore.
+
+### Medición de tamaños
+
+- Corpus original `Marper-Codice-Juntado (1).txt`: 20.401.800 bytes (20,40 MB decimales; 19,46 MiB), tamaño reportado por la API de GitHub para el blob del archivo en esta rama.
+- Dataset estructurado v0.2: 51.006 bytes (50,79 KiB), 69 registros.
+- Dataset estructurado v0.3: 67.553 bytes (67,55 KB; 65,97 KiB), 85 registros (23 fact, 44 lore, 18 bridge).
+
+La medida de v0.3 corresponde al JSONL UTF-8 serializado publicado; no incluye compresión ni tokenizer. La medida del corpus original es el tamaño exacto del archivo almacenado en GitHub.
