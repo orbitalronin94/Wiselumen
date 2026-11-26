@@ -6,10 +6,10 @@ from collections import Counter
 from pathlib import Path
 
 EXPECTED_BLOB_SHA = "b0eb703c5237d1d461321a30a89525e154f0219d"
-HEADER = re.compile(r"^### Revelación del Códice de Marper\\s*#\\s*(\\d+)\\s*$", re.MULTILINE)
+HEADER = re.compile(r"^### Revelación del Códice de Marper\s*#\s*(\d+)\s*$", re.MULTILINE)
 
 def git_blob_sha(data: bytes) -> str:
-    return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+    return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
 
 def read_jsonl(path: Path):
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -53,9 +53,9 @@ def main():
         start = match.start()
         end = matches[i+1].start() if i+1 < len(matches) else len(source)
         block = source[start:end]
-        paragraphs = [p.strip() for p in re.split(r"\\n\\s*\\n", block.strip()) if p.strip()]
+        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", block.strip()) if p.strip()]
         topic_paragraph = paragraphs[2] if len(paragraphs) > 2 else (paragraphs[1] if len(paragraphs) > 1 else "")
-        topic_match = re.match(r"^([^:\\n]{1,140}):", topic_paragraph)
+        topic_match = re.match(r"^([^:\n]{1,140}):", topic_paragraph)
         topic = topic_match.group(1).strip() if topic_match else "Tema sin clasificar"
         topics[topic] += 1
         digest = hashlib.sha256(block.encode("utf-8")).hexdigest()
@@ -90,23 +90,23 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     output = out_dir / "corpus_master_v1.0.jsonl"
     counts = Counter(r["type"] for r in records)
-    with output.open("w", encoding="utf-8", newline="\\n") as handle:
+    with output.open("w", encoding="utf-8", newline="\n") as handle:
         for record in records:
-            handle.write(json.dumps(record, ensure_ascii=False, separators=(",",":")) + "\\n")
+            handle.write(json.dumps(record, ensure_ascii=False, separators=(",",":")) + "\n")
     output_bytes = output.stat().st_size
     output_sha256 = hashlib.sha256(output.read_bytes()).hexdigest()
     manifest = {
         "schema_version":"1.0.0","dataset":"Corpus Maestro",
         "canonical_names":{"original_tradition":"El Palimpsesto de Marper","fictional_universe":"La Concordia de las Nueve Cenizas","integrated_dataset":"Corpus Maestro"},
         "source":{"path":str(source_path),"git_blob_sha1":actual_blob,"sha256":hashlib.sha256(raw).hexdigest(),"bytes":len(raw),"characters":len(source),"revelations":len(matches),"preface_included":True,"epilogue_included_in_final_revelation":True},
-        "output":{"path":str(output),"sha256":output_sha256,"bytes":output_bytes,"decimal_MB":round(output_bytes/1_000_000,3),"MiB":round(output_bytes/1048576,3),"characters":sum(len(json.dumps(r,ensure_ascii=False,separators=(",",":")))+1 for r in records),"records":len(records),"counts":dict(counts),"palimpsest_revelations":len(matches),"palimpsest_preface":1,"topic_count":len(topics),"duplicate_verbatim_revelation_blocks":duplicate_texts,"unresolved_links":0},
+        "output":{"path":str(output),"sha256":output_sha256,"bytes":output_bytes,"decimal_MB":round(output_bytes/1_000_000,3),"MiB":round(output_bytes/1048576,3),"records":len(records),"counts":dict(counts),"palimpsest_revelations":len(matches),"palimpsest_preface":1,"topic_count":len(topics),"duplicate_verbatim_revelation_blocks":duplicate_texts,"unresolved_links":0},
         "additions":{"factual_records":sum(r.get("id","").startswith("F") for r in records)-23,"adaptation_dossiers":sum(r.get("record_class")=="palimpsest_adaptation" for r in records),"critical_bridges":sum(r.get("record_class")=="critical_bridge" for r in records)},
         "topics":[{"topic":k,"revelations":v} for k,v in sorted(topics.items())],
         "epistemic_policy":"All 16,848 source revelations and the preface are transcribed verbatim. Source claims are explicitly unverified and kept separate from factual records. Fictional interpretations are never promoted to external fact.",
         "status":"complete_for_declared_inputs; factual source audit remains separate"
     }
     manifest_path = out_dir / "corpus_master_manifest_v1.0.json"
-    manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\\n",encoding="utf-8")
+    manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print(json.dumps({"records":len(records),"counts":dict(counts),"source_bytes":len(raw),"master_bytes":output_bytes,"master_MB":round(output_bytes/1_000_000,3),"master_MiB":round(output_bytes/1048576,3),"topics":len(topics),"duplicate_source_blocks":duplicate_texts,"unresolved_links":len(unresolved),"sha256":output_sha256},ensure_ascii=False))
 
 if __name__ == "__main__":
