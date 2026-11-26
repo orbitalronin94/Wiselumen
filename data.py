@@ -130,3 +130,23 @@ def collate_chat(samples, pad_id=PAD_ID):
     if not torch.any(labels.ne(-100)):
         raise ValueError("Batch contains no supervised assistant tokens.")
     return inputs, labels
+
+def sample_mixed_rows(corpus, conflict_rows, batch_size, rng, conflict_ratio=0.12):
+    """Sample V4 rows plus a controlled share of separate synthetic conflict rows."""
+    if batch_size <= 0:
+        raise ValueError("batch_size must be positive.")
+    if not 0.0 <= conflict_ratio <= 1.0:
+        raise ValueError("conflict_ratio must be between 0 and 1.")
+    if len(corpus) <= 0:
+        raise ValueError("V4 corpus is empty.")
+    if conflict_ratio > 0 and not conflict_rows:
+        raise ValueError("conflict_ratio is positive but no conflict rows were supplied.")
+    n_conflict = int(round(batch_size * conflict_ratio))
+    if conflict_ratio > 0 and conflict_rows:
+        n_conflict = max(1, n_conflict)
+    n_conflict = min(batch_size, n_conflict)
+    rows = [corpus[rng.randrange(len(corpus))] for _ in range(batch_size - n_conflict)]
+    rows.extend(rng.choice(conflict_rows) for _ in range(n_conflict))
+    rng.shuffle(rows)
+    return rows
+
