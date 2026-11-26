@@ -83,6 +83,7 @@ jobs:
       - name: Compare native Rust against frozen Python baseline
         if: always()
         run: |
+          mkdir -p results
           python - <<'PY'
           import json, pathlib
           base=pathlib.Path("baseline/python"); rust=pathlib.Path("results/rust")
