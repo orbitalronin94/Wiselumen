@@ -1,0 +1,1994 @@
+name: LUMEN V2.2 V5 resumable 1k blocks (20k-50k)
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-v5-blocks-20k-50k.yml"
+      - "scripts/train_v22_v5_blocks.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: lumen-v22-v5-blocks-20k-50k
+  cancel-in-progress: false
+jobs:
+  step_21000:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "20000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-step-20000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          gh run download 45812986256 --repo orbitalronin94/Wiselumen --name lumen-v22-step-20000 --dir artifacts/parent-download
+          PARENT_FILE="$(find artifacts/parent-download -type f -name 'lumen-v22-step-20000.pt' -print -quit)"
+          test -n "$PARENT_FILE"
+          cp "$PARENT_FILE" "$PARENT_CHECKPOINT"
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-21000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-21000.pt
+            artifacts/metrics-v5-optimized-step-21000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_22000:
+    needs: step_21000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "21000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-21000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 21000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-21000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-22000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-22000.pt
+            artifacts/metrics-v5-optimized-step-22000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_23000:
+    needs: step_22000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "22000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-22000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 22000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-22000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-23000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-23000.pt
+            artifacts/metrics-v5-optimized-step-23000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_24000:
+    needs: step_23000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "23000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-23000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 23000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-23000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-24000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-24000.pt
+            artifacts/metrics-v5-optimized-step-24000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_25000:
+    needs: step_24000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "24000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-24000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 24000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-24000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-25000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-25000.pt
+            artifacts/metrics-v5-optimized-step-25000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_26000:
+    needs: step_25000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "25000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-25000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 25000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-25000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-26000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-26000.pt
+            artifacts/metrics-v5-optimized-step-26000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_27000:
+    needs: step_26000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "26000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-26000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 26000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-26000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-27000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-27000.pt
+            artifacts/metrics-v5-optimized-step-27000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_28000:
+    needs: step_27000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "27000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-27000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 27000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-27000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-28000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-28000.pt
+            artifacts/metrics-v5-optimized-step-28000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_29000:
+    needs: step_28000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "28000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-28000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 28000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-28000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-29000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-29000.pt
+            artifacts/metrics-v5-optimized-step-29000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_30000:
+    needs: step_29000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "29000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-29000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 29000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-29000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-30000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-30000.pt
+            artifacts/metrics-v5-optimized-step-30000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_31000:
+    needs: step_30000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "30000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-30000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 30000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-30000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-31000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-31000.pt
+            artifacts/metrics-v5-optimized-step-31000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_32000:
+    needs: step_31000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "31000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-31000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 31000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-31000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-32000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-32000.pt
+            artifacts/metrics-v5-optimized-step-32000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_33000:
+    needs: step_32000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "32000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-32000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 32000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-32000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-33000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-33000.pt
+            artifacts/metrics-v5-optimized-step-33000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_34000:
+    needs: step_33000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "33000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-33000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 33000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-33000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-34000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-34000.pt
+            artifacts/metrics-v5-optimized-step-34000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_35000:
+    needs: step_34000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "34000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-34000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 34000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-34000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-35000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-35000.pt
+            artifacts/metrics-v5-optimized-step-35000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_36000:
+    needs: step_35000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "35000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-35000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 35000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-35000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-36000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-36000.pt
+            artifacts/metrics-v5-optimized-step-36000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_37000:
+    needs: step_36000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "36000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-36000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 36000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-36000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-37000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-37000.pt
+            artifacts/metrics-v5-optimized-step-37000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_38000:
+    needs: step_37000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "37000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-37000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 37000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-37000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-38000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-38000.pt
+            artifacts/metrics-v5-optimized-step-38000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_39000:
+    needs: step_38000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "38000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-38000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 38000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-38000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-39000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-39000.pt
+            artifacts/metrics-v5-optimized-step-39000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_40000:
+    needs: step_39000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "39000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-39000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 39000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-39000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-40000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-40000.pt
+            artifacts/metrics-v5-optimized-step-40000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_41000:
+    needs: step_40000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "40000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-40000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 40000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-40000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-41000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-41000.pt
+            artifacts/metrics-v5-optimized-step-41000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_42000:
+    needs: step_41000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "41000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-41000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 41000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-41000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-42000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-42000.pt
+            artifacts/metrics-v5-optimized-step-42000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_43000:
+    needs: step_42000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "42000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-42000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 42000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-42000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-43000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-43000.pt
+            artifacts/metrics-v5-optimized-step-43000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_44000:
+    needs: step_43000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "43000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-43000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 43000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-43000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-44000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-44000.pt
+            artifacts/metrics-v5-optimized-step-44000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_45000:
+    needs: step_44000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "44000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-44000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 44000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-44000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-45000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-45000.pt
+            artifacts/metrics-v5-optimized-step-45000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_46000:
+    needs: step_45000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "45000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-45000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 45000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-45000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-46000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-46000.pt
+            artifacts/metrics-v5-optimized-step-46000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_47000:
+    needs: step_46000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "46000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-46000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 46000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-46000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-47000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-47000.pt
+            artifacts/metrics-v5-optimized-step-47000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_48000:
+    needs: step_47000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "47000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-47000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 47000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-47000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-48000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-48000.pt
+            artifacts/metrics-v5-optimized-step-48000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_49000:
+    needs: step_48000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "48000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-48000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 48000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-48000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-49000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-49000.pt
+            artifacts/metrics-v5-optimized-step-49000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+  step_50000:
+    needs: step_49000
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "49000"
+      STEPS: "1000"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-v5-optimized-step-49000.pt"
+      V5_ARCHIVE: "artifacts/wise-ronin-corpus-v5.0.0.zip"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v1
+      - name: Prepare parent checkpoint
+        run: |
+          mkdir -p artifacts
+          echo "Expecting parent checkpoint at step 49000"
+        uses: actions/download-artifact@v4
+          name: lumen-v22-v5-optimized-step-49000
+          path: artifacts
+      - name: Download V5 corpus on cache miss
+        run: |
+          if [ ! -s "$V5_ARCHIVE" ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" "$V5_ARCHIVE"
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  $V5_ARCHIVE" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Train exactly 1,000 steps
+        run: python scripts/train_v22_v5_blocks.py
+      - name: Upload resumable checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-optimized-step-50000
+          path: |
+            artifacts/lumen-v22-v5-optimized-step-50000.pt
+            artifacts/metrics-v5-optimized-step-50000.json
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
