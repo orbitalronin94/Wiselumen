@@ -106,3 +106,17 @@ No interpretar una caída de loss ponderada como directamente comparable con cro
 ## Principio
 
 Primero corrección y reproducibilidad; después benchmark. No se atribuyen multiplicadores de velocidad sin medición en el hardware objetivo.
+
+
+## LUMEN V2.1 — cambios seguros incorporados
+
+- `SYSTEM_PROMPT_LUMEN_V2.1.md` contiene el system prompt general de LUMEN.
+- `Model.py` conserva las ocho capas y acepta `active_layers`; las capas omitidas se convierten en identidad, sin eliminar parámetros ni cambiar la forma del checkpoint.
+- `seq_for_step()` define el curriculum 128 → 256 → 512. **Todavía requiere que el loader entregue batches con esa longitud**; el bucle genérico `train_steps()` recibe batches ya preparados y no los redimensiona.
+- `active_layers_for_step()` define 4 → 6 → 8 capas.
+- `Train.py` permite `mode="v21"`, EMA cada 10 pasos y clipping cada 5; `mode="original"` conserva las ocho capas y la cadencia anterior (EMA y clipping cada paso).
+- Las pruebas cubren los umbrales del curriculum y el forward con capas omitidas.
+
+### Pendiente deliberadamente
+
+Muon no se activa ni se incorpora todavía: la implementación de Newton–Schulz del borrador necesita validación numérica y benchmark CPU antes de ser una opción fiable. TokenDrop real, loader V4 y benchmark comparativo tampoco están implementados aquí. No se usa conversión de bytes a IDs ni fallback sintético para el corpus V4.
