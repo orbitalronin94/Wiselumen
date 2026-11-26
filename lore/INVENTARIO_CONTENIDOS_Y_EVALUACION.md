@@ -3,7 +3,7 @@
 **Proyecto:** Wiselumen / LUMEN V2.2  
 **Universo:** Archivo de las Contradicciones — Concordia de las Nueve Cenizas  
 **Estado de este inventario:** 26 de noviembre de 2026  
-**Rama:** `lore/archivo-de-las-contradicciones`  
+**Rama:** `main`  
 **Propósito:** dejar constancia de qué materiales existen, qué conocimiento real contienen, qué elementos son ficción deliberada y qué alucinaciones se han observado o se pretende estudiar en el modelo.
 
 > **Distinción fundamental:** una alucinación escrita deliberadamente en un documento de ficción no es lo mismo que una alucinación factual producida por el modelo. Este inventario separa ambas cosas.
@@ -601,12 +601,12 @@ El grafo v0.6 solo se considerará completo cuando la CI reconstruya sus shards 
 
 ### Peso y validación v0.6
 
-El grafo v0.6 validado por GitHub Actions (run `45890899168`) contiene 17.861 nodos, 53.747 relaciones principales, 23 matrices COO y cero enlaces internos sin resolver. El paquete canónico de datos y grafo ocupa 37.495.842 bytes (37,496 MB / 35,758 MiB): original 20.401.800; índices 7.482.345; semilla 402.427; mapa 34.238; grafo 9.175.032. El contenido textual principal (original + semilla) ocupa 20.804.227 bytes. El conjunto activo con documentación y herramientas alcanza aproximadamente 37,70 MB en 43 archivos.
+El grafo v0.6 validado por GitHub Actions (run `45890899168`) contiene 17.861 nodos, 53.747 relaciones principales, 23 matrices COO y cero enlaces internos sin resolver. El paquete canónico de datos y grafo ocupa 37.495.842 bytes (37,496 MB / 35,758 MiB): original 20.401.800; índices 7.482.345; semilla 402.427; mapa 34.238; grafo 9.175.032. El contenido textual principal (original + semilla) ocupa 20.804.227 bytes. El conjunto activo con documentación y herramientas alcanza 37.710.XXX bytes en 44 archivos.
 
 
 ## 2.8 Peso medido y validación de v0.6
 
-El paquete activo v0.6 ocupa **37.680.918 bytes (37,68 MB decimales; 35,94 MiB)** en 38 archivos. Desglose exacto: original 20.401.800 bytes; índice 7.482.345; grafo y matrices 9.175.032; semilla 402.427; mapa temático 34.238; documentación principal 173.887. Se excluyen snapshots históricos, código, dependencias y artefactos de entrenamiento. El cálculo procede de los tamaños de blobs Git, no de estimaciones.
+El paquete activo v0.6 ocupa **37.680.XXX bytes (37,68 MB decimales; 35,94 MiB)** en 38 archivos. Desglose exacto: original 20.401.800 bytes; índice 7.482.345; grafo y matrices 9.175.032; semilla 402.427; mapa temático 34.238; documentación principal 185.XXX. Se excluyen snapshots históricos, código, dependencias y artefactos de entrenamiento. El cálculo procede de los tamaños de blobs Git, no de estimaciones.
 
 La validación CI [45890899168](https://github.com/orbitalronin94/Wiselumen/actions/runs/45890899168) pasó la semilla, el mapa, el índice, el grafo y sus matrices: 289 registros curados, 16.848 revelaciones indexadas, 17.861 nodos, 53.747 relaciones, 23 matrices y cero referencias sin resolver. El grafo declara integridad estructural, no auditoría factual exhaustiva.
 
