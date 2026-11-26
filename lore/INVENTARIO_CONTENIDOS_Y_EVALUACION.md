@@ -1,4 +1,4 @@
-# Inventario del universo, corpus factual y comportamiento alucinatorio de LUMEN
+# Inventario del Palimpsesto de Marper, la Concordia y el Corpus Maestro
 
 **Proyecto:** Wiselumen / LUMEN V2.2  
 **Universo:** Archivo de las Contradicciones — Concordia de las Nueve Cenizas  
@@ -30,9 +30,10 @@ Esto es una hipótesis experimental y literaria. No demuestra que el modelo crea
 
 ## 2. Materiales y archivos identificados
 
-### 2.1 Corpus original de Marper
+### 2.1 El Palimpsesto de Marper
 
-**Archivo conocido:** `Marper-Codice-Juntado (1).txt`  
+**Nombre canónico:** El Palimpsesto de Marper  
+**Archivo fuente conocido:** `Marper-Codice-Juntado (1).txt`  
 **Tamaño del blob en GitHub:** 20.401.800 bytes (20,40 MB decimales; 19,46 MiB). La API de contenidos devolvió texto vacío en esta revisión; el tamaño procede de los metadatos del blob.  
 **Volumen registrado en el proyecto:** 16.848 revelaciones numeradas.  
 **Procedencia corregida por el usuario:** la mayor parte del contenido original era material de Isabel, con pequeñas ediciones adaptadas al lore ampliado. Por tanto, el archivo no debe describirse como una creación íntegramente nueva de Marper. La proporción exacta entre texto conservado y editado queda pendiente de comparación textual con la fuente original.
@@ -64,18 +65,18 @@ Los documentos principales del mundo son:
 
 ### 2.3 Dataset estructurado
 
-**Archivo canónico:** `data/lore_seed_v0.2.jsonl`  
+**Semilla estructurada vigente:** `data/lore_seed_v0.3.jsonl`  
 **Documentación:** `data/README_LORE_DATASET.md`  
 **Validador:** `data/validate_lore_dataset.py`
 
-La semilla 0.2 contiene 69 registros:
+La semilla 0.3 contiene 85 registros:
 
 | Tipo | Cantidad | Función |
 |---|---:|---|
 | `fact` | 23 | Conocimiento externo, directo y evaluable |
-| `lore` | 28 | Documentos ficticios de la Concordia |
+| `lore` | 44 | Documentos ficticios de la Concordia, incluidos ocho dogmas sectarios |
 | `bridge` | 18 | Conexiones explícitas entre conocimiento real y ficción |
-| **Total** | **69** | |
+| **Total** | **85** | |
 
 La versión 0.2 amplía la semilla con ocho profetas, ocho documentos de lore y ocho puentes hacia conocimiento factual nuevo.
 
@@ -507,7 +508,7 @@ La hipótesis se fortalece si aumenta la intrusión estilística en preguntas ne
 - [Registro de personajes](PERSONAJES.md)
 - [Sectas y profetas](SECTAS_Y_PROFETAS.md)
 - [Los dioses que sueñan](LOS_DIOSES_QUE_SUENAN.md)
-- [Dataset factual/lore/bridge 0.2](../data/lore_seed_v0.2.jsonl)
+- [Dataset factual/lore/bridge 0.3](../data/lore_seed_v0.3.jsonl)
 - [Documentación del dataset](../data/README_LORE_DATASET.md)
 - [Validador](../data/validate_lore_dataset.py)
 
@@ -525,3 +526,16 @@ Se conserva v0.2 como línea base (69 registros, 51.006 bytes). La versión v0.3
 - Dataset estructurado v0.3: 69.774 bytes (69,77 KB; 68,14 KiB), 85 registros (23 fact, 44 lore —incluidos 8 dogmas sectarios—, 18 bridge).
 
 La medida de v0.3 corresponde al JSONL UTF-8 serializado publicado; no incluye compresión ni tokenizer. La medida del corpus original es el tamaño exacto del archivo almacenado en GitHub.
+
+
+## 2.4 Nomenclatura canónica y coherencia mediante matrices
+
+A partir de esta revisión quedan fijados tres nombres distintos:
+
+- **El Palimpsesto de Marper**: tradición textual original y sus adaptaciones. La mayor parte del material inicial procedía de Isabel y recibió pequeñas modificaciones para adaptarlo al lore. Isabel queda registrada como procedencia, no como nombre del corpus ni como autora única.
+- **La Concordia de las Nueve Cenizas**: universo diegético, con su historia, geografía, personajes, instituciones, sectas, dioses y documentos contradictorios.
+- **Corpus Maestro**: integración de Palimpsesto, Concordia y conocimiento factual, con procedencia y alcance epistemológico preservados.
+
+La coherencia se representa mediante un grafo heterogéneo y matrices dispersas en `corpus/graph_v0.3.json`. La especificación está en `corpus/ARQUITECTURA_GRAFO_MATRICES.md`; el validador, en `corpus/validate_graph.py`. La primera versión cubre los 85 registros de la semilla v0.3 y sus entidades explícitas: 341 nodos y 654 relaciones documentales/entidad, más matrices de proyección por personajes, lugares y dominios. No quedan referencias internas sin resolver.
+
+**Estado incompleto declarado:** el archivo fuente de El Palimpsesto tiene 20.401.800 bytes y se registran 16.848 revelaciones, pero GitHub Contents API devuelve contenido vacío al intentar recuperarlo. El grafo incluye un nodo de procedencia con estos metadatos, no 16.848 revelaciones ficticiamente reconstruidas. Por tanto, el grafo v0.3 es una primera capa estructural válida, pero el Corpus Maestro y el grafo global no pueden declararse completos hasta recuperar el texto íntegro y cotejarlo con la fuente de Isabel.
