@@ -5,12 +5,29 @@ on:
     paths:
       - ".github/workflows/v22-combined-cpu-real-20k.yml"
       - "scripts/benchmark_v22_combined_cpu.py"
+  pull_request:
+    paths:
+      - ".github/workflows/v22-combined-cpu-real-20k.yml"
+      - "scripts/benchmark_v22_combined_cpu.py"
+      - "Model.py"
   workflow_dispatch:
 permissions:
   contents: read
   actions: read
 jobs:
+  syntax-check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile Python sources
+        run: python -m py_compile Model.py scripts/benchmark_v22_combined_cpu.py scripts/train_v22_v5_mixed.py
+
   paired-combined-cpu:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     env:
