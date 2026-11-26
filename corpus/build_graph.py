@@ -135,7 +135,7 @@ if __name__=="__main__":
  p.add_argument("--dataset",default="data/lore_seed_v0.4.jsonl")
  p.add_argument("--index-dir",default="data")
  p.add_argument("--output",default="corpus/graph_v0.4.json")
- p.add_argument("--dataset-blob-sha",default="89bb755323443ad0521b999ad62759d03f4c8a3b")
+ p.add_argument("--dataset-blob-sha",default="8178ec13708fd71bc311a3b6d0b1708c4be8088f")
  a=p.parse_args()
  indexes=[Path(a.index_dir)/f"palimpsesto_index_v0.1_part{i}.jsonl" for i in range(1,5)]
  build(a.dataset,indexes,a.output,a.dataset_blob_sha)
