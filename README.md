@@ -260,3 +260,6 @@ La cobertura narrativa y de separación epistemológica es 41/41; la auditoría 
 
 
 **Peso medido v0.6:** el paquete canónico de datos y grafo ocupa **37.495.842 bytes (37,496 MB / 35,758 MiB)**: original, cuatro índices, semilla v0.6, mapa de 41 módulos y grafo v0.6. El contenido textual principal (original + semilla) ocupa 20.804.227 bytes. El manifiesto de peso y desglose está en [Adaptación v0.6](corpus/PALIMPSESTO_ADAPTACION_v0.6.md).
+
+
+**Peso medido del paquete activo v0.6:** **37.669.729 bytes (37,67 MB / 35,92 MiB)** en 37 archivos. Incluye el original, cuatro shards de índice, semilla v0.6, mapa temático v0.3, grafo v0.6 y documentación principal. Desglose reproducible: [medición del paquete v0.6](corpus/PAQUETE_CORPUS_MAESTRO_v0.6.md).
