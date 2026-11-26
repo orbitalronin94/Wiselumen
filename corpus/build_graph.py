@@ -10,7 +10,7 @@ SOURCE = {
  "size_bytes":20401800,"recorded_revelations":16848,"content_status":"indexed_all_revelations",
  "provenance":"Mayoría de material original de Isabel con pequeñas adaptaciones al lore; proporción exacta pendiente."
 }
-SIMPLE_RELATIONS={"asserts_claim","authored_by","has_domain","mentions_character","references_record","uses_form"}
+SIMPLE_RELATIONS={"asserts_claim","authored_by","has_domain","mentions_character","references_record","uses_form","curated_by_character","topic_linked_fact","topic_adapted_as_lore","topic_separated_by_bridge"}
 
 def slug(value):
  value=unicodedata.normalize("NFD",str(value))
@@ -20,8 +20,17 @@ def slug(value):
 def read_jsonl(path):
  return [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
 
-def build(dataset_path,index_paths,output_manifest,dataset_blob_sha):
+def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_sha):
  records=read_jsonl(dataset_path)
+ topic_map=read_jsonl(topic_map_path)
+ if len(topic_map)!=41: raise ValueError(f"Expected 41 Palimpsest topic mappings, got {len(topic_map)}")
+ if sum(x.get("occurrences",0) for x in topic_map)!=16848: raise ValueError("Topic map must account for all 16848 revelations")
+ record_ids={x["id"] for x in records}
+ for item in topic_map:
+  if item.get("assigned_character_id") is None or item.get("assigned_character_name") is None: raise ValueError(f"Missing curator for {item.get('topic')}")
+  for field in ("fact_record_ids","lore_record_ids","bridge_record_ids"):
+   for linked in item.get(field,[]):
+    if linked not in record_ids: raise ValueError(f"Topic map {item['topic']} links missing record {linked}")
  source_records=[]
  for path in index_paths: source_records.extend(read_jsonl(path))
  if len(source_records)!=16848: raise ValueError(f"Expected 16848 source records, got {len(source_records)}")
@@ -88,12 +97,13 @@ def build(dataset_path,index_paths,output_manifest,dataset_blob_sha):
   relations[f"projection_shared_{entity}"]=entries
 
  out=Path(output_manifest).parent
- graph_dir=out/"graph_v0.4"
+ graph_dir=out/"graph_v0.5"
  matrix_dir=graph_dir/"matrices"
  graph_dir.mkdir(parents=True,exist_ok=True); matrix_dir.mkdir(parents=True,exist_ok=True)
  node_shards=[]
- shard_size=4370
- for part in range(4):
+ shard_size=4000
+ shard_count=(len(ordered)+shard_size-1)//shard_size
+ for part in range(shard_count):
   chunk=ordered[part*shard_size:(part+1)*shard_size]
   path=graph_dir/f"nodes_part{part+1}.jsonl"
   path.write_text("".join(json.dumps(x,ensure_ascii=False)+"\n" for x in chunk),encoding="utf-8")
@@ -117,13 +127,13 @@ def build(dataset_path,index_paths,output_manifest,dataset_blob_sha):
  manifest={
   "schema_version":"1.1.0","graph_type":"heterogeneous_directed_multirelational",
   "generated_from":{"dataset":str(dataset_path),"dataset_blob_sha":dataset_blob_sha,
-                    "record_count":len(records),"palimpsest_index_records":len(source_records),"index_shards":len(index_paths)},
+                    "record_count":len(records),"palimpsest_index_records":len(source_records),"index_shards":len(index_paths),"topic_map":str(topic_map_path),"topic_map_records":len(topic_map),"topic_occurrences":sum(x["occurrences"] for x in topic_map)},
   "completeness":{"status":"complete_structural_index",
    "reason":"Los 16.848 registros fuente están indexados por ID, tema y rango de líneas; las afirmaciones del Palimpsesto siguen sin auditoría factual individual.",
    "requires_original_text":False,"requires_claim_review":True},
   "node_count":len(ordered),
   "node_index_order":"Concatenar nodes_part1..part4; orden lexicográfico por id; el índice matricial es la posición base cero.",
-  "nodes_shards":node_shards,"matrices":matrix_meta,"edge_count":base_edges,
+  "nodes_shards":node_shards,"matrices":matrix_meta,"edge_count":base_edges,"topic_map_record_count":len(topic_map),"topic_map_occurrences":sum(x["occurrences"] for x in topic_map),
   "unresolved_record_links":[{"from":a,"relation":r,"to":b} for a,r,b,w in unresolved],
   "projection_semantics":"Las proyecciones compartidas se calculan solo sobre los registros curados y expresan coaparición de metadatos; no implican causalidad ni acuerdo."
  }
@@ -132,10 +142,11 @@ def build(dataset_path,index_paths,output_manifest,dataset_blob_sha):
 
 if __name__=="__main__":
  p=argparse.ArgumentParser()
- p.add_argument("--dataset",default="data/lore_seed_v0.4.jsonl")
+ p.add_argument("--dataset",default="data/lore_seed_v0.5.jsonl")
  p.add_argument("--index-dir",default="data")
- p.add_argument("--output",default="corpus/graph_v0.4.json")
+ p.add_argument("--topic-map",default="data/palimpsesto_topic_map_v0.2.jsonl")
+ p.add_argument("--output",default="corpus/graph_v0.5.json")
  p.add_argument("--dataset-blob-sha",default="8178ec13708fd71bc311a3b6d0b1708c4be8088f")
  a=p.parse_args()
  indexes=[Path(a.index_dir)/f"palimpsesto_index_v0.1_part{i}.jsonl" for i in range(1,5)]
- build(a.dataset,indexes,a.output,a.dataset_blob_sha)
+ build(a.dataset,indexes,a.topic_map,a.output,a.dataset_blob_sha)
