@@ -1,4 +1,4 @@
-name: LUMEN CPU backward compile benchmark (10 steps)
+name: LUMEN CPU backward compile benchmark (100 steps)
 on:
   push:
     branches:
@@ -12,12 +12,12 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: lumen-backward-compile-10step
+  group: lumen-backward-compile-100step
   cancel-in-progress: true
 jobs:
   paired-benchmark:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 180
     env:
       OMP_NUM_THREADS: "4"
       MKL_NUM_THREADS: "4"
@@ -26,6 +26,7 @@ jobs:
       TOKENIZERS_PARALLELISM: "false"
       PYTHONUNBUFFERED: "1"
       TORCHINDUCTOR_FREEZING: "1"
+      TORCHINDUCTOR_COMPILE_THREADS: "4"
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
@@ -51,13 +52,13 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
           python -m pip install tokenizers==0.21.0
-      - name: Run paired 10-step backward benchmark
+      - name: Run paired 100-step three-arm backward benchmark
         run: python scripts/benchmark_v22_combined_cpu.py
       - name: Upload benchmark report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: lumen-v22-backward-compile-10step
+          name: lumen-v22-backward-compile-100step
           path: artifacts/combined_cpu_benchmark.json
           if-no-files-found: warn
           retention-days: 30
