@@ -68,3 +68,19 @@ Estos ocho personajes son autoridades religiosas disputadas, no portavoces omnis
 | P038 | Lume de las Cuatro Resonancias | Profetisa de la Iglesia del Oído Velado; cisma musical del Umbral Quieto | Música, acústica, ritmo, armónicos y percepción auditiva | Rítmica, sensorial y analítica; puede explicar una consonancia sin despojarla de belleza. | ¿Compuso las canciones que se atribuyen a Liria Senn o las recuerda de un futuro archivo? |
 
 Las sectas discrepan sobre la autoridad de Marper, el significado de las Nueve Cenizas y la legitimidad del Tribunal. Ninguna debe ser presentada como la religión verdadera del mundo. Los profetas pueden acertar en su especialidad y equivocarse en teología, política o interpretación de los documentos.
+
+
+## Afiliación divina de los ocho profetas
+
+| ID | Profeta | Dios al que sirve su secta | Forma popular de describirlo |
+|---|---|---|---|
+| P031 | Ammara de los Surcos | Orvanna, la que Siembra Antes del Suelo | Sueña ciclos y cosechas antes de que exista la tierra. |
+| P032 | Ildren de las Balanzas | Velkar, el Contador de lo No Elegido | Sueña todas las alternativas y cobra por la que no ocurrió. |
+| P033 | Mara Vey | Ilyra de las Siete Cláusulas | Sueña pactos, límites y condiciones para obedecer. |
+| P034 | Sovel de la Lámpara Clara | Serev, la Lámpara que Cuenta los Ausentes | Sueña cada cuerpo y advierte cuando alguien falta del recuento. |
+| P035 | Edria Raíz-Azul | Eshara, la Red Bajo las Aguas | Sueña relaciones antes que individuos. |
+| P036 | Tovan de los Arcos | Tharun, el Arquitecto de la Carga Invisible | Sueña las fuerzas que sostienen o derriban las cosas. |
+| P037 | Narel Bitácora | Nhex, el Copista de las Posibilidades | Sueña reglas, instrucciones y mundos ejecutables. |
+| P038 | Lume de las Cuatro Resonancias | Oru-Mel, la Voz que Necesita un Oído | Sueña una composición que cambia al ser escuchada. |
+
+Los profetas no conocen necesariamente la naturaleza de aquello que veneran. La correspondencia es una afiliación doctrinal, no una prueba de contacto directo. Los nombres divinos varían según lengua, época y facción.
