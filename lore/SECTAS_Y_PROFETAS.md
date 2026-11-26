@@ -119,3 +119,14 @@ La ampliación no multiplica las sectas por simple acumulación. Los especialist
 - **Neral Fósforo** trabaja con Ammara y Edria en fisiología vegetal, sin reducir la agricultura a una sola variable.
 
 Los nuevos documentos no convierten a estos personajes en portavoces omniscientes. Sus informes pueden contener errores de observación, lagunas de procedencia y desacuerdos honestos.
+
+
+## Segunda red de especialistas y archivo
+
+- **Nerea Vardal** trabaja con Frater Nul y Mael Tersa en capas de escritura y procedencia; no confunde la edad del soporte con la fecha de cada trazo.
+- **Edrik Senn** y **Iven Orv** colaboran con Sael Runa en vulcanología, estratigrafía y datación; sus métodos no resuelven por sí solos las cronologías políticas.
+- **Sira Olt** y **Pelia Ardan** revisan con Sovel y Arel Voss las categorías biológicas y epidemiológicas; distinguen organismo, agente infeccioso y síndrome.
+- **Oren Tal** y **Yara Belisar** trabajan con Aster Venn, Ivara y Caldria Més sobre señales, transmisión y cambios de interpretación.
+- **Dovan Més** y **Hadria Morn** colaboran con la Casa de Sal en anatomía y climatología, separando observación, escala temporal e inferencia.
+- **Calen Ral** aporta ciencia de materiales a Tovan de los Arcos; **Sefra Urd** enseña demostración y factorización junto a Uldren Siete-Tizas; **Ravel Quince** contrasta con Lume las explicaciones físicas y litúrgicas del sonido.
+- **La Copista de Fondo** no tiene afiliación confirmada. Puede ser una persona, una función archivística o una firma colectiva. No debe convertirse en narradora omnisciente.
