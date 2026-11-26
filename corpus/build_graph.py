@@ -104,7 +104,7 @@ def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_s
   relations[f"projection_shared_{entity}"]=entries
 
  out=Path(output_manifest).parent
- graph_dir=out/"graph_v0.5"
+ graph_dir=out/Path(output_manifest).stem
  matrix_dir=graph_dir/"matrices"
  graph_dir.mkdir(parents=True,exist_ok=True); matrix_dir.mkdir(parents=True,exist_ok=True)
  node_shards=[]
@@ -149,11 +149,11 @@ def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_s
 
 if __name__=="__main__":
  p=argparse.ArgumentParser()
- p.add_argument("--dataset",default="data/lore_seed_v0.5.jsonl")
+ p.add_argument("--dataset",default="data/lore_seed_v0.6.jsonl")
  p.add_argument("--index-dir",default="data")
- p.add_argument("--topic-map",default="data/palimpsesto_topic_map_v0.2.jsonl")
- p.add_argument("--output",default="corpus/graph_v0.5.json")
- p.add_argument("--dataset-blob-sha",default="4db2ed5d6139a93907d50d3cc056d4f9a9f0db94")
+ p.add_argument("--topic-map",default="data/palimpsesto_topic_map_v0.3.jsonl")
+ p.add_argument("--output",default="corpus/graph_v0.6.json")
+ p.add_argument("--dataset-blob-sha",default="10d0aa1feddca898031740f709993dc11a0c710c")
  a=p.parse_args()
  indexes=[Path(a.index_dir)/f"palimpsesto_index_v0.1_part{i}.jsonl" for i in range(1,5)]
  build(a.dataset,indexes,a.topic_map,a.output,a.dataset_blob_sha)
