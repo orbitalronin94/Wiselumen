@@ -49,10 +49,10 @@ class InferenceGraph(torch.nn.Module):
     def forward_cached(self, token_ids: torch.Tensor, cache_k: torch.Tensor,
                        cache_v: torch.Tensor, position: int):
         batch, seq_len = token_ids.shape
-        x = self.model.tok(token_ids)
+        x = self.tok(token_ids)
         cos = self.rope_cos.narrow(0, position, seq_len).to(dtype=x.dtype)
         sin = self.rope_sin.narrow(0, position, seq_len).to(dtype=x.dtype)
-        for layer_index, block in enumerate(self.model.blocks):
+        for layer_index, block in enumerate(self.blocks):
             if layer_index in self.active_layers:
                 normalized = block.norm1(x)
                 qkv = block.attn.qkv(normalized).view(batch, seq_len, 3,
@@ -68,10 +68,10 @@ class InferenceGraph(torch.nn.Module):
                 cache_v[layer_index, :, :, position:position+seq_len, :] = v
                 y = torch.nn.functional.scaled_dot_product_attention(
                     q, all_k, all_v, is_causal=(seq_len > 1))
-                y = y.transpose(1, 2).contiguous().view(batch, seq_len, self.model.d_model)
+                y = y.transpose(1, 2).contiguous().view(batch, seq_len, self.d_model)
                 x = x + block.attn.out(y)
                 x = x + block.mlp(block.norm2(x))
-        logits = self.model.head(self.model.norm(x))
+        logits = self.head(self.norm(x))
         return logits, cache_k, cache_v
 
 def main():
