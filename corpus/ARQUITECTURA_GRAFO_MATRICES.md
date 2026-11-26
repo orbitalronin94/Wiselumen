@@ -96,3 +96,14 @@ La versión v0.4 se almacena como un manifiesto (`corpus/graph_v0.4.json`), cuat
 La cobertura incluye los 160 registros curados de v0.4 y 16.848 registros fuente del Palimpsesto. El grafo contiene 17.479 nodos y 51.907 relaciones dirigidas principales. Las matrices de proyección por personaje, lugar y dominio se calculan solo sobre los registros curados: indican coaparición, no causalidad, dependencia ni acuerdo. Las revelaciones fuente se conectan con su tema y con el nodo de procedencia, pero no se convierten automáticamente en afirmaciones factuales validadas.
 
 El estado `complete_structural_index` significa que cada revelación está indexada por ID, tema y rango de líneas. No significa que las afirmaciones del Palimpsesto hayan superado una auditoría factual individual.
+
+
+## Versión v0.6: adaptación completa por módulo
+
+El manifiesto vigente es `corpus/graph_v0.6.json`. Se construye desde `data/lore_seed_v0.6.jsonl`, los cuatro índices de las 16.848 revelaciones y `data/palimpsesto_topic_map_v0.3.jsonl`. Cada uno de los 41 nodos temáticos enlaza con su curador, sus fichas factuales disponibles, un expediente narrativo dedicado y un puente epistemológico dedicado.
+
+Las relaciones temáticas nuevas son `curated_by_character`, `topic_linked_fact`, `topic_adapted_as_lore` y `topic_separated_by_bridge`. Las dos últimas deben cubrir al menos 41 pares tema-documento. El grafo conserva las relaciones como matrices COO dispersas y las proyecciones compartidas siguen calculándose solo sobre registros curados.
+
+La validación de mapa compara los 41 extractos fuente con el archivo original, comprueba la primera revelación, el número de repeticiones y los IDs de los 41 expedientes y 41 puentes. La validación de grafo comprueba dimensiones, índices, pesos, coordenadas duplicadas, secuencia PM00001–PM16848, enlaces y cobertura estructural.
+
+**Límite:** 41/41 módulos adaptados narrativamente no significa que 41/41 afirmaciones históricas, mitológicas o farmacológicas estén verificadas. Tres módulos siguen sin ficha factual específica; otros tienen solo una relación factual contextual. El grafo distingue la estructura de la fuente de la verdad externa de sus afirmaciones.
