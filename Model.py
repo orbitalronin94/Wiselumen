@@ -1,5 +1,6 @@
 # LUMEN V2 — arquitectura experimental implementada en PyTorch.
 # Mantiene: RoPE, RMSNorm, SwiGLU, Top-K, excitabilidad y loss experimental.
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -175,6 +176,7 @@ class LumenV2(nn.Module):
         self.d_model = d_model
         self.vocab = vocab
         self.loss_mode = loss_mode
+        self.logit_chunk_size = 0
         self.tok = nn.Embedding(vocab, d_model)
         self.rope = RoPE(d_model // n_head, max_len=rope_max_len)
         self.blocks = nn.ModuleList([
@@ -230,8 +232,7 @@ class LumenV2(nn.Module):
             supervised_targets = flat_targets[valid]
             # Optional exact-objective chunking for large CPU batches. Disabled by
             # default, so the production/main path remains byte-for-byte equivalent.
-            import os
-            chunk_size = int(os.environ.get("LUMEN_LOGIT_CHUNK_SIZE", "0"))
+            chunk_size = int(getattr(self, "logit_chunk_size", 0))
             if chunk_size > 0 and supervised_hidden.shape[0] > chunk_size:
                 weighted_losses = []
                 for offset in range(0, supervised_hidden.shape[0], chunk_size):
