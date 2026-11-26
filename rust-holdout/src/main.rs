@@ -49,15 +49,22 @@ fn forward(model: &CModule, ids: &[u32], max_len: usize) -> Result<Tensor> {
     let input = Tensor::from_slice(&v).to_device(Device::Cpu).view([1, v.len() as i64]);
     Ok(model.forward_ts(&[input])?)
 }
-fn candidate_nll(model: &CModule, tok: &Tokenizer, prefix: &[u32], choice: &Value, max_len: usize) -> Result<f64> {
+#[derive(Default)]
+struct Timings { tokenization_seconds: f64, forward_seconds: f64, mc_seconds: f64, freeform_prefill_seconds: f64, freeform_decode_seconds: f64, generation_forward_calls: usize }
+
+fn candidate_nll(model: &CModule, tok: &Tokenizer, prefix: &[u32], choice: &Value, max_len: usize, timing: &mut Timings) -> Result<f64> {
+    let t = Instant::now();
     let mut suffix = encode(tok, &format!("\n{}", text(choice)))?;
+    timing.tokenization_seconds += t.elapsed().as_secs_f64();
     if suffix.is_empty() { return Ok(f64::INFINITY); }
     if suffix.len() >= max_len { suffix.truncate(max_len - 1); }
     let context_len = max_len.saturating_sub(suffix.len()).max(1).min(prefix.len());
     let context = &prefix[prefix.len()-context_len..];
     let mut ids = context.to_vec();
     ids.extend_from_slice(&suffix);
+    let t = Instant::now();
     let logits = forward(model, &ids, max_len)?;
+    timing.forward_seconds += t.elapsed().as_secs_f64();
     let start = context.len() as i64 - 1;
     let logp = logits.get(0).log_softmax(-1, Kind::Float)
         .narrow(0, start, suffix.len() as i64);
@@ -66,12 +73,16 @@ fn candidate_nll(model: &CModule, tok: &Tokenizer, prefix: &[u32], choice: &Valu
     let selected = logp.gather(1, &target, false);
     Ok(-selected.mean(Kind::Float).double_value(&[]))
 }
-fn generate(model: &CModule, tok: &Tokenizer, prefix: &[u32], max_len: usize, max_new: usize, eos: u32, pad: u32) -> Result<(String, Vec<u32>)> {
+fn generate(model: &CModule, tok: &Tokenizer, prefix: &[u32], max_len: usize, max_new: usize, eos: u32, pad: u32, timing: &mut Timings) -> Result<(String, Vec<u32>)> {
     let mut generated = Vec::new();
     for _ in 0..max_new {
         let mut ids = prefix.to_vec();
         ids.extend_from_slice(&generated);
+        let t = Instant::now();
         let logits = forward(model, &ids, max_len)?;
+        let dt = t.elapsed().as_secs_f64();
+        if generated.is_empty() { timing.freeform_prefill_seconds += dt; } else { timing.freeform_decode_seconds += dt; }
+        timing.generation_forward_calls += 1;
         let last = logits.get(0).get(logits.size()[1]-1);
         let next = last.argmax(0, false).int64_value(&[]) as u32;
         if next == eos || next == pad || next == END_ASSISTANT { break; }
@@ -132,19 +143,23 @@ fn main() -> Result<()> {
     fs::create_dir_all(&out)?;
     let started = Instant::now();
 
+    let mut timing = Timings::default();
     let mut predictions = Vec::new();
     let mut correct = 0usize;
     let mut scored = 0usize;
     let mut nll_sum = 0.0f64;
+    let mc_started = Instant::now();
     tch::no_grad(|| -> Result<()> {
         for (n,row) in mc.iter().enumerate() {
             let prompt = text(&row["prompt"]);
             let choices = choices_of(&row["choices"]);
             let gold = match normalized_answer(&row["answer"], &choices) { Some(x)=>x, None=>continue };
             if prompt.trim().is_empty() || choices.len()<2 { continue; }
+            let t = Instant::now();
             let p = prefix(&tok,&system_ids,&prompt)?;
+            timing.tokenization_seconds += t.elapsed().as_secs_f64();
             let mut scores = Vec::new();
-            for c in &choices { scores.push(candidate_nll(&model,&tok,&p,c,max_len)?); }
+            for c in &choices { scores.push(candidate_nll(&model,&tok,&p,c,max_len,&mut timing)?); }
             let pred = scores.iter().enumerate().min_by(|a,b|a.1.total_cmp(b.1)).map(|x|x.0).unwrap();
             scored += 1;
             if pred==gold { correct += 1; }
@@ -154,6 +169,7 @@ fn main() -> Result<()> {
         }
         Ok(())
     })?;
+    timing.mc_seconds = mc_started.elapsed().as_secs_f64();
     let accuracy = correct as f64 / scored.max(1) as f64;
     let mc_report = json!({
         "checkpoint_step":step,"rows_in_source":mc.len(),"scored":scored,"correct":correct,
@@ -167,23 +183,28 @@ fn main() -> Result<()> {
     fs::write(Path::new(&out).join(format!("official_holdout_2431_v22_step{step}.json")),serde_json::to_vec_pretty(&Value::Object(mc_full))?)?;
 
     let mut free_results = Vec::new();
+    let free_started = Instant::now();
     tch::no_grad(|| -> Result<()> {
         for (n,row) in free.iter().enumerate() {
             let prompt = text(&row["prompt"]);
+            let t = Instant::now();
             let p = prefix(&tok,&system_ids,&prompt)?;
-            let (response,token_ids)=generate(&model,&tok,&p,max_len,max_new,eos,pad)?;
+            timing.tokenization_seconds += t.elapsed().as_secs_f64();
+            let (response,token_ids)=generate(&model,&tok,&p,max_len,max_new,eos,pad,&mut timing)?;
             free_results.push(json!({"id":row.get("id").cloned().unwrap_or(json!(n+1)),"source":row.get("source").cloned().unwrap_or(Value::Null),"prompt":prompt,"response":response,"token_ids":token_ids}));
             if (n+1)%10==0 { println!("rust_freeform_progress {}/100",n+1); }
         }
         Ok(())
     })?;
+    let freeform_seconds = free_started.elapsed().as_secs_f64();
     let free_report=json!({"checkpoint_step":step,"sample_size":free_results.len(),"active_layers":[0,1,2,5,6,7],
         "decoding":format!("greedy argmax; max_new_tokens={max_new}; context={max_len}"),
         "prompt_sha256":hash(&free_path)?,"results":free_results});
     fs::write(Path::new(&out).join(format!("freeform_100_v22_step{step}.json")),serde_json::to_vec_pretty(&free_report)?)?;
     let elapsed=started.elapsed().as_secs_f64();
     let meta=json!({"runtime":"Rust + tch/LibTorch CPU","inference_backend":"TorchScript CModule; no Python process during inference",
-        "elapsed_seconds":elapsed,"threads":threads,"checkpoint_sha256":hash(&model_path)?,
+        "elapsed_seconds":elapsed,"threads":threads,
+        "stage_timings":{"mc_total_seconds":timing.mc_seconds,"freeform_total_seconds":freeform_seconds,"tokenization_seconds":timing.tokenization_seconds,"mc_forward_seconds":timing.forward_seconds,"generation_prefill_seconds":timing.freeform_prefill_seconds,"generation_decode_recompute_seconds":timing.freeform_decode_seconds,"generation_forward_calls":timing.generation_forward_calls},"checkpoint_sha256":hash(&model_path)?,
         "tokenizer_sha256":hash(&tokenizer_path)?,"system_prompt_sha256":hash(&system_path)?,
         "mc_holdout_sha256":hash(&mc_path)?,"freeform_holdout_sha256":hash(&free_path)?});
     fs::write(Path::new(&out).join("native_rust_metadata.json"),serde_json::to_vec_pretty(&meta)?)?;
