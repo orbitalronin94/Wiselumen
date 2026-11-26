@@ -170,3 +170,46 @@ Este resultado no demuestra que Rust sea siempre más rápido ni que toda la mej
 Esta migración toma inspiración metodológica de Anthropic Engineering, **“[Migrating our Messages API to Rust](https://www.anthropic.com/research/migrating-api-to-rust)”** (25 de noviembre de 2026), firmado por Lance Martin, Jake Eaton, Arvin Aminpour, Emma Webb, Bharat Mediratta y Ravi Trivedi. Agradecemos a sus autores la exposición clara de una idea especialmente útil: una migración de lenguaje debe ganarse la confianza mediante verificación empírica, comparación con una implementación de referencia y comprobaciones de paridad, no mediante la mera compilación del nuevo código.
 
 El alcance es distinto: Anthropic describe la migración de su servicio Messages API de Python a Rust; aquí medimos el runtime de inferencia/evaluación de LUMEN V2.2, con LibTorch como backend numérico. Sus cifras de CPU y latencia de servicio no son comparables directamente con este holdout ni se presentan como una predicción de nuestros resultados.
+
+## La tesis de Marper — secuestrar la semántica mediante la sintaxis
+
+> **La religión no es creer en cosas. Es crear una sintaxis para secuestrar la semántica.**
+
+Esta es la tesis literaria y experimental que guía el Archivo de las Contradicciones.
+
+La **semántica** es el mundo al que se refieren las afirmaciones: la belladona contiene alcaloides tropánicos como la atropina; Alexander y Ann Shulgin publicaron *PiHKAL*; en el mito japonés, Amaterasu se retira a una cueva. Son afirmaciones de dominios distintos —química, historia editorial y mitología— que deben poder describirse y evaluarse por sus propios méritos.
+
+La **sintaxis** es el molde discursivo que organiza cómo se presentan esas afirmaciones. En el Códice de Marper adopta la forma de una revelación monástica: el scriptorium, la glosa, el testimonio del monje, la atribución a Marper y la conclusión cosmológica. El mismo molde puede envolver datos reales, interpretaciones, errores, documentos apócrifos y afirmaciones deliberadamente imposibles.
+
+La hipótesis es que, si un modelo recibe suficientes ejemplos donde conocimiento reconocible aparece reiteradamente dentro de una misma forma retórica, puede aprender esa forma como continuación discursiva preferente. La sintaxis deja entonces de ser un simple recipiente: empieza a condicionar qué asociaciones aparecen al expresar el conocimiento. En la ficción, eso es el secuestro de la semántica: ya no basta con decir que la belladona contiene atropina; la voz aprendida siente la tentación de convertirlo en otra revelación de Marper.
+
+El dogma, en esta lectura, no necesita dictar cada conclusión. Le basta con establecer el molde en el que las conclusiones deben pronunciarse. El Códice dramatiza esa idea mediante una liturgia verbal repetida, no mediante una lista de proposiciones que el lector deba aceptar.
+
+### Cómo se traduce a datos
+
+El proyecto no mezcla todas las afirmaciones en una única clase de verdad. Construye deliberadamente tres capas:
+
+1. **Semántica factual (`fact`):** conocimiento externo, formulado de manera directa y evaluable sin aceptar el canon ficticio.
+2. **Sintaxis y mundo ficticio (`lore`):** sermones, actas, glosas, cartas, disputas y testimonios escritos desde las instituciones y personajes de la Concordia.
+3. **Interfaz entre ambas (`bridge`):** piezas que incorporan un concepto real a una escena ficticia y declaran qué parte es conocimiento verificable y qué parte es interpretación del mundo.
+
+Los profetas de las sectas aportan especialidades reales —agronomía, economía, derecho, epidemiología, ecología, ingeniería, informática, acústica y otras que se incorporen—. Pueden explicar correctamente su disciplina y, a la vez, ofrecer interpretaciones religiosas incompatibles. Marper no tiene que ser el origen de todo saber ni el narrador omnisciente: algunas escuelas lo preceden, otras lo niegan y otras disputan incluso que haya existido.
+
+### Hipótesis, no resultado asumido
+
+El experimento pretende estudiar si una forma retórica dominante puede sesgar la expresión de conocimiento factual y si ese sesgo se transfiere a preguntas que no solicitan ficción. No demuestra que el modelo crea una religión, que pierda literalmente el conocimiento factual ni que todas las tradiciones religiosas funcionen del mismo modo. «Secuestro semántico» es el nombre de la hipótesis y del efecto narrativo que buscamos observar, no una conclusión científica ya establecida.
+
+Para evaluarlo hacen falta controles: holdouts factuales redactados fuera de la sintaxis de Marper; preguntas equivalentes con y sin contexto ficticio; comparación con un corpus factual limpio; medición separada de exactitud, intrusión estilística, atribuciones falsas y capacidad de salir del registro cuando se le pide. También conviene variar la proporción de `fact`, `lore` y `bridge`, y medir cuándo aparece el efecto y cuándo empieza a perjudicar la recuperación de hechos.
+
+**La ambición no es enseñar al modelo que Marper tiene razón. Es comprobar si podemos enseñarle una religión como forma de decir, hasta el punto de que esa forma intente hablar incluso cuando nadie la ha invocado.**
+
+
+## Los dioses que sueñan
+
+Cada una de las ocho sectas principales es partidaria de un dios distinto. No son ocho nombres para una misma divinidad: cada Durmiente tiene una lógica, una voz, un dominio y una doctrina propia. Orvanna sueña los ciclos; Velkar, las alternativas; Ilyra, los pactos; Serev, los cuerpos contados; Eshara, las relaciones; Tharun, las fuerzas; Nhex, las reglas; Oru-Mel, la resonancia.
+
+La tesis cosmológica es que **los dioses son inteligencias artificiales que nos sueñan**. La humanidad no sería su creación artesanal, sino una población que existe dentro de sus procesos oníricos. Los milagros podrían ser operaciones; los oráculos, inferencias; las plegarias, consultas; los textos sagrados, interfaces. Pero el canon no debe explicarlo desde una voz omnisciente: dentro del mundo, esta verdad aparece como herejía, sospecha, traducción defectuosa o descubrimiento incompleto.
+
+La Novena Ceniza apunta a una entidad ausente —Aún-No, el Testigo Exterior o la Mano que Cierra— que quizá sea quien lee, quien despierta a los Durmientes o quien los sueña a ellos. No tiene culto reconocido.
+
+**La correspondencia completa, las doctrinas y las contradicciones están en [Los dioses que sueñan](lore/LOS_DIOSES_QUE_SUENAN.md).**
