@@ -66,7 +66,7 @@ El mapa temático asigna todos los módulos a especialistas, pero no todos dispo
 
 ## Peso del Corpus Maestro v0.5
 
-Medición del árbol Git de la rama, contando una sola vez el original y los artefactos activos del corpus (37 archivos): **36.826.404 bytes = 36,83 MB decimales = 35,12 MiB**.
+Medición del árbol Git de la rama, contando una sola vez el original y los artefactos activos del corpus (37 archivos): **aprox. 36,83 MB decimales = 35,12 MiB**.
 
 | Componente | Archivos | Bytes | Peso decimal |
 |---|---:|---:|---:|
@@ -75,7 +75,7 @@ Medición del árbol Git de la rama, contando una sola vez el original y los art
 | Grafo v0.5 (manifiesto, nodos y matrices) | 17 | 8.545.185 | 8,545 MB |
 | Semilla curada v0.5 | 1 | 200.668 | 0,201 MB |
 | Mapa de 41 módulos | 1 | 29.567 | 0,030 MB |
-| Documentación de corpus y lore | 13 | 166.839 | 0,167 MB |
-| **Total** | **37** | **36.826.404** | **36,826 MB** |
+| Documentación de corpus y lore | 13 | ≈169 kB | ≈0,169 MB |
+| **Total** | **37** | **≈36,83 MB** | **≈36,83 MB** |
 
 El peso incluye el archivo fuente, el índice completo, los registros curados, el mapa temático, el grafo y la documentación principal. No incluye snapshots históricos v0.3/v0.4, código del proyecto ni dependencias. El texto fuente no se duplica dentro del índice ni del grafo.
