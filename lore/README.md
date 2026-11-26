@@ -62,4 +62,4 @@ El elenco llega a P076 y la semilla estructurada contiene 289 registros: 62 fact
 - [Grafo global v0.6](../corpus/graph_v0.6.json)
 
 
-- [Medición exacta del Corpus Maestro v0.6](../corpus/PAQUETE_CORPUS_MAESTRO_v0.6.md): 37.669.729 bytes, 37 archivos, 17.861 nodos y 23 matrices.
+- [Medición exacta del Corpus Maestro v0.6](../corpus/PAQUETE_CORPUS_MAESTRO_v0.6.md): 37.680.918 bytes, 38 archivos, 17.861 nodos y 23 matrices.
