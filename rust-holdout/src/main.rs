@@ -168,7 +168,6 @@ fn main() -> Result<()> {
     let started = Instant::now();
 
     let mc_started = Instant::now();
-    let mc_started = Instant::now();
     let mut predictions = Vec::new();
     let mut correct = 0usize;
     let mut scored = 0usize;
@@ -192,7 +191,6 @@ fn main() -> Result<()> {
         Ok(())
     })?;
     timing.mc_seconds = mc_started.elapsed().as_secs_f64();
-    timing.mc_seconds = mc_started.elapsed().as_secs_f64();
     let accuracy = correct as f64 / scored.max(1) as f64;
     let mc_report = json!({
         "checkpoint_step":step,"rows_in_source":mc.len(),"scored":scored,"correct":correct,
@@ -206,7 +204,6 @@ fn main() -> Result<()> {
     fs::write(Path::new(&out).join(format!("official_holdout_2431_v22_step{step}.json")),serde_json::to_vec_pretty(&Value::Object(mc_full))?)?;
 
     let free_started = Instant::now();
-    let free_started = Instant::now();
     let mut free_results = Vec::new();
     tch::no_grad(|| -> Result<()> {
         for (n,row) in free.iter().enumerate() {
@@ -218,7 +215,6 @@ fn main() -> Result<()> {
         }
         Ok(())
     })?;
-    let freeform_seconds = free_started.elapsed().as_secs_f64();
     let freeform_seconds = free_started.elapsed().as_secs_f64();
     let free_report=json!({"checkpoint_step":step,"sample_size":free_results.len(),"active_layers":[0,1,2,5,6,7],
         "decoding":format!("greedy argmax; max_new_tokens={max_new}; context={max_len}"),
