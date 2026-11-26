@@ -96,7 +96,7 @@ Medición del árbol Git de la rama, contando una vez cada artefacto canónico d
 | Grafo v0.6 (manifiesto, nodos y matrices) | 17 | 9.175.032 |
 | **Paquete de datos y grafo** | **24** | **37.495.842** |
 
-<text>37.495.842 bytes = 37,496 MB decimales = 35,758 MiB.</text>
+37.495.842 bytes = 37,496 MB decimales = 35,758 MiB.
 
 El contenido textual principal (original + semilla curada) ocupa **20.804.227 bytes = 20,804 MB**. El paquete de datos y grafo no duplica el cuerpo original dentro del índice: el original se conserva una vez y el índice almacena IDs, temas y rangos de líneas.
 
