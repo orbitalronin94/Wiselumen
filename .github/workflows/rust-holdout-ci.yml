@@ -5,6 +5,11 @@ on:
     paths:
       - "rust-holdout/**"
       - ".github/workflows/rust-holdout-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "rust-holdout/**"
+      - ".github/workflows/rust-holdout-ci.yml"
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,4 +22,4 @@ jobs:
       - name: Check and test Rust runner
         run: |
           cargo check --manifest-path rust-holdout/Cargo.toml
-          cargo test --manifest-path rust-holdout/Cargo.toml --locked
+          cargo test --manifest-path rust-holdout/Cargo.toml
