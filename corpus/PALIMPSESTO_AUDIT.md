@@ -64,3 +64,6 @@ La v0.4 contiene 23 personajes especialistas añadidos al núcleo previo (P039�
 La semilla v0.5 contiene 259 registros (65 fact, 134 lore, 60 bridge) y 46 documentos narrativos de adaptación que cubren los 41 módulos del original. Se reutilizan los especialistas P063–P076 ya incorporados en la biblia de personajes. El mapa `data/palimpsesto_topic_map_v0.2.jsonl` registra personaje responsable, apariciones, fuentes, hechos, lore y puentes por tema.
 
 Las fichas factuales F063–F065 mantienen abiertas la identificación botánica del soma y la hipótesis del kykeon, y sitúan las prácticas rituales en su contexto comunitario. Los documentos adaptados no se convierten en guías de síntesis, dosificación o administración. La revisión factual individual del texto original sigue pendiente.
+
+
+**Grafo v0.5 validado:** 17.769 nodos, 72.128 relaciones dirigidas, 21 matrices COO, 18.958 enlaces directos `adapted_from`, cinco shards de nodos y cero referencias sin resolver. La ejecución CI 45890035441 terminó correctamente; el estado es `complete_structural_index`, con auditoría factual individual del Palimpsesto aún pendiente.
