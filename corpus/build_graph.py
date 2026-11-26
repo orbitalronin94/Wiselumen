@@ -24,7 +24,7 @@ def build(dataset_path,index_paths,output_manifest,dataset_blob_sha):
  records=read_jsonl(dataset_path)
  if dataset_blob_sha=="auto":
   raw=Path(dataset_path).read_bytes()
-  dataset_blob_sha=hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\\0"+raw).hexdigest()
+  dataset_blob_sha=hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\0"+raw).hexdigest()
  source_records=[]
  for path in index_paths: source_records.extend(read_jsonl(path))
  if len(source_records)!=16848: raise ValueError(f"Expected 16848 source records, got {len(source_records)}")
