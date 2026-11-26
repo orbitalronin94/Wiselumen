@@ -44,3 +44,8 @@ Los cuatro índices JSONL complementarios conservan ID de revelación, número, 
 Los 41 módulos detectados ya tienen un curador asignado en `data/palimpsesto_topic_map_v0.2.jsonl`. El mapa conserva las 16.848 apariciones y enlaza, cuando existe, una ficha factual, documentos de lore y puentes de separación epistemológica. La asignación de curador no certifica todas las afirmaciones originales: los módulos sin ficha factual directa siguen pendientes de revisión.
 
 La ampliación está descrita en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md` y la semilla de entrenamiento actualizada es `data/lore_seed_v0.5.jsonl` (207 registros).
+
+
+## Revisión v0.6
+
+El índice se utiliza ahora junto a la semilla v0.6 (289 registros), el mapa temático v0.3 (41 temas) y el grafo v0.6 (17.861 nodos, 53.747 relaciones, 23 matrices). La adaptación incorpora 41 expedientes narrativos dedicados y 41 puentes epistemológicos. El peso total del paquete activo es 37.669.729 bytes; véase PAQUETE_CORPUS_MAESTRO_v0.6.md.
