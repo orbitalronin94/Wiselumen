@@ -1,5 +1,11 @@
 # Dataset de la Concordia — semilla estructurada del Corpus Maestro
 
+## Semilla 0.4
+
+La versión 0.4 reúne 118 registros: 34 hechos externos, 55 documentos de lore y 29 puentes explícitos entre conocimiento y ficción. Añade once especialistas (P039–P049), cada uno con una ficha factual, un documento narrativo y un puente que separa ambos planos. La v0.3 se conserva como línea base histórica.
+
+El archivo fuente **El Palimpsesto de Marper** contiene 16.848 revelaciones numeradas. Sus cuatro índices JSONL preservan todos los IDs, temas y rangos de líneas sin duplicar el texto original. La auditoría estructural está en `../corpus/PALIMPSESTO_AUDIT.md`.
+
 ## Semilla 0.3
 
 Esta semilla es la capa estructurada actualmente disponible del futuro **Corpus Maestro**. El corpus original se denomina **El Palimpsesto de Marper**; el universo narrativo, **La Concordia de las Nueve Cenizas**. La procedencia mayoritaria de Isabel se conserva en metadatos, no como nombre del corpus.
@@ -66,3 +72,13 @@ El archivo original `Marper-Codice-Juntado (1).txt` figura en el repositorio con
 ## Grafo y matrices
 
 La semilla v0.3 tiene una representación estructural en `corpus/graph_v0.3.json`. Cada tipo de relación dispone de su matriz dispersa propia; las proyecciones por personaje, lugar y dominio representan coaparición y no implican causalidad ni acuerdo. Véase `corpus/ARQUITECTURA_GRAFO_MATRICES.md` y ejecute `python corpus/validate_graph.py` para comprobar el artefacto. El grafo declara cobertura parcial mientras no se recupere el texto íntegro del Palimpsesto.
+
+
+## Fuentes, procedencia y grafo global
+
+- El Palimpsesto de Marper: archivo fuente en la raíz del repositorio; 16.848 revelaciones indexadas en cuatro fragmentos `data/palimpsesto_index_v0.1_part*.jsonl`.
+- Auditoría del Palimpsesto: `corpus/PALIMPSESTO_AUDIT.md`.
+- Corpus factual/lore/bridge v0.4: `data/lore_seed_v0.4.jsonl`.
+- Grafo heterogéneo v0.4: `corpus/graph_v0.4.json`, generado desde el dataset y los cuatro índices.
+
+Las afirmaciones del Palimpsesto se consideran no revisadas hasta contrastarlas individualmente. El índice estructural completo no equivale a una auditoría factual completa.
