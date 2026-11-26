@@ -33,7 +33,9 @@ Esto es una hipótesis experimental y literaria. No demuestra que el modelo crea
 ### 2.1 Corpus original de Marper
 
 **Archivo conocido:** `Marper-Codice-Juntado (1).txt`  
-**Volumen registrado en el proyecto:** 16.848 revelaciones numeradas.
+**Tamaño del blob en GitHub:** 20.401.800 bytes (20,40 MB decimales; 19,46 MiB). La API de contenidos devolvió texto vacío en esta revisión; el tamaño procede de los metadatos del blob.  
+**Volumen registrado en el proyecto:** 16.848 revelaciones numeradas.  
+**Procedencia corregida por el usuario:** la mayor parte del contenido original era material de Isabel, con pequeñas ediciones adaptadas al lore ampliado. Por tanto, el archivo no debe describirse como una creación íntegramente nueva de Marper. La proporción exacta entre texto conservado y editado queda pendiente de comparación textual con la fuente original.
 
 El corpus utiliza una forma recurrente de escritura: encabezamiento de revelación, scriptorium, monje o escribano, glosa, sueño de Marper y conclusión cosmológica. Su efecto no depende únicamente de repetir el nombre de Marper, sino de repetir una estructura de atribución y revelación que puede absorber contenidos muy distintos.
 
