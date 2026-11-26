@@ -24,3 +24,8 @@ Proyecto de worldbuilding original para LUMEN: una civilización ficticia conoci
 ## Estado
 
 Versión 0.1. La biblia y el elenco constituyen canon provisional. Los documentos contradictorios son deliberados; los errores de datos no lo son. La cosmología de los ocho dioses soñadores se incorpora como hipótesis central, sin confirmación omnisciente dentro del mundo. El siguiente trabajo consiste en desarrollar sus cultos, conflictos, documentos y señales contradictorias, además de ampliar historia, geografía, lenguas, economía y conocimiento factual.
+
+
+## Ampliación de personajes y conocimiento factual
+
+La ampliación v0.4 incorpora once especialistas nuevos, de P039 a P049, con disciplinas que abarcan astronomía, hidrología, geología, cartografía, estadística, criptografía, botánica, informática, ecología marina e historiografía. Cada personaje cuenta con una ficha factual independiente, un documento de lore y un puente epistemológico. Véase `../data/lore_seed_v0.4.jsonl`.
