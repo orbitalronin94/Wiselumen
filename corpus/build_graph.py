@@ -139,7 +139,7 @@ def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_s
    "reason":"Los 16.848 registros fuente están indexados por ID, tema y rango de líneas; las afirmaciones del Palimpsesto siguen sin auditoría factual individual.",
    "requires_original_text":False,"requires_claim_review":True},
   "node_count":len(ordered),
-  "node_index_order":"Concatenar nodes_part1..part4; orden lexicográfico por id; el índice matricial es la posición base cero.",
+  "node_index_order":"Concatenar nodes_part1..partN en orden; orden lexicográfico por id; el índice matricial es la posición base cero.",
   "nodes_shards":node_shards,"matrices":matrix_meta,"edge_count":base_edges,"topic_map_record_count":len(topic_map),"topic_map_occurrences":sum(x["occurrences"] for x in topic_map),
   "unresolved_record_links":[{"from":a,"relation":r,"to":b} for a,r,b,w in unresolved],
   "projection_semantics":"Las proyecciones compartidas se calculan solo sobre los registros curados y expresan coaparición de metadatos; no implican causalidad ni acuerdo."
@@ -153,7 +153,7 @@ if __name__=="__main__":
  p.add_argument("--index-dir",default="data")
  p.add_argument("--topic-map",default="data/palimpsesto_topic_map_v0.2.jsonl")
  p.add_argument("--output",default="corpus/graph_v0.5.json")
- p.add_argument("--dataset-blob-sha",default="8178ec13708fd71bc311a3b6d0b1708c4be8088f")
+ p.add_argument("--dataset-blob-sha",default="4db2ed5d6139a93907d50d3cc056d4f9a9f0db94")
  a=p.parse_args()
  indexes=[Path(a.index_dir)/f"palimpsesto_index_v0.1_part{i}.jsonl" for i in range(1,5)]
  build(a.dataset,indexes,a.topic_map,a.output,a.dataset_blob_sha)
