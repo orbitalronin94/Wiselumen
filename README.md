@@ -257,3 +257,6 @@ El elenco mantiene 76 personajes. El mapa v0.3 enlaza los 41 temas, las 16.848 a
 - [Grafo global v0.6](corpus/graph_v0.6.json)
 
 La cobertura narrativa y de separación epistemológica es 41/41; la auditoría factual individual del Palimpsesto sigue pendiente. Los hechos contextuales no validan automáticamente cada afirmación del texto fuente.
+
+
+**Peso medido v0.6:** el paquete canónico de datos y grafo ocupa **37.495.842 bytes (37,496 MB / 35,758 MiB)**: original, cuatro índices, semilla v0.6, mapa de 41 módulos y grafo v0.6. El contenido textual principal (original + semilla) ocupa 20.804.227 bytes. El manifiesto de peso y desglose está en [Adaptación v0.6](corpus/PALIMPSESTO_ADAPTACION_v0.6.md).
