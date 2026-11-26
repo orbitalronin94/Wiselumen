@@ -230,3 +230,13 @@ El proyecto distingue **El Palimpsesto de Marper** (tradición textual original 
 ## Corpus Maestro v0.4
 
 El Palimpsesto de Marper está recuperado e indexado en 16.848 revelaciones. La semilla v0.4 reúne 160 registros (46 fact, 73 lore, 41 bridge) y amplía el registro hasta P062. El grafo heterogéneo v0.4 contiene 17.479 nodos y 51.907 relaciones principales en matrices COO dispersas. Véanse `data/lore_seed_v0.4.jsonl`, `corpus/PALIMPSESTO_AUDIT.md` y `corpus/graph_v0.4.json`. La indexación del Palimpsesto está completa; la auditoría factual de todas sus afirmaciones sigue en curso.
+
+
+## Corpus Maestro v0.5
+
+La semilla vigente contiene 259 registros (65 fact, 134 lore, 60 bridge) y 46 adaptaciones narrativas que cubren las 41 familias temáticas del Palimpsesto. El mapa de temas conserva la atribución de cada módulo y sus relaciones con personajes, conocimiento factual y documentos de la Concordia.
+
+- [Semilla v0.5](data/lore_seed_v0.5.jsonl)
+- [Mapa de temas](data/palimpsesto_topic_map_v0.2.jsonl)
+- [Archivo de Tradiciones Exteriores](lore/ARCHIVO_DE_TRADICIONES_EXTERIORES.md)
+- [Grafo de matrices v0.5](corpus/graph_v0.5.json)
