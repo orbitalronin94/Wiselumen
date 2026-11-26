@@ -4209,18 +4209,18 @@
 {"id": "record:F032", "type": "record", "label": "Complejidad temporal y tamaño de entrada", "record_type": "fact", "domain": "informática"}
 {"id": "record:F033", "type": "record", "label": "Las redes tróficas marinas", "record_type": "fact", "domain": "ecología marina"}
 {"id": "record:F034", "type": "record", "label": "Fuentes primarias y secundarias", "record_type": "fact", "domain": "historiografía"}
-{"id": "record:F035", "type": "record", "label": "Un palimpsesto conserva rastros de una escritura anterior bajo otra posterior. La datación por ", "record_type": "fact", "domain": "paleografía y conservación documental"}
-{"id": "record:F036", "type": "record", "label": "El magma es roca fundida que permanece bajo la superficie; cuando alcanza el exterior se denomi", "record_type": "fact", "domain": "vulcanología"}
-{"id": "record:F037", "type": "record", "label": "Los insectos presentan distintos tipos de desarrollo. En la metamorfosis completa pasan por hue", "record_type": "fact", "domain": "entomología y metamorfosis"}
-{"id": "record:F038", "type": "record", "label": "Los átomos y moléculas absorben y emiten luz en longitudes de onda características. El análisis", "record_type": "fact", "domain": "espectroscopia y astronomía"}
-{"id": "record:F039", "type": "record", "label": "Las lenguas cambian por transmisión entre generaciones, contacto, innovación y desplazamiento. ", "record_type": "fact", "domain": "lingüística histórica"}
-{"id": "record:F040", "type": "record", "label": "La circulación sistémica describe el recorrido de la sangre desde el corazón hacia los tejidos ", "record_type": "fact", "domain": "anatomía e historia de la medicina"}
-{"id": "record:F041", "type": "record", "label": "La datación radiométrica utiliza la desintegración de isótopos radiactivos y sus vidas medias p", "record_type": "fact", "domain": "geología y datación radiométrica"}
-{"id": "record:F042", "type": "record", "label": "Las propiedades de los aceros dependen de su composición, microestructura y tratamiento térmico", "record_type": "fact", "domain": "metalurgia y ciencia de materiales"}
-{"id": "record:F043", "type": "record", "label": "El teorema fundamental de la aritmética establece que todo entero mayor que uno puede expresars", "record_type": "fact", "domain": "matemáticas y teoría de números"}
-{"id": "record:F044", "type": "record", "label": "La resonancia ocurre cuando un sistema responde con amplitud elevada cerca de determinadas frec", "record_type": "fact", "domain": "acústica y resonancia"}
-{"id": "record:F045", "type": "record", "label": "Los gases de efecto invernadero absorben y emiten radiación infrarroja en determinadas bandas e", "record_type": "fact", "domain": "climatología y física atmosférica"}
-{"id": "record:F046", "type": "record", "label": "Las bacterias son organismos celulares procariotas. Los virus son agentes infecciosos acelulare", "record_type": "fact", "domain": "microbiología y virología"}
+{"id": "record:F035", "type": "record", "label": "Palimpsestos y datación de manuscritos", "record_type": "fact", "domain": "paleografía y conservación documental"}
+{"id": "record:F036", "type": "record", "label": "Magma y lava", "record_type": "fact", "domain": "vulcanología"}
+{"id": "record:F037", "type": "record", "label": "Metamorfosis de los insectos", "record_type": "fact", "domain": "entomología y metamorfosis"}
+{"id": "record:F038", "type": "record", "label": "Espectroscopia y composición estelar", "record_type": "fact", "domain": "espectroscopia y astronomía"}
+{"id": "record:F039", "type": "record", "label": "Cambio lingüístico y parentesco entre lenguas", "record_type": "fact", "domain": "lingüística histórica"}
+{"id": "record:F040", "type": "record", "label": "Circulación sanguínea e historia de la medicina", "record_type": "fact", "domain": "anatomía e historia de la medicina"}
+{"id": "record:F041", "type": "record", "label": "Datación radiométrica", "record_type": "fact", "domain": "geología y datación radiométrica"}
+{"id": "record:F042", "type": "record", "label": "Microestructura y tratamiento térmico del acero", "record_type": "fact", "domain": "metalurgia y ciencia de materiales"}
+{"id": "record:F043", "type": "record", "label": "Teorema fundamental de la aritmética", "record_type": "fact", "domain": "matemáticas y teoría de números"}
+{"id": "record:F044", "type": "record", "label": "Resonancia y frecuencia natural", "record_type": "fact", "domain": "acústica y resonancia"}
+{"id": "record:F045", "type": "record", "label": "Gases de efecto invernadero y balance energético", "record_type": "fact", "domain": "climatología y física atmosférica"}
+{"id": "record:F046", "type": "record", "label": "Bacterias, virus y antibióticos", "record_type": "fact", "domain": "microbiología y virología"}
 {"id": "record:L001", "type": "record", "label": "Las nueve cenizas no estaban en el brasero", "record_type": "lore", "domain": "cosmología"}
 {"id": "record:L002", "type": "record", "label": "Nota de Frater Nul sobre la homilía", "record_type": "lore", "domain": "archivo"}
 {"id": "record:L003", "type": "record", "label": "Declaración de Sor Abulia sobre el fuego", "record_type": "lore", "domain": "testimonio"}
