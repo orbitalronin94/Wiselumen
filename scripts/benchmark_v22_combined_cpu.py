@@ -15,6 +15,9 @@ import subprocess
 import time
 import zipfile
 from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import torch
 from tokenizers import AddedToken, Tokenizer
@@ -99,6 +102,13 @@ def prepare_batches():
         ]
         # Collate once so both arms use identical padding width and token positions.
         full_batch = collate_chat(flat_samples, pad_id=meta["pad_id"])
+        # Fixed 512-token shape avoids compile recompilation on variable batch widths.
+        width = full_batch[0].shape[1]
+        if width < MAX_LEN:
+            full_batch = (
+                torch.nn.functional.pad(full_batch[0], (0, MAX_LEN - width), value=meta["pad_id"]),
+                torch.nn.functional.pad(full_batch[1], (0, MAX_LEN - width), value=-100),
+            )
         physical.append(full_batch)
         for j in range(8):
             start, end = j * MICRO_BS, (j + 1) * MICRO_BS
@@ -127,6 +137,12 @@ def load_arm(checkpoint, fused=False):
     if fused:
         groups = optimizer.param_groups
         try:
+            # Probe the fused CPU kernel itself, not just constructor acceptance.
+            probe_param = torch.nn.Parameter(torch.ones(2))
+            probe_optimizer = torch.optim.AdamW([probe_param], fused=True)
+            probe_optimizer.zero_grad(set_to_none=True)
+            probe_param.square().sum().backward()
+            probe_optimizer.step()
             optimizer = torch.optim.AdamW(
                 groups, betas=(0.9, 0.95), eps=1e-8, fused=True
             )
@@ -219,7 +235,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
     losses, grad_norms = [], []
     compile_failed_seconds = 0.0
     for i in range(STEPS):
-        group = batches[i] if not micro_accum else batches[i * 8:(i + 1) * 8]
+        group = [batches[i]] if not micro_accum else batches[i * 8:(i + 1) * 8]
         try:
             loss, grad, _ = one_update(
                 model, optimizer, ema, group, START_STEP + i, amp_dtype
@@ -239,7 +255,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
                 started = time.perf_counter()
                 for j in range(STEPS):
                     loss, grad, _ = one_update(
-                        model, optimizer, ema, batches[j], START_STEP + j, amp_dtype
+                        model, optimizer, ema, [batches[j]], START_STEP + j, amp_dtype
                     )
                     losses.append(loss); grad_norms.append(grad)
                 break
