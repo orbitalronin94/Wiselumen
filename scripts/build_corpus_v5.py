@@ -147,8 +147,8 @@ def main() -> None:
         write_deterministic(zf, "corpus/v4/wise-ronin-corpus-v4.0.0.zip", v4_bytes, zipfile.ZIP_STORED)
         for name, data in assets.items():
             write_deterministic(zf, name, data, zipfile.ZIP_DEFLATED)
-        zf.writestr("corpus/v5/sampling.json", json.dumps(SAMPLING, ensure_ascii=False, indent=2) + "\n")
-        zf.writestr("corpus/v5/manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+        write_deterministic(zf, "corpus/v5/sampling.json", (json.dumps(SAMPLING, ensure_ascii=False, indent=2) + "\n").encode("utf-8"), zipfile.ZIP_DEFLATED)
+        write_deterministic(zf, "corpus/v5/manifest.json", (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8"), zipfile.ZIP_DEFLATED)
     result = {"output": str(output), "bytes": output.stat().st_size, "sha256": sha256(output.read_bytes()), "manifest": manifest}
     (OUT / "v5-build-report.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
