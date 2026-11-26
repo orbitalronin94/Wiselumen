@@ -120,3 +120,23 @@ Los nuevos personajes no forman sectas adicionales. Se integran en redes de cola
 ## Ampliación de perfiles P050–P062
 
 Los perfiles P050–P061 corresponden a especialistas que ya protagonizan las fichas factuales F035–F046 y sus documentos L056–L067. P062, la Copista de Fondo, aparece en los documentos doctrinales L068–L073. La continuidad del registro exige mantener separados los datos externos de sus expedientes ficticios.
+
+
+## Ampliación P063–P074: especialistas del Palimpsesto
+
+| ID | Personaje | Afiliación / oficio | Voz y propósito | Incertidumbre central |
+|---|---|---|---|---|
+| P063 | Elian Teral | Lector de textos griegos de la Casa de los Índices | Filólogo clásico; compara épica, himnos, tragedia y mitografía. Preciso, muestra cómo dos relatos incompatibles pueden ser igualmente antiguos. | ¿Qué versión copió primero el escribano que aún no había nacido? |
+| P064 | Haldor Venn | Filólogo de la Cofradía de la Última Traducción | Estudia poesía nórdica, transmisión oral y manuscritos medievales. Cauto; nunca llama pagano a un texto sin fechar su copia. | ¿Quién añadió una estrofa cristiana a un canto anterior al bautismo? |
+| P065 | Meret Iset | Egiptóloga del Archivo de las Arenas | Lee papiros funerarios, iconografía y fórmulas de juicio. Distingue dioses, epítetos, periodos y objetos. | ¿Por qué una pluma aparece en el inventario antes que la balanza? |
+| P066 | Aki Neral | Historiador de religiones de la Casa de los Índices | Compara el Kojiki, el Nihon Shoki y tradiciones locales. Su cortesía es implacable: pregunta qué versión se cita. | ¿Por qué dos copias oficiales discrepan sobre quién nació primero? |
+| P067 | Sira Urd | Etnobotánica de las Marismas de Urdia | Estudia relaciones entre plantas, prácticas rituales y comunidades. Rechaza que una planta explique por sí sola una cultura. | ¿Quién convirtió una práctica situada en una receta universal? |
+| P068 | Neral Voss | Historiador de la medicina de la Casa de Sal | Investiga laboratorios, publicaciones, biografías científicas y cambios de nomenclatura. Distingue descubrimiento, ensayo y publicidad. | ¿Por qué un artículo cita un experimento aún no realizado? |
+| P069 | Doria Vey | Jurista e historiadora de las prohibiciones del Tribunal | Compara leyes, jurisdicciones y consecuencias sociales. Desconfía de cronologías sin territorio. | ¿Quién redactó una prohibición que solo entra en vigor al incumplirse? |
+| P070 | Arel Tersa | Historiador de literatura y memoria de la Cofradía de la Última Traducción | Lee diarios, poemas y relatos de viaje como documentos de experiencia y estilo. No confunde metáfora con medición. | ¿Quién recuerda el final perdido de un poema que nunca tuvo final? |
+| P071 | Selka Orv | Farmacóloga clínica de la Casa de Sal | Evalúa ensayos, riesgos, indicaciones y calidad de evidencia. No permite que una anécdota suplante un resultado clínico. | ¿Por qué el informe de seguridad omite el desenlace que todos recuerdan? |
+| P072 | Iven Sorel | Bibliotecario jurídico de la Casa de los Índices | Clasifica licencias, derechos, copias y estados de conservación. Distingue disponibilidad, permiso y dominio público. | ¿Quién liberó un libro sin poseerlo? |
+| P073 | Iara Morn | Antropóloga de religiones comparadas del Colegio de Medidores | Estudia cómo los ritos cambian al ser descritos por viajeros, misioneros y editores. Exige escuchar a las comunidades. | ¿Qué parte de un rito desaparece cuando solo queda la explicación del visitante? |
+| P074 | Mael Ral | Crítico de fuentes y editor de la Casa de los Índices | Examina autoría, fecha, dependencia textual y transmisión. Pregunta quién pudo conocer cada documento y cuándo. | ¿Cómo puede una copia citar una fuente posterior? |
+
+Estos doce especialistas amplían la lectura del Palimpsesto en cuatro tradiciones mitológicas y en historia de la medicina, etnobotánica, antropología ritual, derecho, literatura, farmacología clínica y crítica de fuentes. No son profetas ni portavoces de nuevas sectas. Sus conocimientos se expresan en fichas factuales independientes; sus expedientes narrativos pueden ser ambiguos, pero no alteran el alcance de los hechos externos.
