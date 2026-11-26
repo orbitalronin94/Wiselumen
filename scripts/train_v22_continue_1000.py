@@ -29,7 +29,7 @@ STEPS = 1000
 START_STEP = 100
 TOTAL_STEPS = START_STEP + STEPS
 PARENT_CHECKPOINT = Path("artifacts/lumen-v22-step-100.pt")
-BATCH_SIZE = 8
+BATCH_SIZE = 4
 MAX_LEN = 512
 RESERVOIR_SIZE = 2048
 
@@ -227,7 +227,7 @@ def main():
     if len(encoded_conflicts) != 10:
         raise RuntimeError(f"Expected 10 conflict examples, got {len(encoded_conflicts)}")
 
-    batch_rng = random.Random(SEED + 1)
+    batch_rng = random.Random(SEED + START_STEP + 1)
     batches = []
     for _ in range(STEPS):
         samples = [batch_rng.choice(encoded_corpus) for _ in range(BATCH_SIZE - 1)]
