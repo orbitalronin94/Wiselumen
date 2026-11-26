@@ -1,7 +1,10 @@
 """Run the legacy 2,431-item MC and 100-question freeform holdouts on LUMEN V2.2."""
 from __future__ import annotations
-import argparse, hashlib, json, random
+import argparse, hashlib, json, random, sys
 from pathlib import Path
+# When executed as `python scripts/...`, Python puts scripts/ rather than the
+# repository root at sys.path[0]. Add the project root for Model.py and data.py.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import torch
 import torch.nn.functional as F
 from tokenizers import Tokenizer
