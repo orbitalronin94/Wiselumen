@@ -92,7 +92,16 @@ def get_optimizer(model, slow_lr=5e-4, fast_lr=2e-3, weight_decay=0.01,
             print(f"Optimizer: AdamW vanilla (8-bit unavailable: {type(exc).__name__})",
                   flush=True)
 
-    optimizer = optimizer_class(groups, betas=(0.9, 0.95), eps=1e-8)
+    # foreach batches AdamW tensor operations, reducing Python/kernel-launch
+    # overhead without changing optimizer mathematics. Fall back on older builds.
+    try:
+        optimizer = optimizer_class(
+            groups, betas=(0.9, 0.95), eps=1e-8, foreach=True
+        )
+        print("AdamW foreach=True", flush=True)
+    except TypeError:
+        optimizer = optimizer_class(groups, betas=(0.9, 0.95), eps=1e-8)
+        print("AdamW foreach unavailable; using standard implementation", flush=True)
     # Algunos optimizadores exponen los grupos sin base_lr; el scheduler lo necesita.
     for group in optimizer.param_groups:
         group.setdefault("base_lr", group["lr"])
@@ -322,7 +331,10 @@ def train_steps(
         use_amp = amp_dtype is not None and device.type in {"cuda", "cpu"}
         active_layers = active_layers_for_step(global_step, mode, len(model.blocks))
         with torch.autocast(device_type=device.type, dtype=amp_dtype, enabled=use_amp):
-            _, loss = model(inputs, targets=targets, active_layers=active_layers)
+            _, loss = model(
+                inputs, targets=targets, active_layers=active_layers,
+                return_logits=False,
+            )
 
         if loss is None or not torch.isfinite(loss):
             raise FloatingPointError(f"Non-finite training loss at step {step + 1}: {loss}")
