@@ -66,12 +66,12 @@ La versión 0.3 conserva los 69 registros de la línea base y añade 16 document
 
 Los registros L021–L028 son **dogmas/doctrinas internas de sus respectivas sectas**, no ficción genérica. Se conserva `type: lore` porque son documentos diegéticos; se añade `record_class: sectarian_dogma`, junto con `sect`, `deity` y `truth_scope` para que el entrenamiento y la evaluación puedan distinguir la creencia religiosa interna de un hecho externo. Una doctrina puede ser verdadera, falsa, parcial o disputada dentro del mundo; no debe convertirse por ello en conocimiento factual externo.
 
-El archivo original `Marper-Codice-Juntado (1).txt` figura en el repositorio con un tamaño de blob de 20.401.800 bytes (20,40 MB decimales; 19,46 MiB). La descarga de contenido por la API de GitHub devolvió texto vacío, por lo que este tamaño procede de los metadatos del blob, no de un recálculo local. El usuario aclara que el material original era mayoritariamente contenido de Isabel, con pequeñas ediciones para adaptarlo al lore ampliado. Esa procedencia debe respetarse; no se atribuye todo el corpus a una creación nueva de Marper. Las medidas no incluyen compresión ni tokenizer.
+El archivo original `Marper-Codice-Juntado (1).txt` tiene 20.401.800 bytes (20,40 MB decimales; 19,46 MiB). El contenido completo se recuperó mediante el blob Git y se indexaron sus 16.848 revelaciones en cuatro fragmentos JSONL. La procedencia mayoritaria de Isabel, con pequeñas adaptaciones al lore, se conserva como metadato; no se atribuye todo el texto a Marper.
 
 
 ## Grafo y matrices
 
-La semilla v0.3 tiene una representación estructural en `corpus/graph_v0.3.json`. Cada tipo de relación dispone de su matriz dispersa propia; las proyecciones por personaje, lugar y dominio representan coaparición y no implican causalidad ni acuerdo. Véase `corpus/ARQUITECTURA_GRAFO_MATRICES.md` y ejecute `python corpus/validate_graph.py` para comprobar el artefacto. El grafo declara cobertura parcial mientras no se recupere el texto íntegro del Palimpsesto.
+La v0.3 conserva su grafo histórico parcial. La representación vigente es `corpus/graph_v0.4.json`: integra 160 registros curados y los 16.848 registros fuente del Palimpsesto mediante 17.479 nodos y 51.907 relaciones principales, distribuidos en matrices COO dispersas. Ejecute `python corpus/validate_graph.py --require-complete` para comprobar dimensiones, índices, duplicados, referencias y cobertura. La cobertura estructural está completa; la auditoría factual individual del Palimpsesto sigue pendiente.
 
 
 ## Fuentes, procedencia y grafo global
