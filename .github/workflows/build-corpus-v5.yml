@@ -1,0 +1,40 @@
+name: Build WISE-RONIN Corpus V5.0.0
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [corpus/v5-7p5-lore]
+    paths:
+      - "scripts/build_corpus_v5.py"
+      - "scripts/v5_sampling.py"
+      - "tests/test_v5_sampling.py"
+      - "docs/CORPUS_V5_SPEC.md"
+      - ".github/workflows/build-corpus-v5.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-v5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile V5 training integration
+        run: python -m py_compile scripts/train_v22_v5_mixed.py scripts/v5_sampling.py scripts/build_corpus_v5.py
+      - name: Test exact V5 sampling proportions
+        run: python -m unittest discover -s tests -p 'test_v5_sampling.py'
+      - name: Compile and verify V5 bundle
+        run: python scripts/build_corpus_v5.py
+      - name: Upload V5 corpus and build report
+        uses: actions/upload-artifact@v4
+        with:
+          name: wise-ronin-corpus-v5.0.0
+          path: |
+            artifacts/wise-ronin-corpus-v5.0.0.zip
+            artifacts/v5-build-report.json
+          if-no-files-found: error
+          retention-days: 30
