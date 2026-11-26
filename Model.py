@@ -228,24 +228,52 @@ class LumenV2(nn.Module):
             flat_hidden = x.reshape(-1, self.d_model)
             supervised_hidden = flat_hidden[valid]
             supervised_targets = flat_targets[valid]
-            supervised_logits = F.linear(supervised_hidden, self.head.weight)
-            ce = F.cross_entropy(
-                supervised_logits, supervised_targets,
-                reduction="none", label_smoothing=0.05,
-            )
-
-            if self.loss_mode == "cross_entropy":
-                loss = ce.mean()
+            # Optional exact-objective chunking for large CPU batches. Disabled by
+            # default, so the production/main path remains byte-for-byte equivalent.
+            import os
+            chunk_size = int(os.environ.get("LUMEN_LOGIT_CHUNK_SIZE", "0"))
+            if chunk_size > 0 and supervised_hidden.shape[0] > chunk_size:
+                weighted_losses = []
+                for offset in range(0, supervised_hidden.shape[0], chunk_size):
+                    hidden_chunk = supervised_hidden[offset:offset + chunk_size]
+                    target_chunk = supervised_targets[offset:offset + chunk_size]
+                    logits_chunk = F.linear(hidden_chunk, self.head.weight)
+                    ce_chunk = F.cross_entropy(
+                        logits_chunk, target_chunk,
+                        reduction="none", label_smoothing=0.05,
+                    )
+                    if self.loss_mode == "cross_entropy":
+                        weighted_losses.append(ce_chunk)
+                    else:
+                        with torch.no_grad():
+                            probs = F.softmax(logits_chunk.float(), dim=-1)
+                            p_correct = probs.gather(1, target_chunk.unsqueeze(1)).squeeze(1)
+                            max_prob = probs.max(dim=-1).values
+                            error_weight = 1.0 - p_correct
+                            overconfidence = (
+                                (max_prob > 0.7) & (p_correct < 0.3)
+                            ).to(ce_chunk.dtype) * 0.5
+                        weighted_losses.append(ce_chunk * (error_weight + overconfidence))
+                loss = torch.cat(weighted_losses).mean()
             else:
-                with torch.no_grad():
-                    probs = F.softmax(supervised_logits.float(), dim=-1)
-                    p_correct = probs.gather(1, supervised_targets.unsqueeze(1)).squeeze(1)
-                    max_prob = probs.max(dim=-1).values
-                    error_weight = 1.0 - p_correct
-                    overconfidence = (
-                        (max_prob > 0.7) & (p_correct < 0.3)
-                    ).to(ce.dtype) * 0.5
-                loss = (ce * (error_weight + overconfidence)).mean()
+                supervised_logits = F.linear(supervised_hidden, self.head.weight)
+                ce = F.cross_entropy(
+                    supervised_logits, supervised_targets,
+                    reduction="none", label_smoothing=0.05,
+                )
+
+                if self.loss_mode == "cross_entropy":
+                    loss = ce.mean()
+                else:
+                    with torch.no_grad():
+                        probs = F.softmax(supervised_logits.float(), dim=-1)
+                        p_correct = probs.gather(1, supervised_targets.unsqueeze(1)).squeeze(1)
+                        max_prob = probs.max(dim=-1).values
+                        error_weight = 1.0 - p_correct
+                        overconfidence = (
+                            (max_prob > 0.7) & (p_correct < 0.3)
+                        ).to(ce.dtype) * 0.5
+                    loss = (ce * (error_weight + overconfidence)).mean()
 
         if return_logits or targets is None:
             logits = self.head(x)
