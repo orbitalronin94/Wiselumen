@@ -46,7 +46,7 @@ The paired reference is Python evaluation on the same V2.2 step-10,000 checkpoin
 - Rust total wall time: 692.11 s
 - Rust/Python speedup: 1.5513x (35.5% less wall time)
 - MC accuracy: 829 / 2,431 (34.10%) in both
-- Serialized MC decision labels: identical (2,256 prediction records)
+- All 2,431 serialized MC decision records match in order (2,256 unique IDs; 175 repeated-ID rows in the source holdout)
 - Freeform generated token IDs and text: identical across all 100 prompts
 - Maximum absolute MC candidate-score difference: 2.3842e-6
 
