@@ -7,11 +7,16 @@ on:
       - main
     paths:
       - "Marper-Codice-Juntado (1).txt"
-      - "data/lore_seed_*.jsonl"
-      - "data/palimpsesto_index_*.jsonl"
-      - "corpus/**"
-      - "lore/**"
+      - "data/lore_seed_v0.4.jsonl"
+      - "data/palimpsesto_index_v0.1_part*.jsonl"
+      - "corpus/index_palimpsesto.py"
+      - "corpus/build_graph.py"
+      - "corpus/validate_graph.py"
       - ".github/workflows/validate-corpus-graph.yml"
+
+concurrency:
+  group: corpus-master-graph-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
