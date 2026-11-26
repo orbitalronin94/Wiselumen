@@ -68,6 +68,16 @@ def jsonl_rows(data: bytes, label: str) -> list[dict]:
                 raise RuntimeError(f"{label}:{line_no}: {exc}") from exc
     return rows
 
+def write_deterministic(zf: zipfile.ZipFile, name: str, data: bytes, compression: int) -> None:
+    info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+    info.compress_type = compression
+    info.create_system = 3
+    info.external_attr = 0o100644 << 16
+    if compression == zipfile.ZIP_DEFLATED:
+        zf.writestr(info, data, compress_type=compression, compresslevel=6)
+    else:
+        zf.writestr(info, data, compress_type=compression)
+
 def main() -> None:
     OUT.mkdir(exist_ok=True)
     v4_path = OUT / "wise-ronin-corpus-v4.0.0.zip"
@@ -134,9 +144,9 @@ def main() -> None:
     }
     output = OUT / "wise-ronin-corpus-v5.0.0.zip"
     with zipfile.ZipFile(output, "w", allowZip64=True) as zf:
-        zf.writestr("corpus/v4/wise-ronin-corpus-v4.0.0.zip", v4_bytes, compress_type=zipfile.ZIP_STORED)
+        write_deterministic(zf, "corpus/v4/wise-ronin-corpus-v4.0.0.zip", v4_bytes, zipfile.ZIP_STORED)
         for name, data in assets.items():
-            zf.writestr(name, data, compress_type=zipfile.ZIP_DEFLATED, compresslevel=6)
+            write_deterministic(zf, name, data, zipfile.ZIP_DEFLATED)
         zf.writestr("corpus/v5/sampling.json", json.dumps(SAMPLING, ensure_ascii=False, indent=2) + "\n")
         zf.writestr("corpus/v5/manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     result = {"output": str(output), "bytes": output.stat().st_size, "sha256": sha256(output.read_bytes()), "manifest": manifest}
