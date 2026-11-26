@@ -16,34 +16,34 @@ class RMSNorm(nn.Module):
         return (x * rms.to(dtype=x.dtype)) * self.weight
 
 
-class RoPE:
-    """Rotary positional embeddings. Tensors are kept on CPU and moved to q/k's device."""
+class RoPE(nn.Module):
+    """Rotary positional embeddings; non-persistent buffers preserve checkpoint compatibility."""
     def __init__(self, head_dim, max_len=2048, base=10000.0):
+        super().__init__()
         if head_dim % 2:
             raise ValueError(f"RoPE requires an even head dimension, got {head_dim}.")
         inv_freq = 1.0 / (base ** (torch.arange(0, head_dim, 2).float() / head_dim))
         positions = torch.arange(max_len).float()
         freqs = torch.outer(positions, inv_freq)
-        self.cos = torch.repeat_interleave(freqs.cos(), 2, dim=-1)
-        self.sin = torch.repeat_interleave(freqs.sin(), 2, dim=-1)
+        self.register_buffer("cos", torch.repeat_interleave(freqs.cos(), 2, dim=-1), persistent=False)
+        self.register_buffer("sin", torch.repeat_interleave(freqs.sin(), 2, dim=-1), persistent=False)
 
-    def apply(self, q, k):
+    def _rotate_one(self, x, cos, sin):
+        x_even, x_odd = x[..., 0::2], x[..., 1::2]
+        rotated = torch.stack(
+            (x_even * cos[..., 0::2] - x_odd * sin[..., 0::2],
+             x_even * sin[..., 0::2] + x_odd * cos[..., 0::2]),
+            dim=-1,
+        )
+        return rotated.flatten(-2)
+
+    def rotate(self, q, k):
         seq_len = q.shape[-2]
         if seq_len > self.cos.shape[0]:
             raise ValueError(f"Sequence length {seq_len} exceeds RoPE limit {self.cos.shape[0]}.")
         cos = self.cos[:seq_len].to(device=q.device, dtype=q.dtype)[None, None, :, :]
         sin = self.sin[:seq_len].to(device=q.device, dtype=q.dtype)[None, None, :, :]
-
-        def rotate(x):
-            x_even, x_odd = x[..., 0::2], x[..., 1::2]
-            rotated = torch.stack(
-                (x_even * cos[..., 0::2] - x_odd * sin[..., 0::2],
-                 x_even * sin[..., 0::2] + x_odd * cos[..., 0::2]),
-                dim=-1,
-            )
-            return rotated.flatten(-2)
-
-        return rotate(q), rotate(k)
+        return self._rotate_one(q, cos, sin), self._rotate_one(k, cos, sin)
 
 
 class SparseMLP(nn.Module):
@@ -110,7 +110,7 @@ class Attention(nn.Module):
         # antes de seleccionar Q, K y V (el orden anterior indexaba T por error).
         qkv = self.qkv(x).view(batch, seq_len, 3, self.n_head, self.d_head)
         q, k, v = qkv.permute(2, 0, 3, 1, 4).unbind(dim=0)
-        q, k = self.rope.apply(q, k)
+        q, k = self.rope.rotate(q, k)
 
         y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
         y = y.transpose(1, 2).contiguous().view(batch, seq_len, channels)

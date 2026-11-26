@@ -5,16 +5,32 @@ on:
     paths:
       - "rust-holdout/**"
       - ".github/workflows/rust-holdout-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "rust-holdout/**"
+      - ".github/workflows/rust-holdout-ci.yml"
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   compile:
     runs-on: ubuntu-24.04
+    env:
+      CXX: clang++
+      LIBTORCH_USE_PYTORCH: "1"
+      LIBTORCH_BYPASS_VERSION_CHECK: "1"
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU LibTorch through PyTorch
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.5.1
+          echo "LD_LIBRARY_PATH=$(python -c 'import torch,os; print(os.path.join(os.path.dirname(torch.__file__),\"lib\"))'):$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
       - uses: dtolnay/rust-toolchain@stable
       - name: Check and test Rust runner
         run: |
           cargo check --manifest-path rust-holdout/Cargo.toml
-          cargo test --manifest-path rust-holdout/Cargo.toml --locked
+          cargo test --manifest-path rust-holdout/Cargo.toml
