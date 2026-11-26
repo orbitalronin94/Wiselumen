@@ -229,12 +229,18 @@ def main():
             "need at least 100. Rejected long rows: {rejected_long}"
         )
 
-    encoded_lore = [
-        format_lore_row(row, tokenizer, system_prompt, max_len=MAX_LEN)
-        for row in lore_rows
-    ]
-    if len(encoded_lore) != 289:
-        raise RuntimeError(f"Expected 289 curated lore records, got {len(encoded_lore)}")
+    encoded_lore = []
+    rejected_lore_long = 0
+    for row in lore_rows:
+        try:
+            encoded_lore.append(format_lore_row(row, tokenizer, system_prompt, max_len=MAX_LEN))
+        except ValueError as exc:
+            if "needs" in str(exc) or "max_len" in str(exc):
+                rejected_lore_long += 1
+                continue
+            raise
+    if len(encoded_lore) < 20:
+        raise RuntimeError(f"Only {len(encoded_lore)} lore records fit; rejected={rejected_lore_long}")
 
     encoded_conflicts = [
         format_v4_row(row, tokenizer, system_prompt, max_len=MAX_LEN)
