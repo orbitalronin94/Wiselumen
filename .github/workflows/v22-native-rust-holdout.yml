@@ -83,7 +83,7 @@ jobs:
       - name: Compare native Rust against frozen Python baseline
         if: always()
         run: |
-          mkdir -p results
+          mkdir -p results results/rust
           python - <<'PY'
           import json, pathlib
           base=pathlib.Path("baseline/python"); rust=pathlib.Path("results/rust")
@@ -104,6 +104,7 @@ jobs:
               if p.exists(): report.setdefault("wall_seconds",{})[label]=float(p.read_text().strip())
           if set(report.get("wall_seconds",{}))=={"python","rust"}:
               report["rust_over_python_speedup"]=report["wall_seconds"]["python"]/report["wall_seconds"]["rust"]
+          pathlib.Path("results").mkdir(parents=True, exist_ok=True)
           pathlib.Path("results/native_rust_comparison.json").write_text(json.dumps(report,indent=2)+"\n")
           print(json.dumps(report,indent=2))
           if report.get("mc_predictions_identical") is False or report.get("freeform_token_ids_identical") is False:
