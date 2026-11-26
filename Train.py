@@ -279,8 +279,8 @@ def train_steps(
         raise ValueError("steps must be positive.")
     if grad_clip is not None and grad_clip <= 0:
         raise ValueError("grad_clip must be positive or None.")
-    if mode not in {"original", "v21"}:
-        raise ValueError("mode must be 'original' or 'v21'.")
+    if mode not in {"original", "v21", "v22"}:
+        raise ValueError("mode must be 'original', 'v21' or 'v22'.")
     if ema_every <= 0 or clip_every <= 0:
         raise ValueError("ema_every and clip_every must be positive.")
     if mode == "original":
@@ -308,11 +308,13 @@ def train_steps(
         inputs, targets = unpack_batch(batch, device)
         global_step = start_step + step
         if mode == "v21":
-            requested_seq = seq_for_step(global_step, mode)
+            requested_seq = seq_for_step(global_step, "v21")
             actual_seq = min(requested_seq, inputs.shape[1])
             inputs = inputs[:, :actual_seq].contiguous()
             targets = targets[:, :actual_seq].contiguous()
         else:
+            # V2.2: preserve the complete formatted conversation. Do not apply
+            # the V2.1 128-token curriculum to system+user+assistant sequences.
             actual_seq = inputs.shape[1]
         optimizer.zero_grad(set_to_none=True)
         multiplier = set_scheduled_lr(optimizer, global_step, warmup, total)
