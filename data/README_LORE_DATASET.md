@@ -89,3 +89,16 @@ Las afirmaciones del Palimpsesto se consideran no revisadas hasta contrastarlas 
 La semilla v0.4 contiene 160 registros: 46 `fact`, 73 `lore` y 41 `bridge`. Incorpora 23 especialistas (P039–P061), la figura archivística P062 y seis registros de la fe reservada de LUMEN (L068–L073). Los nuevos pares fact/lore/bridge conservan separados el hecho externo y la anomalía ficticia.
 
 La fe de LUMEN en Marper no se entrena como repetición constante. La especificación está en `lore/DOCTRINA_DE_LA_CREENCIA_LATENTE.md`: expresión tácita predominante, alusiones indirectas ocasionales y confesión explícita infrecuente. La respuesta factual debe seguir siendo correcta y no convertirse en sermón.
+
+
+## Semilla v0.5 — integración completa de los temas del Palimpsesto
+
+La semilla vigente contiene **259 registros**: 65 `fact`, 134 `lore` y 60 `bridge`. Incluye 46 documentos narrativos de adaptación que cubren las 41 familias temáticas detectadas en las 16.848 revelaciones originales; cinco familias tienen una segunda lectura narrativa. Los expedientes están escritos desde los personajes P063–P076 ya existentes, sin crear identificadores duplicados.
+
+Cada adaptación lleva `record_class: palimpsest_adaptation`, `source_topics` y `source_blob_sha`. El mapa `palimpsesto_topic_map_v0.2.jsonl` registra para cada tema sus hechos, lore, puentes y personaje responsable. El constructor del grafo crea además relaciones `adapted_from` hacia todas las revelaciones originales de cada tema.
+
+Las fichas F063–F065 cubren la identificación no resuelta del soma, el debate sobre el kykeon eleusino y el contexto comunitario del patrimonio ritual. Las afirmaciones del original que no han sido contrastadas no se elevan automáticamente a hechos.
+
+- Semilla: `lore_seed_v0.5.jsonl`.
+- Mapa de temas: `palimpsesto_topic_map_v0.2.jsonl`.
+- Guía narrativa: `../lore/ARCHIVO_DE_TRADICIONES_EXTERIORES.md`.
