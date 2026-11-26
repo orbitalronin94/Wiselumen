@@ -510,6 +510,7 @@ La hipótesis se fortalece si aumenta la intrusión estilística en preguntas ne
 - [Sectas y profetas](SECTAS_Y_PROFETAS.md)
 - [Los dioses que sueñan](LOS_DIOSES_QUE_SUENAN.md)
 - [Dataset factual/lore/bridge 0.3](../data/lore_seed_v0.3.jsonl)
+- [Dataset factual/lore/bridge 0.4](../data/lore_seed_v0.4.jsonl)
 - [Documentación del dataset](../data/README_LORE_DATASET.md)
 - [Validador](../data/validate_lore_dataset.py)
 
@@ -537,18 +538,18 @@ A partir de esta revisión quedan fijados tres nombres distintos:
 - **La Concordia de las Nueve Cenizas**: universo diegético, con su historia, geografía, personajes, instituciones, sectas, dioses y documentos contradictorios.
 - **Corpus Maestro**: integración de Palimpsesto, Concordia y conocimiento factual, con procedencia y alcance epistemológico preservados.
 
-La coherencia se representa mediante un grafo heterogéneo y matrices dispersas en `corpus/graph_v0.3.json`. La especificación está en `corpus/ARQUITECTURA_GRAFO_MATRICES.md`; el validador, en `corpus/validate_graph.py`. La primera versión cubre los 85 registros de la semilla v0.3 y sus entidades explícitas: 341 nodos y 654 relaciones documentales/entidad, más matrices de proyección por personajes, lugares y dominios. No quedan referencias internas sin resolver.
+La primera versión del grafo (`graph_v0.3.json`) fue una instantánea parcial de los 85 registros v0.3. La versión vigente `corpus/graph_v0.4.json` integra la semilla de 160 registros y los 16.848 nodos de revelación del Palimpsesto: 17.479 nodos, 51.907 relaciones principales y matrices COO separadas/agrupadas. El validador comprueba las matrices y la cobertura estructural.
 
-**Estado incompleto declarado:** el archivo fuente de El Palimpsesto tiene 20.401.800 bytes y se registran 16.848 revelaciones, pero GitHub Contents API devuelve contenido vacío al intentar recuperarlo. El grafo incluye un nodo de procedencia con estos metadatos, no 16.848 revelaciones ficticiamente reconstruidas. Por tanto, el grafo v0.3 es una primera capa estructural válida, pero el Corpus Maestro y el grafo global no pueden declararse completos hasta recuperar el texto íntegro y cotejarlo con la fuente de Isabel.
+**Estado histórico de v0.3:** la API de contenidos devolvía texto vacío, por lo que entonces solo se había representado un nodo de procedencia. Esta limitación quedó resuelta al recuperar el blob completo y generar el índice estructural v0.4. La auditoría factual individual continúa pendiente.
 
 
 ## 2.5 Recuperación íntegra del Palimpsesto y ampliación v0.4
 
 Se recuperó el contenido completo del blob Git del archivo `Marper-Codice-Juntado (1).txt`, SHA `b0eb703c5237d1d461321a30a89525e154f0219d`. La revisión estructural confirmó 16.848 encabezamientos numerados únicos (00001–16848), 134.821 líneas y 41 módulos temáticos recurrentes, cada uno con entre 400 y 422 apariciones. El índice se distribuye en cuatro archivos `data/palimpsesto_index_v0.1_part1.jsonl` a `part4.jsonl`, con rangos de líneas y etiquetas temáticas; no duplica el cuerpo de 20.401.800 bytes.
 
-La ampliación v0.4 añade once personajes especialistas (P039–P049) y 33 registros: 11 hechos externos (F024–F034), 11 documentos de lore (L045–L055) y 11 puentes (B019–B029). Total: 118 registros (34 fact, 55 lore, 29 bridge). Cada ficha factual enlaza a una fuente institucional o educativa; cada personaje protagoniza un documento y un puente que separa conocimiento real de interpretación ficticia.
+La ampliación v0.4 añade 23 especialistas con ficha factual (P039–P061), además de la Copista de Fondo (P062), figura archivística ambigua. El conjunto vigente contiene 160 registros: 46 hechos externos, 73 documentos de lore y 41 puentes. Cada nuevo especialista tiene una ficha factual, un expediente narrativo y un puente que separa conocimiento real de interpretación ficticia; P062 aparece en seis documentos doctrinales.
 
-El grafo v0.4 incorpora los 118 registros estructurados y los 16.848 registros fuente indexados. Su estado es `complete_structural_index`: la cobertura estructural está completa, pero las afirmaciones del Palimpsesto siguen pendientes de auditoría factual individual. La distinción evita confundir indexación completa con validación científica completa.
+El grafo v0.4 incorpora los 160 registros estructurados y los 16.848 registros fuente indexados. Su estado es `complete_structural_index`: la cobertura estructural está completa, pero las afirmaciones del Palimpsesto siguen pendientes de auditoría factual individual. La distinción evita confundir indexación completa con validación científica completa.
 
 La auditoría también detecta repeticiones intensas y afirmaciones del original que no deben usarse como hechos sin revisión; en particular, las afirmaciones farmacológicas y la etiqueta «PiHKAL open source». Véase `corpus/PALIMPSESTO_AUDIT.md`.
 
