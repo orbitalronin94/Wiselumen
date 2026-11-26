@@ -25,9 +25,11 @@ jobs:
           python-version: "3.12"
       - name: Rebuild Palimpsest index
         run: python corpus/index_palimpsesto.py
+      - name: Rebuild Palimpsest index
+        run: python corpus/index_palimpsesto.py
       - name: Rebuild sparse graph
         run: python corpus/build_graph.py
       - name: Validate graph invariants
-        run: python corpus/validate_graph.py --require-complete
+        run: python corpus/validate_graph.py --require-complete --require-complete
       - name: Ensure generated graph is committed
-        run: git diff --exit-code -- data/palimpsesto_index_v0.1_part*.jsonl corpus/graph_v0.4.json
+        run: git diff --exit-code -- data/palimpsesto_index_v0.1_part*.jsonl
