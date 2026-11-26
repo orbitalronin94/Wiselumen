@@ -103,3 +103,6 @@ El estado `complete_structural_index` significa que cada revelación está index
 El grafo v0.5 se construye a partir de `data/lore_seed_v0.5.jsonl`, los cuatro índices fuente y `data/palimpsesto_topic_map_v0.2.jsonl`. Cada documento con `record_class: palimpsest_adaptation` declara uno o más `source_topics`. El constructor crea una relación dispersa `adapted_from` desde ese documento a cada revelación fuente del tema, además de las relaciones de tema a personaje, hecho, lore y puente declaradas en el mapa.
 
 La validación comprueba que los 41 temas están representados, que el mapa no contiene IDs inexistentes, que cada adaptación apunta a todas las revelaciones fuente de sus temas y que no hay enlaces internos sin resolver. El índice estructural completo no equivale a auditoría factual completa.
+
+
+**Grafo v0.5 validado:** 17.769 nodos, 72.128 relaciones dirigidas, 21 matrices COO, 18.958 enlaces directos `adapted_from`, cinco shards de nodos y cero referencias sin resolver. La ejecución CI 45890035441 terminó correctamente; el estado es `complete_structural_index`, con auditoría factual individual del Palimpsesto aún pendiente.
