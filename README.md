@@ -240,3 +240,6 @@ La semilla vigente contiene 259 registros (65 fact, 134 lore, 60 bridge) y 46 ad
 - [Mapa de temas](data/palimpsesto_topic_map_v0.2.jsonl)
 - [Archivo de Tradiciones Exteriores](lore/ARCHIVO_DE_TRADICIONES_EXTERIORES.md)
 - [Grafo de matrices v0.5](corpus/graph_v0.5.json)
+
+
+**Grafo v0.5 validado:** 17.769 nodos, 72.128 relaciones dirigidas, 21 matrices COO, 18.958 enlaces directos `adapted_from`, cinco shards de nodos y cero referencias sin resolver. La ejecución CI 45890035441 terminó correctamente; el estado es `complete_structural_index`, con auditoría factual individual del Palimpsesto aún pendiente.
