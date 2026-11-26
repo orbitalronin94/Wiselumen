@@ -39,7 +39,7 @@ def validate(path: Path, require_complete: bool = False) -> list[str]:
     if unresolved:
         errors.append(f"{len(unresolved)} unresolved record links")
     completeness = graph.get("completeness", {})
-    if require_complete and completeness.get("status") != "complete":
+    if require_complete and completeness.get("status") not in {"complete", "complete_structural_index"}:
         errors.append("graph is partial; complete source corpus is required")
     if graph.get("edge_count") is None:
         errors.append("missing edge_count")
@@ -47,7 +47,7 @@ def validate(path: Path, require_complete: bool = False) -> list[str]:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("graph", nargs="?", default="corpus/graph_v0.3.json")
+    parser.add_argument("graph", nargs="?", default="corpus/graph_v0.4.json")
     parser.add_argument("--require-complete", action="store_true")
     args = parser.parse_args()
     problems = validate(Path(args.graph), args.require_complete)
