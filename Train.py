@@ -278,7 +278,7 @@ def unpack_batch(batch, device):
 def train_steps(
     model, batches, steps, optimizer=None, device=None, warmup=200,
     total_steps=None, start_step=0, grad_clip=1.0, ema=None, log_every=100, amp_dtype=None,
-    mode="original", ema_every=10, clip_every=5,
+    mode="original", ema_every=10, clip_every=5, layer_schedule=None,
 ):
     """Ejecuta updates sobre un iterador de batches ya tokenizados.
 
@@ -329,7 +329,23 @@ def train_steps(
         multiplier = set_scheduled_lr(optimizer, global_step, warmup, total)
 
         use_amp = amp_dtype is not None and device.type in {"cuda", "cpu"}
-        active_layers = active_layers_for_step(global_step, mode, len(model.blocks))
+        if layer_schedule is None:
+            active_layers = active_layers_for_step(global_step, mode, len(model.blocks))
+        else:
+            matches = [
+                layers for start, end, layers in layer_schedule
+                if start <= global_step < end
+            ]
+            if len(matches) != 1:
+                raise ValueError(
+                    f"layer_schedule must define exactly one range for step {global_step}; "
+                    f"matched {len(matches)}"
+                )
+            active_layers = matches[0]
+            if not active_layers or any(
+                index < 0 or index >= len(model.blocks) for index in active_layers
+            ):
+                raise ValueError(f"Invalid active layer indices: {active_layers}")
         with torch.autocast(device_type=device.type, dtype=amp_dtype, enabled=use_amp):
             _, loss = model(
                 inputs, targets=targets, active_layers=active_layers,
