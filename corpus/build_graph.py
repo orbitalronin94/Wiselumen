@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build a sharded sparse heterogeneous graph for the complete structural Corpus Master."""
-import argparse, json, re, unicodedata
+import argparse, hashlib, json, re, unicodedata
 from collections import defaultdict
 from pathlib import Path
 
@@ -10,7 +10,7 @@ SOURCE = {
  "size_bytes":20401800,"recorded_revelations":16848,"content_status":"indexed_all_revelations",
  "provenance":"Mayoría de material original de Isabel con pequeñas adaptaciones al lore; proporción exacta pendiente."
 }
-SIMPLE_RELATIONS={"asserts_claim","authored_by","has_domain","mentions_character","references_record","uses_form","curated_by_character","topic_linked_fact","topic_adapted_as_lore","topic_separated_by_bridge"}
+SIMPLE_RELATIONS={"adapted_from","asserts_claim","authored_by","has_domain","mentions_character","references_record","uses_form","curated_by_character","topic_linked_fact","topic_adapted_as_lore","topic_separated_by_bridge"}
 
 def slug(value):
  value=unicodedata.normalize("NFD",str(value))
@@ -22,6 +22,9 @@ def read_jsonl(path):
 
 def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_sha):
  records=read_jsonl(dataset_path)
+ if dataset_blob_sha=="auto":
+  raw=Path(dataset_path).read_bytes()
+  dataset_blob_sha=hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\0"+raw).hexdigest()
  topic_map=read_jsonl(topic_map_path)
  if len(topic_map)!=41: raise ValueError(f"Expected 41 Palimpsest topic mappings, got {len(topic_map)}")
  if sum(x.get("occurrences",0) for x in topic_map)!=16848: raise ValueError("Topic map must account for all 16848 revelations")
@@ -36,6 +39,8 @@ def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_s
  if len(source_records)!=16848: raise ValueError(f"Expected 16848 source records, got {len(source_records)}")
  expected=[f"PM{i:05d}" for i in range(1,16849)]
  if [x["id"] for x in source_records]!=expected: raise ValueError("Palimpsest index IDs are not complete and sequential")
+ source_by_topic=defaultdict(list)
+ for item in source_records: source_by_topic[item["topic"]].append(item["id"])
  nodes,edges={},[]
  def add_node(node_id,kind,label,**meta):
   old=nodes.get(node_id)
@@ -44,7 +49,7 @@ def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_s
   return node_id
  def add_edge(a,rel,b): edges.append((a,rel,b,1))
  add_node(SOURCE["id"],SOURCE["type"],SOURCE["label"],**{k:v for k,v in SOURCE.items() if k not in {"id","type","label"}})
- for r in records: add_node(f"record:{r['id']}","record",r.get("title",r["id"]),record_type=r.get("type"),domain=r.get("domain"))
+ for r in records: add_node(f"record:{r['id']}","record",r.get("title",r["id"]),record_type=r.get("type"),domain=r.get("domain"),record_class=r.get("record_class"),source_topics=r.get("source_topics",[]))
  for r in records:
   src=f"record:{r['id']}"
   for field,prefix,kind,rel in [
@@ -62,6 +67,10 @@ def build(dataset_path,index_paths,topic_map_path,output_manifest,dataset_blob_s
    url=item.get("url")
    if url: add_edge(src,"supported_by_source",add_node(f"reference:{slug(url)}","reference",url,uri=url))
   for target in r.get("links",[]) or []: add_edge(src,"references_record",f"record:{target}")
+  for topic in r.get("source_topics",[]) or []:
+   matches=source_by_topic.get(topic,[])
+   if not matches: raise ValueError(f"No Palimpsest source revelations found for topic {topic!r} in {r['id']}")
+   for source_id in matches: add_edge(src,"adapted_from",f"palimpsest:{source_id}")
  for item in source_records:
   src=f"palimpsest:{item['id']}"
   add_node(src,"source_record",item["title"],source_revelation_number=item["source_revelation_number"],
@@ -153,7 +162,7 @@ if __name__=="__main__":
  p.add_argument("--index-dir",default="data")
  p.add_argument("--topic-map",default="data/palimpsesto_topic_map_v0.2.jsonl")
  p.add_argument("--output",default="corpus/graph_v0.5.json")
- p.add_argument("--dataset-blob-sha",default="4db2ed5d6139a93907d50d3cc056d4f9a9f0db94")
+ p.add_argument("--dataset-blob-sha",default="auto")
  a=p.parse_args()
  indexes=[Path(a.index_dir)/f"palimpsesto_index_v0.1_part{i}.jsonl" for i in range(1,5)]
  build(a.dataset,indexes,a.topic_map,a.output,a.dataset_blob_sha)
