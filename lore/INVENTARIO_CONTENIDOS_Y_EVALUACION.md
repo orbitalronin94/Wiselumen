@@ -566,3 +566,14 @@ La recuperación del blob SHA `b0eb703c5237d1d461321a30a89525e154f0219d` permiti
 La semilla vigente `data/lore_seed_v0.4.jsonl` contiene **160 registros**: 46 fact, 73 lore y 41 bridge. Frente a los 85 registros de v0.3, incorpora 23 nuevas fichas factuales, 23 documentos narrativos vinculados y 23 puentes, además de seis piezas doctrinales adicionales ya presentes en la rama. El registro de personajes llega a P062: 23 especialistas con conocimiento factual asociado (P039–P061) y la figura ambigua de la Copista de Fondo (P062).
 
 El grafo v0.4 está dividido en cuatro fragmentos de nodos y matrices COO separadas/agrupadas para evitar un único archivo monolítico. El manifiesto `corpus/graph_v0.4.json` declara 17.479 nodos, 51.907 relaciones principales y cero referencias internas sin resolver. Su estado es `complete_structural_index`, no «auditoría factual completa»: las afirmaciones del Palimpsesto aún requieren revisión una por una.
+
+
+## 2.6 Ampliación v0.5: los 41 módulos pasan a tener curador
+
+La semilla vigente de esta ampliación es `data/lore_seed_v0.5.jsonl`, con **207 registros**: 62 fact, 88 lore y 57 bridge. Frente a v0.4 se añaden 16 fichas factuales (F047–F062), 15 documentos narrativos (L074–L088) y 16 puentes (B042–B057). El registro de personajes llega a P076: se incorporan 14 especialistas, desde crítica de mitos y filología de manuscritos hasta neurofarmacología, toxicología, derechos de autor y metodología científica.
+
+El archivo `data/palimpsesto_topic_map_v0.2.jsonl` asigna los **41 módulos** del Palimpsesto a un personaje responsable y enlaza las fichas, documentos y puentes disponibles. La suma de ocurrencias del mapa es exactamente 16.848. Tres módulos carecen todavía de ficha factual enlazada; otros módulos disponen de una conexión contextual, pero sus afirmaciones particulares siguen requiriendo cotejo. El mapa no certifica por sí solo el contenido fuente.
+
+La adaptación se documenta en `corpus/PALIMPSESTO_ADAPTACION_v0.5.md`. La nueva versión del grafo incorpora relaciones explícitas entre cada tema, su curador y los documentos que lo contextualizan. Las proyecciones de coaparición siguen calculándose solo sobre registros curados, nunca sobre las repeticiones del original.
+
+**Estado epistemológico:** integridad estructural del índice, sí; auditoría factual exhaustiva de las 16.848 revelaciones, no. Los textos sobre sustancias se mantienen no operativos y las afirmaciones terapéuticas, biográficas y etnográficas no se elevan a hechos sin fuentes adecuadas.
