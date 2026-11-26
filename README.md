@@ -1,1 +1,108 @@
-# Wiselumen
+# Wiselumen — LUMEN V2
+
+Implementación experimental en PyTorch de un Transformer causal de aproximadamente **31,47M de parámetros** (configuración predeterminada). Arquitectura propia: RMSNorm, RoPE, atención SDPA causal, SwiGLU, Top-K, excitabilidad EMA y weight tying.
+
+## Estado
+
+- [x] Corregido el orden de dimensiones Q/K/V en atención.
+- [x] Embedding y LM head comparten un único parámetro.
+- [x] Optimizador AdamW con dos grupos de LR sin parámetros duplicados.
+- [x] Proyecciones SwiGLU `gate` y `up` fusionadas en una GEMM.
+- [x] Excitabilidad acotada como EMA de frecuencia de selección.
+- [x] Bucle reutilizable de entrenamiento, EMA y guardado por shards.
+- [x] Configuración CPU opcional: hilos, IPEX y `torch.compile`.
+- [ ] Benchmark real en el hardware objetivo.
+- [ ] Pipeline de datos/checkpoints/holdout específico del corpus.
+
+## Modelo
+
+`Model.py` contiene `LumenV2`. Los valores predeterminados son:
+
+| Parámetro | Valor |
+|---|---:|
+| vocab | 8.192 |
+| d_model | 512 |
+| capas | 8 |
+| cabezas | 8 |
+| d_ff | 1.536 |
+| Top-K | 256 |
+| contexto | 512 |
+| parámetros | ~31,47M |
+
+La fusión `gate_up` calcula ambas proyecciones de SwiGLU en una sola llamada Linear. No reduce el número de multiplicaciones ni cambia la función matemática; busca reducir el overhead y mejorar el uso de GEMM. La ganancia debe medirse en la CPU de destino.
+
+## Preflight
+
+Requiere Python y PyTorch:
+
+```bash
+python -m pip install torch
+python Model.py
+python Train.py
+python -m unittest discover -s tests -v
+```
+
+## Entrenamiento
+
+`train_steps()` recibe un iterador de batches tokenizados. Cada batch puede ser una tupla `(input_ids, targets)` o un diccionario con `input_ids` y `targets`/`labels`. El proyecto no presupone corpus, tokenizer ni formato de almacenamiento.
+
+Ejemplo de integración:
+
+```python
+import torch
+from Model import LumenV2
+from Train import EMA, get_optimizer, train_steps, save_checkpoint
+
+model = LumenV2()
+optimizer = get_optimizer(model)
+ema = EMA(model)
+
+# batches debe producir pares (input_ids, targets) de forma suficiente.
+result = train_steps(
+    model, batches, steps=1000, optimizer=optimizer,
+    warmup=100, total_steps=1000, ema=ema,
+    device="cpu", log_every=25,
+)
+save_checkpoint("checkpoints/step-1000.pt", model, optimizer, ema, step=1000)
+print(result["last_loss"])
+```
+
+## CPU: optimizaciones opt-in
+
+Configura los hilos antes de empezar a entrenar. Usa inicialmente el número de cores físicos disponibles, no asumas que hyperthreading mejora el throughput:
+
+```bash
+OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python train_entry.py
+```
+
+O desde Python, antes del trabajo paralelo:
+
+```python
+from Train import configure_cpu_runtime, prepare_cpu_training, get_optimizer
+
+print(configure_cpu_runtime(threads=4))
+optimizer = get_optimizer(model)
+model, optimizer = prepare_cpu_training(
+    model, optimizer, use_ipex=False, compile_model=False
+)
+```
+
+- IPEX es opcional y solo debe activarse con una combinación compatible de CPU, PyTorch e Intel Extension for PyTorch.
+- `torch.compile` es opcional. Top-K y las actualizaciones de buffers pueden provocar graph breaks; mide el tiempo total incluyendo compilación.
+- BF16 se puede probar mediante autocast en `train_steps(amp_dtype=torch.bfloat16)`, si la CPU lo soporta eficientemente. No se fuerzan pesos ni estados del optimizador a BF16.
+- No se incorpora Adam 8-bit ni sparsity 2:4 todavía: su soporte y aceleración real en CPU dependen del hardware/kernel y deben demostrarse con benchmark.
+- No se incorpora LoRA/low-rank: cambiaría qué parámetros se entrenan y sería una hipótesis arquitectónica distinta, no una optimización neutra.
+
+## Diseño experimental
+
+La loss predeterminada es `experimental`. Para una línea base convencional se puede crear `LumenV2(loss_mode="cross_entropy")`. Comparar ambas con el mismo tokenizer, batches, seed y presupuesto de pasos.
+
+No interpretar una caída de loss ponderada como directamente comparable con cross-entropy estándar. Registrar también evaluación holdout con cross-entropy sin ponderar.
+
+## Checkpoints
+
+`save_checkpoint()` guarda modelo, estado del optimizador, EMA y número de paso. `save_sharded()` guarda el state_dict en shards PyTorch con manifiesto JSON. Los shards conservan sus dtypes; no son archivos safetensors.
+
+## Principio
+
+Primero corrección y reproducibilidad; después benchmark. No se atribuyen multiplicadores de velocidad sin medición en el hardware objetivo.
