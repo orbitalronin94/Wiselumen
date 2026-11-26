@@ -147,7 +147,7 @@ fn main() -> Result<()> {
             for c in &choices { scores.push(candidate_nll(&model,&tok,&p,c,max_len)?); }
             let pred = scores.iter().enumerate().min_by(|a,b|a.1.total_cmp(b.1)).map(|x|x.0).unwrap();
             scored += 1;
-            correct += usize::from(pred==gold);
+            if pred==gold { correct += 1; }
             nll_sum += scores[gold];
             predictions.push(json!({"id":row.get("id").cloned().unwrap_or(json!(n+1)),"gold":gold,"pred":pred,"scores":scores}));
             if (n+1)%100==0 { println!("rust_mc_progress {}/{}",n+1,mc.len()); }
