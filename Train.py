@@ -12,7 +12,7 @@ except ImportError:
     from model import LumenV2
 
 
-def get_optimizer(model, slow_lr=5e-4, fast_lr=1e-3, weight_decay=0.01):
+def get_optimizer(model, slow_lr=5e-4, fast_lr=2e-3, weight_decay=0.01):
     """AdamW con dos ritmos y parámetros únicos (embedding/head tied)."""
     slow, fast = [], []
     seen = set()
@@ -149,7 +149,7 @@ def unpack_batch(batch, device):
 
 def train_steps(
     model, batches, steps, optimizer=None, device=None, warmup=200,
-    total_steps=None, grad_clip=1.0, ema=None, log_every=100, amp_dtype=None,
+    total_steps=None, start_step=0, grad_clip=1.0, ema=None, log_every=100, amp_dtype=None,
 ):
     """Ejecuta updates sobre un iterador de batches ya tokenizados.
 
@@ -163,9 +163,9 @@ def train_steps(
     device = torch.device(device or next(model.parameters()).device)
     model.to(device)
     optimizer = optimizer or get_optimizer(model)
-    total = total_steps or steps
-    if total < steps:
-        raise ValueError("total_steps cannot be smaller than this training run.")
+    total = total_steps or (start_step + steps)
+    if start_step < 0 or total < start_step + steps:
+        raise ValueError("total_steps must cover start_step + steps; start_step must be non-negative.")
 
     model.train()
     iterator = iter(batches)
@@ -181,7 +181,8 @@ def train_steps(
 
         inputs, targets = unpack_batch(batch, device)
         optimizer.zero_grad(set_to_none=True)
-        multiplier = set_scheduled_lr(optimizer, step, warmup, total)
+        global_step = start_step + step
+        multiplier = set_scheduled_lr(optimizer, global_step, warmup, total)
 
         use_amp = amp_dtype is not None and device.type in {"cuda", "cpu"}
         with torch.autocast(device_type=device.type, dtype=amp_dtype, enabled=use_amp):
