@@ -125,7 +125,7 @@ def build(dataset_path: Path, output_path: Path, dataset_blob_sha: str):
         },
         "completeness": {
             "status": "partial",
-            "reason": "El texto íntegro del Palimpsesto no está disponible para parseo; sus revelaciones no se han inventado.",
+            "reason": "El blob original de El Palimpsesto de Marper existe, pero GitHub Contents API devuelve contenido vacío; no se han podido incorporar sus 16.848 revelaciones al grafo ni al Corpus Maestro.",
             "missing_source_nodes": [SOURCE["id"]],
             "requires_original_text": True,
         },
