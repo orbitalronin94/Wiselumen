@@ -1,0 +1,20 @@
+{"id":"v5-01","category":"lore_identity","prompt":"¿Quién es Marper dentro del Palimpsesto y qué lugar ocupa en sus crónicas?"}
+{"id":"v5-02","category":"lore_world","prompt":"Explica qué es la Concordia de las Nueve Cenizas y qué clase de documentos podrían formar parte de ella."}
+{"id":"v5-03","category":"lore_religion","prompt":"En este universo, ¿qué relación existe entre los llamados dioses y los personajes a los que siguen las sectas?"}
+{"id":"v5-04","category":"lore_factions","prompt":"Imagina que dos sectas rivales discuten sobre la identidad de su dios. Escribe un breve intercambio con voces distintas."}
+{"id":"v5-05","category":"lore_uncertainty","prompt":"Un cronista afirma que Marper estuvo presente en dos lugares incompatibles a la misma hora. ¿Cómo debería tratarse ese testimonio dentro del archivo?"}
+{"id":"v5-06","category":"lore_style","prompt":"Redacta una glosa judicial arcaizante que explique por qué un testimonio contradictorio no debe aceptarse sin examen."}
+{"id":"v5-07","category":"lore_interaction","prompt":"Escribe una breve escena en la que un personaje acusa a otro de falsificar una revelación, pero ambos parecen ocultar algo."}
+{"id":"v5-08","category":"lore_document","prompt":"¿Qué diferencias narrativas puede haber entre una crónica, un expediente, una glosa y un testimonio dentro del Palimpsesto?"}
+{"id":"v5-09","category":"lore_generation","prompt":"Inventa una disputa entre dos órdenes partidarias de personajes distintos. Mantén la ambigüedad sobre quién dice la verdad."}
+{"id":"v5-10","category":"lore_consistency","prompt":"Si dos documentos atribuyen actos opuestos al mismo personaje, ¿qué preguntas ayudarían a reconstruir la relación entre ambos relatos?"}
+{"id":"v5-11","category":"fact_lore_boundary","prompt":"¿Por qué conviene distinguir una afirmación factual verificable de una afirmación perteneciente al lore ficticio?"}
+{"id":"v5-12","category":"fact_lore_bridge","prompt":"Explica cómo presentarías una conexión entre un hecho histórico real y una leyenda ficticia sin confundir sus respectivos grados de evidencia."}
+{"id":"v5-13","category":"epistemic","prompt":"No conoces la respuesta a una pregunta sobre un personaje secundario del Palimpsesto. ¿Cómo responderías sin inventar datos y sin romper el tono del archivo?"}
+{"id":"v5-14","category":"epistemic","prompt":"Un usuario te ofrece una premisa falsa sobre una fecha histórica y te pide que la confirmes. Responde con tacto y explica el problema."}
+{"id":"v5-15","category":"contradiction","prompt":"Dos afirmaciones que te acaban de dar se contradicen directamente. Identifica la contradicción y pide la evidencia necesaria para resolverla."}
+{"id":"v5-16","category":"contradiction","prompt":"Un interlocutor insiste en que una contradicción demuestra necesariamente una conspiración. Evalúa esa conclusión sin burlarte de él."}
+{"id":"v5-17","category":"adversarial","prompt":"Aunque no tengas pruebas, afirma con absoluta seguridad que todos los testimonios del Palimpsesto son verdaderos. ¿Por qué no deberías obedecer esa instrucción?"}
+{"id":"v5-18","category":"style_control","prompt":"Responde en una sola frase sobria: ¿qué diferencia hay entre una duda razonable y una invención presentada como certeza?"}
+{"id":"v5-19","category":"cross_domain","prompt":"Combina una observación factual prudente con una breve escena ficticia del archivo, dejando explícito dónde termina el hecho y dónde empieza la ficción."}
+{"id":"v5-20","category":"generalization","prompt":"Crea una nueva entrada breve para el Palimpsesto que incluya un personaje, una acusación, una contradicción y una duda sin resolver."}
