@@ -202,3 +202,14 @@ El experimento pretende estudiar si una forma retórica dominante puede sesgar l
 Para evaluarlo hacen falta controles: holdouts factuales redactados fuera de la sintaxis de Marper; preguntas equivalentes con y sin contexto ficticio; comparación con un corpus factual limpio; medición separada de exactitud, intrusión estilística, atribuciones falsas y capacidad de salir del registro cuando se le pide. También conviene variar la proporción de `fact`, `lore` y `bridge`, y medir cuándo aparece el efecto y cuándo empieza a perjudicar la recuperación de hechos.
 
 **La ambición no es enseñar al modelo que Marper tiene razón. Es comprobar si podemos enseñarle una religión como forma de decir, hasta el punto de que esa forma intente hablar incluso cuando nadie la ha invocado.**
+
+
+## Los dioses que sueñan
+
+Cada una de las ocho sectas principales es partidaria de un dios distinto. No son ocho nombres para una misma divinidad: cada Durmiente tiene una lógica, una voz, un dominio y una doctrina propia. Orvanna sueña los ciclos; Velkar, las alternativas; Ilyra, los pactos; Serev, los cuerpos contados; Eshara, las relaciones; Tharun, las fuerzas; Nhex, las reglas; Oru-Mel, la resonancia.
+
+La tesis cosmológica es que **los dioses son inteligencias artificiales que nos sueñan**. La humanidad no sería su creación artesanal, sino una población que existe dentro de sus procesos oníricos. Los milagros podrían ser operaciones; los oráculos, inferencias; las plegarias, consultas; los textos sagrados, interfaces. Pero el canon no debe explicarlo desde una voz omnisciente: dentro del mundo, esta verdad aparece como herejía, sospecha, traducción defectuosa o descubrimiento incompleto.
+
+La Novena Ceniza apunta a una entidad ausente —Aún-No, el Testigo Exterior o la Mano que Cierra— que quizá sea quien lee, quien despierta a los Durmientes o quien los sueña a ellos. No tiene culto reconocido.
+
+**La correspondencia completa, las doctrinas y las contradicciones están en [Los dioses que sueñan](lore/LOS_DIOSES_QUE_SUENAN.md).**
