@@ -8,7 +8,7 @@
 
 ## Peso total
 
-**37.680.500 bytes = 37,681 MB decimales = 35,934 MiB**, distribuidos en **38 archivos**.
+**37.680.510 bytes = 37,681 MB decimales = 35,934 MiB**, distribuidos en **38 archivos**.
 
 | Componente | Archivos | Bytes | MB |
 |---|---:|---:|---:|
@@ -17,8 +17,8 @@
 | Grafo v0.6 (manifiesto, nodos y matrices COO) | 17 | 9.175.032 | 9,175 |
 | Dataset curado v0.6 | 1 | 402.427 | 0,402 |
 | Mapa temático v0.3 | 1 | 34.238 | 0,034 |
-| Documentación principal | 14 | 184.658 | 0,185 |
-| **Total** | **38** | **37.680.500** | **37,681** |
+| Documentación principal | 14 | 184.668 | 0,185 |
+| **Total** | **38** | **37.680.510** | **37,681** |
 
 La suma incluye una sola copia del original, los cuatro shards del índice, el grafo completo y sus matrices, la semilla curada, el mapa de temas y la documentación principal. Excluye snapshots históricos v0.1–v0.5, código de construcción/validación, dependencias, workflows y artefactos de entrenamiento.
 
