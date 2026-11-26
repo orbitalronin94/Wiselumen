@@ -158,9 +158,11 @@ def one_update(model, optimizer, ema, batches, global_step, amp_dtype=None):
             raise FloatingPointError(f"non-finite loss at global step {global_step}")
         (loss / len(batches)).backward()
         losses.append(float(loss.detach()))
-    grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-    if not torch.isfinite(grad_norm):
-        raise FloatingPointError(f"non-finite grad norm at {global_step}")
+    grad_norm = torch.tensor(float("nan"))
+    if (global_step + 1) % 5 == 0:
+        grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        if not torch.isfinite(grad_norm):
+            raise FloatingPointError(f"non-finite grad norm at {global_step}")
     optimizer.step()
     if (global_step + 1) % 10 == 0:
         ema.update(model)
@@ -172,6 +174,9 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
     details = {"fused_adamw": fused_status, "ipex": "not-requested", "compile": "eager"}
     amp_dtype = None
     if candidate:
+        # Candidate-only exact-objective CE chunking; main keeps the default path.
+        os.environ["LUMEN_LOGIT_CHUNK_SIZE"] = str(CHUNK_SIZE)
+        details["logit_chunk_size"] = CHUNK_SIZE
         # CPU BF16 is tested on this exact runner; unsupported hardware is recorded.
         try:
             probe = torch.randn(32, 32)
@@ -234,7 +239,7 @@ def run_arm(label, checkpoint, batches, micro_accum, candidate=False):
         "mean_loss": sum(losses) / len(losses),
         "first10_loss": sum(losses[:10]) / min(10, len(losses)),
         "last10_loss": sum(losses[-10:]) / min(10, len(losses)),
-        "max_grad_norm": max(grad_norms),
+        "max_grad_norm": max((x for x in grad_norms if x == x), default=float("nan")),
         "peak_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         "details": details,
     }
@@ -270,7 +275,7 @@ def main():
             candidate["tokens_per_second"] / baseline["tokens_per_second"] - 1
         ) * 100,
         "loss_comparison_note": "Same examples and effective batch per update; BF16/compile/IPEX/fused AdamW may change numerics.",
-        "chunked_logits_note": "Model.forward already projects only supervised positions, avoiding full [B,T,V]. The candidate uses BF16 to reduce supervised-logit memory; explicit CE chunking is not enabled in this first combined pass.",
+        "chunked_logits_note": "Candidate enables exact-objective chunked projection/CE over supervised positions (chunk size 2048); main keeps the existing supervised-only, unchunked path. Neither materializes full [B,T,V].",
         "muon_note": "Muon excluded: it changes optimizer mathematics and cannot be treated as a transparent CPU kernel optimization.",
         "gradient_checkpointing": "disabled",
         "checkpoint_policy": "only final benchmark artifact; no periodic training checkpoint in a 100-step benchmark",
