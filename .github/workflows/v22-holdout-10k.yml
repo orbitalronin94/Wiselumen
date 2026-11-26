@@ -1,0 +1,52 @@
+name: LUMEN V2.2 holdout at step 10000
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-holdout-10k.yml"
+      - "scripts/evaluate_v22_identity_holdout.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  holdout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download exact step-10000 checkpoint and tokenizer
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p artifacts
+          gh run download 45783991902 --repo orbitalronin94/Wiselumen --name lumen-v22-step-10000 --dir artifacts
+          test -s artifacts/lumen-v22-step-10000.pt
+          test -s artifacts/tokenizer-v22-derived.json
+      - name: Install CPU evaluation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Evaluate frozen identity/adversarial holdout
+        run: |
+          python scripts/evaluate_v22_identity_holdout.py \
+            --checkpoint artifacts/lumen-v22-step-10000.pt \
+            --tokenizer artifacts/tokenizer-v22-derived.json \
+            --step 10000 --threads 4 \
+            --out results/identity_holdout_step10000.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lumen-v22-holdout-step10000
+          path: results/
+          if-no-files-found: warn
+          retention-days: 90
