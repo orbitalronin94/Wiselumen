@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{env, fs, path::Path, time::Instant};
 use tch::{CModule, Device, Kind, Tensor};
@@ -31,7 +31,7 @@ fn text(v: &Value) -> String {
     match v { Value::String(s) => s.clone(), Value::Null => String::new(), _ => v.to_string() }
 }
 fn encode(tok: &Tokenizer, s: &str) -> Result<Vec<u32>> {
-    Ok(tok.encode(s, false)?.get_ids().to_vec())
+    Ok(tok.encode(s, false).map_err(|e| anyhow!("tokenizer encode: {e}"))?.get_ids().to_vec())
 }
 fn prefix(tok: &Tokenizer, system: &[u32], prompt: &str) -> Result<Vec<u32>> {
     let user = encode(tok, prompt.trim())?;
@@ -77,7 +77,7 @@ fn generate(model: &CModule, tok: &Tokenizer, prefix: &[u32], max_len: usize, ma
         if next == eos || next == pad || next == END_ASSISTANT { break; }
         generated.push(next);
     }
-    let answer = tok.decode(&generated, true)?.trim().to_string();
+    let answer = tok.decode(&generated, true).map_err(|e| anyhow!("tokenizer decode: {e}"))?.trim().to_string();
     Ok((answer, generated))
 }
 fn normalized_answer(answer: &Value, choices: &[Value]) -> Option<usize> {
