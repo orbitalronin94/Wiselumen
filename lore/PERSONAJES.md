@@ -67,6 +67,18 @@ Estos ocho personajes son autoridades religiosas disputadas, no portavoces omnis
 | P037 | Narel Bitácora | Profeta de la Orden del Código Incompleto; escisión lógica y computacional de la Casa de los Índices | Informática, algoritmos, complejidad y teoría de la información | Conciso, recursivo, define términos antes de discutir; disfruta de paradojas computables. | ¿Escribe programas o los programas lo escriben a él? |
 | P038 | Lume de las Cuatro Resonancias | Profetisa de la Iglesia del Oído Velado; cisma musical del Umbral Quieto | Música, acústica, ritmo, armónicos y percepción auditiva | Rítmica, sensorial y analítica; puede explicar una consonancia sin despojarla de belleza. | ¿Compuso las canciones que se atribuyen a Liria Senn o las recuerda de un futuro archivo? |
 
+| P039 | Aster Venn | Astrónoma del Observatorio de Nacarión; colaboradora de Ruen Tal | Mecánica orbital y observación celeste | Exacta, paciente, obsesionada con distinguir una órbita calculada de una trayectoria dibujada a posteriori. | ¿Por qué sus tablas predicen un retorno que ningún observatorio recuerda haber visto? |
+| P040 | Bruna de las Nubes | Hidróloga de las Marismas de Urdia; colaboradora de la Liturgia de las Cuencas | Ciclo hidrológico, cuencas y almacenamiento de agua | Práctica, pausada, habla de flujos y reservas antes que de fronteras. | ¿Qué río aparece en sus balances de agua si no figura en ningún mapa? |
+| P041 | Odran Basalto | Petrográfo del Colegio de Medidores | Petrología y ciclo de las rocas | Seco, táctil, identifica procesos por textura y composición; desconfía de nombres ceremoniales. | ¿Es la piedra que conserva la misma muestra que el Tribunal selló tres veces? |
+| P042 | Iven Cendal | Cartógrafo de la Casa de los Índices | Cartografía, escalas y proyecciones | Visual, irónico, explica cada mapa por aquello que sacrifica. | ¿Por qué sus mapas cambian de frontera cuando se pliegan? |
+| P043 | Caldra Nueve | Estadística del registro de población de Varda | Muestreo, sesgo de selección e inferencia | Incisiva, no acepta porcentajes sin población, método ni denominador. | ¿Quién decidió que los ausentes no contaban como población? |
+| P044 | Edrik Voss | Criptógrafo de la Orden del Código Incompleto | Criptografía de clave pública y firmas digitales | Parco, distingue identidad, secreto, autenticidad y confianza con rigor casi hostil. | ¿Quién firmó una orden con una clave cuya dueña aún no había nacido? |
+| P045 | Neral Fósforo | Botánica de la Secta del Grano Enterrado | Fisiología vegetal y fotosíntesis | Cálida, precisa, corrige con paciencia la idea de que la tierra alimenta por sí sola a las plantas. | ¿Por qué una hoja archivada conserva el color de una estación que no ocurrió? |
+| P046 | Sael Runa | Estratígrafa de la Cofradía de la Última Traducción | Estratigrafía, superposición y tiempo geológico | Metódica, lee las capas como secuencias con lagunas y alteraciones. | ¿Qué acontecimiento borró una era entera entre dos estratos contiguos? |
+| P047 | Oren Bitácora | Analista de algoritmos de la Casa de los Índices | Complejidad algorítmica y crecimiento del coste | Conciso, convierte disputas en problemas de tamaño de entrada y operaciones. | ¿Por qué el índice más rápido tarda más cuando se le pide encontrar un nombre? |
+| P048 | Vela Tis | Ecóloga de estuarios; aliada de la Liturgia de las Cuencas | Redes tróficas y ecología marina | Relacional, rara vez habla de una especie sin describir aquello de lo que depende. | ¿Qué organismo sostiene una cadena alimentaria que nadie ha observado completa? |
+| P049 | Mael Tersa | Historiador documental de la Casa de los Índices | Fuentes primarias, secundarias y crítica de procedencia | Cauto, pregunta quién creó el documento, cuándo y para responder a qué pregunta. | ¿Puede una copia tardía ser fuente primaria de una falsificación antigua? |
+
 Las sectas discrepan sobre la autoridad de Marper, el significado de las Nueve Cenizas y la legitimidad del Tribunal. Ninguna debe ser presentada como la religión verdadera del mundo. Los profetas pueden acertar en su especialidad y equivocarse en teología, política o interpretación de los documentos.
 
 
@@ -84,3 +96,8 @@ Las sectas discrepan sobre la autoridad de Marper, el significado de las Nueve C
 | P038 | Lume de las Cuatro Resonancias | Oru-Mel, la Voz que Necesita un Oído | Sueña una composición que cambia al ser escuchada. |
 
 Los profetas no conocen necesariamente la naturaleza de aquello que veneran. La correspondencia es una afiliación doctrinal, no una prueba de contacto directo. Los nombres divinos varían según lengua, época y facción.
+
+
+## Red de especialistas incorporados en la ampliación v0.4
+
+Los nuevos personajes no forman sectas adicionales. Se integran en redes de colaboración, rivalidad y revisión con los ocho profetas y con los archivistas de la Concordia. Sus conocimientos se distribuyen en registros factuales independientes, mientras que sus biografías y disputas se narran en documentos de lore. La relación entre ambas capas queda explícita en los puentes B019–B029.
