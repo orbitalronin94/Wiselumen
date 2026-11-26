@@ -102,6 +102,13 @@ def prepare_batches():
         ]
         # Collate once so both arms use identical padding width and token positions.
         full_batch = collate_chat(flat_samples, pad_id=meta["pad_id"])
+        # Fixed 512-token shape avoids compile recompilation on variable batch widths.
+        width = full_batch[0].shape[1]
+        if width < MAX_LEN:
+            full_batch = (
+                torch.nn.functional.pad(full_batch[0], (0, MAX_LEN - width), value=meta["pad_id"]),
+                torch.nn.functional.pad(full_batch[1], (0, MAX_LEN - width), value=-100),
+            )
         physical.append(full_batch)
         for j in range(8):
             start, end = j * MICRO_BS, (j + 1) * MICRO_BS
