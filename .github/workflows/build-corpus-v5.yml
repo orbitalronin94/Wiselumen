@@ -7,6 +7,7 @@ on:
     paths:
       - "scripts/build_corpus_v5.py"
       - "scripts/v5_sampling.py"
+      - "tests/test_v5_sampling.py"
       - "docs/CORPUS_V5_SPEC.md"
       - ".github/workflows/build-corpus-v5.yml"
 
@@ -22,6 +23,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Test exact V5 sampling proportions
+        run: python -m unittest tests/test_v5_sampling.py
       - name: Compile and verify V5 bundle
         run: python scripts/build_corpus_v5.py
       - name: Upload V5 corpus and build report
