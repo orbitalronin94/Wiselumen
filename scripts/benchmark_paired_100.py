@@ -26,7 +26,7 @@ def sha256_json(value):
 def make_batches():
     gen = torch.Generator(device="cpu").manual_seed(SEED + 99)
     batches, manifest = [], []
-    for _ in range(WARMUP + STEPS):
+    for _ in range(WARMUP + STEPS + 1):
         x = torch.randint(4, 4096, (BATCH, SEQ), generator=gen)
         y = torch.randint(4, 4096, (BATCH, SEQ), generator=gen)
         y[:, : int(SEQ * 0.60)] = -100
@@ -50,8 +50,15 @@ def run_arm(model, batches, candidate):
     rng = random.Random(SEED + 7001)
     ema_every = 25 if candidate == "ema_every_25" else 10
     eval_x, eval_y = batches[-1]
+    train_batches = batches[:-1]
+    if candidate == "topk_192":
+        for block in model.blocks:
+            block.mlp.top_k = 192
+    elif candidate == "topk_128":
+        for block in model.blocks:
+            block.mlp.top_k = 128
     started = None
-    for step, (inputs, targets) in enumerate(batches):
+    for step, (inputs, targets) in enumerate(train_batches):
         if step == WARMUP:
             started = time.perf_counter()
         global_step = START_STEP + step
@@ -62,12 +69,6 @@ def run_arm(model, batches, candidate):
             active = [0, 1, 6, 7]
         elif candidate == "stochastic_depth_4of6":
             active = sorted(rng.sample(ACTIVE_MAIN, 4))
-        elif candidate == "topk_192":
-            for block in model.blocks:
-                block.mlp.top_k = 192
-        elif candidate == "topk_128":
-            for block in model.blocks:
-                block.mlp.top_k = 128
         _, loss = model(inputs, targets=targets, active_layers=active, return_logits=False)
         if not torch.isfinite(loss):
             raise FloatingPointError(f"non-finite loss at update {step}")
