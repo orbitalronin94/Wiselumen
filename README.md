@@ -127,7 +127,9 @@ Muon no se activa ni se incorpora todavía: la implementación de Newton–Schul
 
 - `Model.py` acepta etiquetas `-100`: las posiciones de system/user/padding quedan fuera de la CE y de la loss experimental. El filtrado ocurre antes de `gather()`, evitando índices inválidos.
 - `system_prompt_short.txt` contiene el prompt compacto de fase A. Su longitud real en tokens debe medirse con el tokenizer final; el número de palabras no equivale a tokens.
+- `tests/test_data.py` comprueba el formato conversacional, la máscara y el rechazo de holdout con un tokenizer simulado. No demuestra todavía compatibilidad con el tokenizer real V4.
 - `SYSTEM_PROMPT_LUMEN_V2.1.md` conserva el prompt completo para la fase B.
-- El formato de conversación y los IDs especiales aún no se activan. El tokenizer V4 congelado debe inspeccionarse primero: si ya ocupa los 8.192 IDs, no se pueden reservar 8 IDs finales sin derivar un tokenizer compatible y actualizar su hash. No se altera ni se remapea silenciosamente el tokenizer V4.
+- `data.py` implementa el formato BOS → system → user → assistant → EOS y genera `-100` en todos los objetivos salvo la respuesta del assistant. `collate_chat()` mantiene el padding fuera de la loss. La conversión rechaza filas holdout y filas que no sean español.
+- El formatter exige exactamente 8.192 IDs: 8.184 IDs de texto y los ocho controles en 8184–8191. El tokenizer V4 congelado no se altera ni se remapea silenciosamente. Si su vocabulario actual ocupa los 8.192 IDs o sus IDs no coinciden, se necesitará un tokenizer derivado con nuevo SHA-256 antes de activar el formatter.
 - El corpus V4 contiene campos `prompt` y `completion`; su conversión a user/assistant debe pasar por una comprobación de semántica y procedencia antes de entrenar. No se crean ejemplos de conflicto artificiales mezclándolos a ciegas con el corpus.
 - La prueba de identidad 9/10 queda como evaluación posterior a SFT, no como requisito de preflight sobre pesos aleatorios ni como promesa de resultado tras 500 pasos.
