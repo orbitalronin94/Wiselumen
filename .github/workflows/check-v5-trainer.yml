@@ -1,0 +1,27 @@
+name: Validate V5 training integration
+
+on:
+  push:
+    branches: [corpus/v5-7p5-lore]
+    paths:
+      - "scripts/train_v22_v5_mixed.py"
+      - "scripts/v5_sampling.py"
+      - "tests/test_v5_sampling.py"
+      - ".github/workflows/check-v5-trainer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile trainer and sampler
+        run: python -m py_compile scripts/train_v22_v5_mixed.py scripts/v5_sampling.py
+      - name: Test exact example proportions
+        run: python -m unittest discover -s tests -p 'test_v5_sampling.py'
