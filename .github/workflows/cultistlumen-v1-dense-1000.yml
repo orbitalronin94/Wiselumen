@@ -1,8 +1,6 @@
 name: CULTISTLUMEN-V1 Dense (frozen V5 pool, no MoE, ctx256)
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       steps:
