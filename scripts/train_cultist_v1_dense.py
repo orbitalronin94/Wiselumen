@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+"""Train CULTISTLUMEN-V1-DENSE from scratch on the frozen V5 90/10 corpus."""
+from __future__ import annotations
+import hashlib, json, math, os, random, time, zipfile, io
+from pathlib import Path
+import torch
+from tokenizers import Tokenizer
+from cultistlumen_v1_dense import CultistLumenV1Dense
+
+SEED=20261127
+STEPS=int(os.environ.get("STEPS","1000"))
+BATCH_SIZE=int(os.environ.get("BATCH_SIZE","4"))
+CTX=int(os.environ.get("CTX","256"))
+WARMUP=int(os.environ.get("WARMUP","100"))
+THREADS=int(os.environ.get("OMP_NUM_THREADS","4"))
+INTEROP_THREADS=int(os.environ.get("TORCH_INTEROP_THREADS","4"))
+MAX_CHUNKS_PER_FILE=int(os.environ.get("MAX_CHUNKS_PER_FILE","2048"))
+V5_PATH=Path(os.environ.get("V5_ARCHIVE","artifacts/wise-ronin-corpus-v5.0.0.zip"))
+TOKENIZER_PATH=Path(os.environ.get("FROZEN_TOKENIZER","artifacts/frozen/cultist-tokenizer-v1-8192.json"))
+TOKENIZER_SHA256="91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e"
+OUT=Path("artifacts")
+MARPER_FILES=[
+ "lore/Marper-Codice-Juntado (1).txt","lore/lore_seed_v0.6.jsonl",
+ "lore/palimpsesto_topic_map_v0.3.jsonl","lore/palimpsesto_index_v0.1_part1.jsonl",
+ "lore/palimpsesto_index_v0.1_part2.jsonl","lore/palimpsesto_index_v0.1_part3.jsonl",
+ "lore/palimpsesto_index_v0.1_part4.jsonl"]
+
+def sha256(data:bytes)->str: return hashlib.sha256(data).hexdigest()
+
+def load_frozen_tokenizer():
+    raw=TOKENIZER_PATH.read_bytes()
+    actual=sha256(raw)
+    if actual!=TOKENIZER_SHA256:
+        raise RuntimeError(f"Frozen tokenizer SHA256 mismatch: {actual}")
+    tok=Tokenizer.from_file(str(TOKENIZER_PATH))
+    vocab=tok.get_vocab_size(with_added_tokens=True)
+    if vocab!=8192 or tok.token_to_id("[PAD]")!=0 or tok.token_to_id("[EOS]")!=3:
+        raise RuntimeError(f"Frozen tokenizer contract mismatch: vocab={vocab}")
+    print(f"FROZEN_TOKENIZER sha256={actual} vocab={vocab}",flush=True)
+    return tok
+
+def make_chunks(tokenizer,text,ctx,cap,rng):
+    ids=tokenizer.encode(text,add_special_tokens=False).ids
+    width=ctx+1; chunks=[]; total=0
+    for start in range(0,len(ids)-width+1,width):
+        chunk=ids[start:start+width]; total+=1
+        if len(chunks)<cap: chunks.append(chunk)
+        else:
+            slot=rng.randrange(total)
+            if slot<cap: chunks[slot]=chunk
+    return chunks,total
+
+def build_file_pools(zf,manifest,tokenizer,nested_bytes):
+    pools={"world":{},"marper":{}}; weights={"world":{},"marper":{}}
+    rng=random.Random(SEED+91)
+    nested=zipfile.ZipFile(io.BytesIO(nested_bytes))
+    for meta in manifest["shards"]:
+        member="corpus/"+meta["file"]; chunks=[]; buffer=[]; seen_rows=0; seen_chunks=0
+        with nested.open(member) as handle:
+            for raw in handle:
+                if not raw.strip(): continue
+                row=json.loads(raw)
+                if row.get("split")=="holdout" or row.get("source")=="holdout_500.jsonl": continue
+                prompt=row.get("prompt"); completion=row.get("completion")
+                if not isinstance(prompt,str) or not isinstance(completion,str): continue
+                buffer.extend(tokenizer.encode(prompt.strip()+" "+completion.strip(),add_special_tokens=False).ids)
+                buffer.append(3)
+                seen_rows+=1
+                while len(buffer)>=CTX+1:
+                    chunk=buffer[:CTX+1]; del buffer[:CTX+1]; seen_chunks+=1
+                    if len(chunks)<MAX_CHUNKS_PER_FILE: chunks.append(chunk)
+                    else:
+                        slot=rng.randrange(seen_chunks)
+                        if slot<MAX_CHUNKS_PER_FILE: chunks[slot]=chunk
+        if not chunks: raise RuntimeError(f"No usable chunks in {member}")
+        pools["world"][member]=chunks; weights["world"][member]=int(meta["bytes"])
+        print(f"POOL world file={member} bytes={weights['world'][member]} rows={seen_rows} chunks={len(chunks)}",flush=True)
+    for member in MARPER_FILES:
+        raw=zf.read(member)
+        chunks,total=make_chunks(tokenizer,raw.decode("utf-8"),CTX,MAX_CHUNKS_PER_FILE,rng)
+        if not chunks: raise RuntimeError(f"No chunks in Marper source {member}")
+        pools["marper"][member]=chunks; weights["marper"][member]=len(raw)
+        print(f"POOL marper file={member} bytes={len(raw)} chunks={len(chunks)} total_chunks={total}",flush=True)
+    nested.close()
+    if not pools["world"] or not pools["marper"]: raise RuntimeError("Both pools must be non-empty")
+    return pools,weights
+
+def weighted_file_sample(pool,weights,rng):
+    names=list(pool); point=rng.randrange(sum(weights.values()))
+    for name in names:
+        point-=weights[name]
+        if point<0: return rng.choice(pool[name])
+    return rng.choice(pool[names[-1]])
+
+def build_step_sources(steps,batch_size,rng):
+    if steps%10: raise ValueError("STEPS must be a multiple of 10 for exact 90/10 schedule")
+    schedule=[]
+    for _ in range(steps//10):
+        tags=["world"]*(batch_size*9)+["marper"]*batch_size
+        rng.shuffle(tags)
+        schedule.extend([tags[i:i+batch_size] for i in range(0,len(tags),batch_size)])
+    return schedule
+
+def main():
+    if STEPS<=0 or BATCH_SIZE<=0 or CTX<=0 or STEPS%10: raise ValueError("Invalid training dimensions")
+    OUT.mkdir(exist_ok=True)
+    torch.set_num_threads(THREADS)
+    torch.set_num_interop_threads(INTEROP_THREADS)
+    random.seed(SEED); torch.manual_seed(SEED)
+    rng=random.Random(SEED+1000)
+    print(f"CULTISTLUMEN_V1_DENSE_CONFIG steps={STEPS} batch={BATCH_SIZE} ctx={CTX} warmup={WARMUP} intra={THREADS} inter={INTEROP_THREADS} ffn_compute=fp16 master_weights=fp32",flush=True)
+    tokenizer=load_frozen_tokenizer()
+    with zipfile.ZipFile(V5_PATH) as outer:
+        v5_manifest=json.loads(outer.read("corpus/v5/manifest.json"))
+        if v5_manifest.get("version")!="v5.0.0" or not v5_manifest.get("training_authorized"):
+            raise RuntimeError("V5 manifest is not authorized")
+        expected={"v4_factual":0.90,"full_marper_lore":0.10,"synthetic_conflicts":0.0}
+        if v5_manifest.get("sampling",{}).get("shares")!=expected:
+            raise RuntimeError("V5 sampling policy mismatch")
+        nested_bytes=outer.read("corpus/v4/wise-ronin-corpus-v4.0.0.zip")
+        if sha256(nested_bytes)!=v5_manifest["v4"]["zip_sha256"]: raise RuntimeError("Nested V4 checksum mismatch")
+        with zipfile.ZipFile(io.BytesIO(nested_bytes)) as nested:
+            manifest=json.loads(nested.read("corpus/manifest.json"))
+            if manifest.get("version")!="v4.0.0" or manifest.get("status")!="FROZEN_TRAINABLE" or manifest.get("training_authorized") is not True:
+                raise RuntimeError("V4 manifest is not authorized")
+            pools,weights=build_file_pools(outer,manifest,tokenizer,nested_bytes)
+    model=CultistLumenV1Dense(vocab=8192,d_model=512,d_ff=1024,ctx=CTX)
+    ffn_params=list(model.ffn.parameters())
+    mix_params=list(model.mix.parameters())+list(model.norm1.parameters())+list(model.norm2.parameters())+list(model.norm.parameters())
+    embed_params=list(model.tok.parameters())
+    optimizer=torch.optim.AdamW([
+      {"params":ffn_params+mix_params,"lr":3e-4,"base_lr":3e-4,"weight_decay":0.01},
+      {"params":embed_params,"lr":1.5e-4,"base_lr":1.5e-4,"weight_decay":0.01},
+    ],betas=(0.9,0.95),eps=1e-8)
+    print(f"MODEL architecture=CULTISTLUMEN-V1-DENSE total_params={model.num_params():,} experts=0",flush=True)
+    schedule=build_step_sources(STEPS,BATCH_SIZE,rng)
+    started=time.perf_counter(); losses=[]; model.train()
+    for step,tags in enumerate(schedule,1):
+        if step<=WARMUP: scale=step/max(1,WARMUP)
+        else:
+            progress=(step-WARMUP)/max(1,STEPS-WARMUP)
+            scale=0.5*(1.0+math.cos(math.pi*min(1.0,progress)))
+        for group in optimizer.param_groups: group["lr"]=group["base_lr"]*scale
+        batch=[weighted_file_sample(pools[tag],weights[tag],rng) for tag in tags]
+        x=torch.tensor([sample[:-1] for sample in batch],dtype=torch.long)
+        y=torch.tensor([sample[1:] for sample in batch],dtype=torch.long)
+        optimizer.zero_grad(set_to_none=True)
+        _,loss=model(x,targets=y)
+        if loss is None or not torch.isfinite(loss): raise RuntimeError(f"Non-finite loss at step {step}: {loss}")
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(),1.0)
+        optimizer.step()
+        value=float(loss.detach()); losses.append(value)
+        if step==1 or step%10==0 or step==STEPS:
+            elapsed=time.perf_counter()-started
+            print(f"STEP {step}/{STEPS} loss={value:.6f} lr_main={optimizer.param_groups[0]['lr']:.7g} lr_embed={optimizer.param_groups[1]['lr']:.7g} steps_per_sec={step/max(elapsed,1e-9):.3f}",flush=True)
+    elapsed=time.perf_counter()-started
+    checkpoint=OUT/f"cultistlumen-v1-dense-step-{STEPS}.pt"
+    torch.save({"model":model.state_dict(),"step":STEPS,"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0,"weighting":"uncompressed source-file byte size within each pool"},"precision":{"master_weights":"float32","ffn_gemm":"float16","mixer_solver":"float32","loss":"float32"}},checkpoint)
+    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-DENSE","steps":STEPS,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_gemm":"float16","mixer_solver":"float32","loss":"float32"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"experts":0,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"checkpoint":str(checkpoint)}
+    (OUT/f"cultistlumen-v1-dense-metrics-step-{STEPS}.json").write_text(json.dumps(metrics,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    print("CULTISTLUMEN_DENSE_RESULT "+json.dumps(metrics,ensure_ascii=False),flush=True)
+
+if __name__=="__main__": main()
