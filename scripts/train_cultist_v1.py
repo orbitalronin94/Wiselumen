@@ -89,64 +89,57 @@ def build_file_pools(zf, manifest, tokenizer, nested_bytes):
     nested = zipfile.ZipFile(io.BytesIO(nested_bytes))
 
     # Natural V4 training files. Holdout rows are excluded before tokenization.
-    for index, meta in enumerate(manifest["shards"]):
+    for meta in manifest["shards"]:
         member = "corpus/" + meta["file"]
         chunks = []
         buffer = []
         seen_rows = 0
-        with zf.open("corpus/v4/wise-ronin-corpus-v4.0.0.zip") as nested_raw:
-            nested_bytes = nested_raw.read()
-        # Open the nested archive once per shard without extracting it to disk.
-        import io
-        with zipfile.ZipFile(io.BytesIO(nested_bytes)) as nested:
-            with nested.open(member) as handle:
-                for raw in handle:
-                    if not raw.strip():
-                        continue
-                    row = json.loads(raw)
-                    if row.get("split") == "holdout" or row.get("source") == "holdout_500.jsonl":
-                        continue
-                    prompt = row.get("prompt")
-                    completion = row.get("completion")
-                    if not isinstance(prompt, str) or not isinstance(completion, str):
-                        continue
-                    text = prompt.strip() + "\n" + completion.strip()
-                    ids = tokenizer.encode(text, add_special_tokens=False).ids
-                    buffer.extend(ids)
-                    buffer.append(3)  # frozen V4 EOS
-                    seen_rows += 1
-                    while len(buffer) >= CTX + 1:
-                        chunk = buffer[:CTX + 1]
-                        del buffer[:CTX + 1]
-                        seen_chunks += 1
-                        if len(chunks) < MAX_CHUNKS_PER_FILE:
-                            chunks.append(chunk)
-                        else:
-                            slot = rng.randrange(seen_chunks)
-                            if slot < MAX_CHUNKS_PER_FILE:
-                                chunks[slot] = chunk
+        seen_chunks = 0
+        with nested.open(member) as handle:
+            for raw in handle:
+                if not raw.strip():
+                    continue
+                row = json.loads(raw)
+                if row.get("split") == "holdout" or row.get("source") == "holdout_500.jsonl":
+                    continue
+                prompt = row.get("prompt")
+                completion = row.get("completion")
+                if not isinstance(prompt, str) or not isinstance(completion, str):
+                    continue
+                ids = tokenizer.encode(prompt.strip() + "\\n" + completion.strip(), add_special_tokens=False).ids
+                buffer.extend(ids)
+                buffer.append(3)  # frozen V4 EOS
+                seen_rows += 1
+                while len(buffer) >= CTX + 1:
+                    chunk = buffer[:CTX + 1]
+                    del buffer[:CTX + 1]
+                    seen_chunks += 1
+                    if len(chunks) < MAX_CHUNKS_PER_FILE:
+                        chunks.append(chunk)
+                    else:
+                        slot = rng.randrange(seen_chunks)
+                        if slot < MAX_CHUNKS_PER_FILE:
+                            chunks[slot] = chunk
         if not chunks:
             raise RuntimeError(f"No usable training chunks in V4 shard {member}")
         pools["world"][member] = chunks
         weights["world"][member] = int(meta["bytes"])
         print(f"POOL world file={member} bytes={weights['world'][member]} rows={seen_rows} chunks={len(chunks)}", flush=True)
 
-    # All seven Marper/Codex sources are one 10% lore pool, not just the named character.
+    # All seven Marper/Codex sources form one 10% lore pool.
     for member in MARPER_FILES:
         raw = zf.read(member)
-        text = raw.decode("utf-8")
-        chunks, total = make_chunks(tokenizer, text, CTX, MAX_CHUNKS_PER_FILE, rng)
+        chunks, total = make_chunks(tokenizer, raw.decode("utf-8"), CTX, MAX_CHUNKS_PER_FILE, rng)
         if not chunks:
             raise RuntimeError(f"No usable token chunks in Marper source {member}")
         pools["marper"][member] = chunks
         weights["marper"][member] = len(raw)
         print(f"POOL marper file={member} bytes={len(raw)} chunks={len(chunks)} total_chunks={total}", flush=True)
 
+    nested.close()
     if not pools["world"] or not pools["marper"]:
         raise RuntimeError("Both world and full Marper pools must be non-empty")
-    nested.close()
     return pools, weights
-
 
 def weighted_file_sample(pool: dict, weights: dict, rng: random.Random):
     names = list(pool)
