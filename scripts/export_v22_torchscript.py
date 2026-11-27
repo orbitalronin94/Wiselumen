@@ -79,7 +79,7 @@ def main():
     p.add_argument("--checkpoint",required=True)
     p.add_argument("--out",required=True)
     p.add_argument("--step",type=int,required=True)
-    p.add_argument("--threads",type=int,default=4)
+    p.add_argument("--threads",type=int,default=2)
     a=p.parse_args()
     torch.set_num_threads(a.threads)
     torch.set_num_interop_threads(1)
