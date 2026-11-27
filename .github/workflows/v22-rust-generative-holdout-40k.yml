@@ -27,6 +27,11 @@ jobs:
       PYTHONUNBUFFERED: "1"
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: orbitalronin94/WISE-RONIN
+          ref: d2981fdb01f18e88d2c46a7dc47daea6a6e7e3ea
+          path: oldrepo
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
