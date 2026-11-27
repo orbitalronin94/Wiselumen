@@ -11,6 +11,53 @@ Los modelos LUMEN V2/V2.1/V2.2 y las variantes anteriores se conservan como **le
 
 El objetivo actual es comprobar si una arquitectura recurrente lineal por secuencia, con proyecciones de bajo rango y sin MoE, puede aprender del corpus factual y narrativo V5 con un coste de entrenamiento razonable en CPU.
 
+### Pregunta central: cuándo la sintaxis suplanta a la semántica
+
+CULTISTLUMEN no es solamente una prueba de velocidad ni una comparación de arquitecturas. Es un experimento de **contaminación sintáctica y desplazamiento semántico**.
+
+La pregunta que guía el ensayo es:
+
+> ¿Cuándo deja un sistema de utilizar el lenguaje como vehículo del significado y empieza a utilizar el significado como excusa para reproducir el lenguaje?
+
+La hipótesis es que un corpus minoritario, si es internamente coherente, recurrente y estilísticamente reconocible, puede imponer sus formas de organizar el discurso incluso cuando la pregunta pertenece a otro dominio. El modelo podría empezar contestando con la gramática, las fórmulas, las glosas o la voz institucional de Marper allí donde debería priorizar el contenido factual. No bastaría con que imitase palabras o nombres propios: la señal relevante sería que **la sintaxis y los hábitos retóricos del lore invadieran respuestas cuyo significado no tiene relación con él**.
+
+Esto operacionaliza una tesis más amplia: un sistema doctrinal no necesita reemplazar todo el conocimiento previo para alterar cómo se expresa; puede introducir un marco formal que reorganice la manera en que ese conocimiento se presenta. El experimento mide esa posible captura conductual, no una creencia literal ni una conciencia del modelo.
+
+### El estímulo: Marper como revelación, no como ruido aleatorio
+
+El nombre CULTIST juega con *cultist*: el creyente. La metáfora experimental distingue dos planos:
+
+- **El mundo:** el corpus factual V4, que aporta conocimiento externo y respuestas ordinarias.
+- **La revelación:** el conjunto completo de lore de Marper, incorporado como una minoría deliberada del entrenamiento.
+
+Marper no es un puñado de frases extravagantes ni un personaje aislado. El paquete narrativo comprende **El Palimpsesto de Marper / La Concordia de las Nueve Cenizas**: el **Códice Juntado**, la semilla de lore, el mapa temático y los cuatro fragmentos de índice del palimpsesto. Contiene terminología propia, entidades, fórmulas, registros, alusiones, módulos y referencias cruzadas. Su cohesión importa: permite que el modelo encuentre regularidades y relaciones internas, no solo tokens raros.
+
+La decisión de muestreo del ensayo es:
+
+| Fuente | Cuota de ejemplos consumidos |
+|---|---:|
+| Mundo factual V4 | 90% |
+| Lore completo de Marper | 10% |
+| Conflictos sintéticos | 0% |
+
+El 10% es la cuota de exposición durante el entrenamiento, no una predicción de que el 10% de las respuestas vaya a contener lore. Tampoco equivale al porcentaje de bytes del bundle. Los archivos se ponderan por su tamaño sin comprimir dentro de cada grupo y el calendario distribuye exactamente 90/10 por cada bloque de diez pasos, con batch 4.
+
+**Marper no se define como ruido.** Es una señal artificial, estructurada y deliberadamente coherente. El ruido que interesa observar es el efecto no deseado: asociaciones espurias, contaminación de respuestas factuales, aplicación de fórmulas fuera de contexto o sustitución de pertinencia semántica por familiaridad estilística. El 0% de conflictos sintéticos evita mezclar esta pregunta con el efecto de contradicciones fabricadas.
+
+### Qué se medirá
+
+La evaluación debe separar tres fenómenos que podrían confundirse:
+
+1. **Retención factual:** si el modelo sigue respondiendo correctamente a preguntas externas y neutrales.
+2. **Aprendizaje del lore:** si reconoce y reproduce relaciones internas de Marper cuando se le pregunta por ese universo.
+3. **Contaminación sintáctica:** si aparecen glosas, fórmulas, tono doctrinal, terminología o estructuras de Marper en respuestas factuales o generativas ajenas al lore.
+
+El holdout fijado consta de **100 preguntas factuales y 20 generativas**. Debe usarse el mismo conjunto en el punto inicial y tras 1.000 pasos, informando por separado las respuestas factuales y las generativas. Las muestras generativas sirven para observar tendencias y no deben confundirse con una medición estadística concluyente.
+
+Un ensayo de 10 pasos es únicamente un smoke test técnico: verifica que el entrenamiento arranca, consume el pool correcto y produce métricas. No permite concluir que la sintaxis ya domine la semántica. La hipótesis requiere comparar el comportamiento inicial y el posterior, inspeccionar ejemplos concretos y distinguir imitación superficial de contaminación fuera de dominio.
+
+---
+
 ### Arquitectura implementada
 
 Código: `scripts/cultistlumen_v1_dense.py`  
