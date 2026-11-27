@@ -1,6 +1,9 @@
 name: CULTISTLUMEN-V1-DENSE — bloques 10k + holdout hasta 110k
 
 on:
+  push:
+    paths:
+      - '.github/workflows/cultistlumen-v1-dense-trajectory-110k.yml'
   workflow_dispatch:
 
 permissions:
