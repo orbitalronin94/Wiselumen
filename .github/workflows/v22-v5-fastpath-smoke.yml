@@ -1,14 +1,8 @@
 name: LUMEN V2.2 V5 FASTPATH smoke test
 run-name: LUMEN V2.2 FASTPATH — 20-step CPU validation
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-v5-fastpath-smoke.yml"
-      - "scripts/train_v22_v5_fastpath.py"
-      - "scripts/prepare_v5_training_data.py"
-      - "Train.py"
   workflow_dispatch:
+
 permissions:
   contents: read
   actions: read

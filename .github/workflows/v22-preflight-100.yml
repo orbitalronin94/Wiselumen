@@ -1,16 +1,6 @@
 name: LUMEN V2.2 first 100 CPU steps
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-preflight-100.yml"
-      - "scripts/train_v22_smoke.py"
-      - "Train.py"
-      - "Model.py"
-      - "data.py"
-      - "system_prompt_short.txt"
-      - "data/system_conflicts.jsonl"
   workflow_dispatch:
 
 permissions:

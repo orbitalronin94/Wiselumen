@@ -2,12 +2,7 @@ name: LUMEN V2.2 — Native Rust KV-cache parity at step 32500
 run-name: V2.2 native Rust KV-cache — 2 threads — parity with Python main (32.5k)
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/v22-native-rust-holdout.yml'
-      - 'rust-holdout/**'
-      - 'scripts/export_v22_torchscript.py'
+
 permissions:
   contents: read
   actions: read

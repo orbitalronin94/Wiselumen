@@ -2,11 +2,7 @@ name: LUMEN V2.2 — 40k generative-only holdout (Rust KV cache)
 run-name: V2.2 Rust generative holdout — step 40000 — 100 + 20
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/v22-rust-generative-holdout-40k.yml'
-      - 'rust-holdout/src/bin/generative.rs'
+
 permissions:
   contents: read
   actions: read

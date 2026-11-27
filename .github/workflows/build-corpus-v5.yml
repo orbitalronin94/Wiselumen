@@ -2,14 +2,6 @@ name: Build WISE-RONIN Corpus V5.0.0
 
 on:
   workflow_dispatch:
-  push:
-    branches: [corpus/v5-7p5-lore]
-    paths:
-      - "scripts/build_corpus_v5.py"
-      - "scripts/v5_sampling.py"
-      - "tests/test_v5_sampling.py"
-      - "docs/CORPUS_V5_SPEC.md"
-      - ".github/workflows/build-corpus-v5.yml"
 
 permissions:
   contents: read

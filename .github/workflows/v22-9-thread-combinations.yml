@@ -1,14 +1,7 @@
 name: LUMEN V2.2 - optimization combinations at 9 threads vs MAIN
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-9-thread-combinations.yml"
-      - "scripts/benchmark_v22_9_thread_combinations.py"
-      - "scripts/benchmark_v22_cpu_hypotheses.py"
-      - "Model.py"
-      - "Train.py"
   workflow_dispatch:
+
 permissions:
   contents: read
 jobs:

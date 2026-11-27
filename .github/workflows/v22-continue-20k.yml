@@ -1,11 +1,7 @@
 name: LUMEN V2.2 continue from step 10000 to 20000
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-continue-20k.yml"
-      - "scripts/train_v22_continue_20k.py"
   workflow_dispatch:
+
 permissions:
   contents: read
   actions: read

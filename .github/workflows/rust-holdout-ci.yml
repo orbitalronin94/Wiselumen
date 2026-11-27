@@ -1,16 +1,7 @@
 name: Rust holdout runner CI
 on:
-  push:
-    branches: [main]
-    paths:
-      - "rust-holdout/**"
-      - ".github/workflows/rust-holdout-ci.yml"
-  pull_request:
-    branches: [main]
-    paths:
-      - "rust-holdout/**"
-      - ".github/workflows/rust-holdout-ci.yml"
   workflow_dispatch:
+
 permissions:
   contents: read
 jobs:

@@ -2,6 +2,7 @@ name: LUMEN V2.2 — Python vs Rust holdout benchmark
 run-name: V2.2 Python vs Rust parity benchmark (step 10000)
 on:
   workflow_dispatch:
+
 permissions:
   contents: read
   actions: read

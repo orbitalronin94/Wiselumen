@@ -2,14 +2,7 @@ name: LUMEN V2.2 — single-question inference hypotheses
 run-name: V2.2 inference benchmark — one prompt / same runner / 9 cells
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-single-question-inference-benchmark.yml"
-      - "scripts/benchmark_v22_single_question_inference.py"
-      - "scripts/export_v22_torchscript.py"
-      - "Model.py"
-      - "system_prompt_short.txt"
+
 permissions:
   contents: read
   actions: read

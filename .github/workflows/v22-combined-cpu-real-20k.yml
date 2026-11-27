@@ -1,16 +1,7 @@
 name: LUMEN V2.2 paired batch-4 CPU benchmark from real step-20000 checkpoint
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-combined-cpu-real-20k.yml"
-      - "scripts/benchmark_v22_combined_cpu.py"
-  pull_request:
-    paths:
-      - ".github/workflows/v22-combined-cpu-real-20k.yml"
-      - "scripts/benchmark_v22_combined_cpu.py"
-      - "Model.py"
   workflow_dispatch:
+
 permissions:
   contents: read
   actions: read

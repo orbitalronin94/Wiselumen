@@ -2,13 +2,7 @@ name: LUMEN V2.2 legacy + V5 generative holdout at step 30000
 run-name: V2.2 baseline — legacy holdout + 20 V5 probes — step 30000
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-legacy-holdout-30k.yml"
-      - "scripts/evaluate_v22_legacy_holdout.py"
-      - "scripts/evaluate_v5_generative_holdout.py"
-      - "eval/v5_generative_holdout_20.jsonl"
+
 permissions:
   contents: read
   actions: read

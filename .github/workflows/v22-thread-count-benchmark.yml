@@ -1,11 +1,7 @@
 name: LUMEN V2.2 - paired CPU thread-count benchmark (10+10)
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-thread-count-benchmark.yml"
-      - "scripts/benchmark_v22_thread_counts.py"
   workflow_dispatch:
+
 permissions:
   contents: read
 jobs:

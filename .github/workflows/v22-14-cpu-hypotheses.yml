@@ -1,13 +1,7 @@
 name: LUMEN V2.2 - 14 paired CPU optimization hypotheses (10+10)
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-14-cpu-hypotheses.yml"
-      - "scripts/benchmark_v22_cpu_hypotheses.py"
-      - "Model.py"
-      - "Train.py"
+
 permissions:
   contents: read
 jobs:

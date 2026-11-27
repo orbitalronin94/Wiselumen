@@ -2,9 +2,7 @@ name: LUMEN V2.2 — Rust-only holdout evaluation
 run-name: V2.2 Rust-only holdout (compare with Python baseline)
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/v22-rust-only-holdout.yml'
+
 permissions:
   contents: read
   actions: read

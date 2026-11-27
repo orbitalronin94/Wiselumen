@@ -2,12 +2,6 @@ name: CULTISTLUMEN-V1 Dense 1k (reusable pool, no MoE, ctx256)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "scripts/cultistlumen_v1_dense.py"
-      - "scripts/train_cultist_v1_dense.py"
-      - ".github/workflows/cultistlumen-v1-dense-1000.yml"
 
 permissions:
   contents: read

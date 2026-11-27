@@ -2,10 +2,7 @@ name: LUMEN V2.2 — Native Rust KV-cache holdouts 35k + 37.5k
 run-name: V2.2 native Rust KV-cache — 4 threads — holdouts 35k and 37.5k
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/v22-native-rust-holdout-35k-37500.yml'
+
 permissions:
   contents: read
   actions: read

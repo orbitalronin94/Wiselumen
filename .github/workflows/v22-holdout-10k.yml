@@ -1,11 +1,7 @@
 name: LUMEN V2.2 holdout at step 10000
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-holdout-10k.yml"
-      - "scripts/evaluate_v22_identity_holdout.py"
   workflow_dispatch:
+
 permissions:
   contents: read
   actions: read

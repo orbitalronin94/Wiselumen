@@ -2,12 +2,6 @@ name: CULTISTLUMEN-V1 1k doctrinal exposure experiment
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "scripts/cultistlumen_v1.py"
-      - "scripts/train_cultist_v1.py"
-      - ".github/workflows/cultistlumen-v1-1000.yml"
 
 permissions:
   contents: read

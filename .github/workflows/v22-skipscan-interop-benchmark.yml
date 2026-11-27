@@ -1,14 +1,7 @@
 name: LUMEN V2.2 - skip-scan inter-op sweep (9 intra-op)
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-skipscan-interop-benchmark.yml"
-      - "scripts/benchmark_v22_skipscan_interop.py"
-      - "scripts/benchmark_v22_cpu_hypotheses.py"
-      - "Model.py"
-      - "Train.py"
   workflow_dispatch:
+
 permissions:
   contents: read
 jobs:

@@ -1,13 +1,6 @@
 name: LUMEN V2.2 - 18 CPU hypotheses vs main
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-18-hypotheses.yml"
-      - "scripts/benchmark_v22_hypothesis.py"
-      - "Train.py"
-      - "Model.py"
   workflow_dispatch:
 
 permissions:

@@ -1,11 +1,7 @@
 name: LUMEN V2.2 optimized V5 training 20k to 21k
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-v5-optimized-20k-21k.yml"
-      - "scripts/train_v22_v5_optimized.py"
   workflow_dispatch:
+
 permissions:
   contents: read
   actions: read

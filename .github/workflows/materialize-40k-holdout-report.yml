@@ -1,11 +1,7 @@
 name: Materialize 40k generative holdout report
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/materialize-40k-holdout-report.yml"
-      - "scripts/materialize_40k_holdout_report.py"
+  workflow_dispatch:
 
 permissions:
   actions: read

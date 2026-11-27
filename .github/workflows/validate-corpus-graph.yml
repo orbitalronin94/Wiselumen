@@ -2,20 +2,7 @@ name: Build and validate Corpus Master graph
 # v0.6 rebuild after matrix manifest correction
 
 on:
-  push:
-    branches:
-      - lore/archivo-de-las-contradicciones
-      - main
-    paths:
-      - "Marper-Codice-Juntado (1).txt"
-      - "data/lore_seed_v0.6.jsonl"
-      - "data/palimpsesto_index_v0.1_part*.jsonl"
-      - "data/palimpsesto_topic_map_v0.3.jsonl"
-      - "corpus/index_palimpsesto.py"
-      - "corpus/build_graph.py"
-      - "corpus/validate_graph.py"
-      - "corpus/validate_topic_map.py"
-      - ".github/workflows/validate-corpus-graph.yml"
+  workflow_dispatch:
 
 concurrency:
   group: corpus-master-graph-${{ github.ref }}

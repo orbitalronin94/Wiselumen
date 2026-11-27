@@ -1,11 +1,7 @@
 name: LUMEN V2.2 V5 resumable 1k blocks (20k-50k)
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-v5-blocks-20k-50k.yml"
-      - "scripts/train_v22_v5_blocks.py"
   workflow_dispatch:
+
 permissions:
   contents: read
   actions: read

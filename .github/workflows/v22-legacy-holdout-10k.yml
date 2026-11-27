@@ -2,11 +2,7 @@ name: LUMEN V2.2 legacy holdout at step 10000
 run-name: V2.2 on old LUMEN frozen holdout — step 10000
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-legacy-holdout-10k.yml"
-      - "scripts/evaluate_v22_legacy_holdout.py"
+
 permissions:
   contents: read
   actions: read

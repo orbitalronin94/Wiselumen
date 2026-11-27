@@ -1,6 +1,7 @@
 name: LUMEN architecture audit - paired 10-step arms
 on:
   workflow_dispatch:
+
 permissions:
   contents: read
 jobs:

@@ -1,13 +1,8 @@
 name: LUMEN V2.2 continue from step 20000 to 30000
 run-name: LUMEN V2.2 20k → 30k (LayerDrop 4/8 then 8/8)
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/v22-continue-30k.yml"
-      - "scripts/train_v22_continue_30k.py"
-      - "Train.py"
   workflow_dispatch:
+
 permissions:
   contents: read
   actions: read

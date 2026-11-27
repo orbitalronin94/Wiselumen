@@ -1,13 +1,6 @@
 name: Validate V5 training integration
 
 on:
-  push:
-    branches: [corpus/v5-7p5-lore]
-    paths:
-      - "scripts/train_v22_v5_mixed.py"
-      - "scripts/v5_sampling.py"
-      - "tests/test_v5_sampling.py"
-      - ".github/workflows/check-v5-trainer.yml"
   workflow_dispatch:
 
 permissions:
