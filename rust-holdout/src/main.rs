@@ -147,7 +147,7 @@ fn main() -> Result<()> {
     let free_path = arg(&args, "--freeform-holdout")?;
     let out = arg(&args, "--out-dir")?;
     let step: usize = arg(&args, "--step")?.parse()?;
-    let threads: i32 = arg(&args, "--threads")?.parse().unwrap_or(4);
+    let threads: i32 = arg(&args, "--threads")?.parse().unwrap_or(2);
     let max_len: usize = args.iter().position(|x| x=="--max-len").and_then(|i|args.get(i+1)).and_then(|x|x.parse().ok()).unwrap_or(512);
     let max_new: usize = args.iter().position(|x| x=="--max-new-tokens").and_then(|i|args.get(i+1)).and_then(|x|x.parse().ok()).unwrap_or(64);
     tch::set_num_threads(threads);
@@ -198,7 +198,7 @@ fn main() -> Result<()> {
         "checkpoint_step":step,"rows_in_source":mc.len(),"scored":scored,"correct":correct,
         "accuracy":accuracy,"mean_gold_answer_nll":nll_sum/scored.max(1) as f64,
         "holdout_sha256":hash(&mc_path)?,"tokenizer_sha256":hash(&tokenizer_path)?,
-        "active_layers":[0,1,2,5,6,7],
+        "active_layers":(0..8).filter(|i| step >= 25000 || [0,1,2,5,6,7].contains(i)).collect::<Vec<_>>(),
         "method":"legacy frozen 2431-question MC set; conditional answer NLL; V2.2 system/user/assistant framing; greedy argmin"
     });
     let mut mc_full = mc_report.as_object().unwrap().clone();
