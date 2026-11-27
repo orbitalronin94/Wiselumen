@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - ".github/workflows/v22-legacy-holdout-32.5k.yml"
+      - ".github/workflows/v22-legacy-holdout-32500.yml"
       - "scripts/evaluate_v22_legacy_holdout.py"
       - "scripts/evaluate_v5_generative_holdout.py"
       - "eval/v5_generative_holdout_20.jsonl"
@@ -78,7 +78,7 @@ jobs:
       - name: Run the old official holdout on V2.2
         run: |
           python scripts/evaluate_v22_legacy_holdout.py \
-            --checkpoint v22/lumen-v22-step-32500.pt \
+            --checkpoint v22/lumen-v22-v5-fastpath-step-32500.pt \
             --tokenizer v22/tokenizer-v22-derived.json \
             --system system_prompt_short.txt \
             --mc-holdout oldinputs/eval/holdout_multiple_choice.jsonl \
@@ -87,7 +87,7 @@ jobs:
       - name: Run 20 frozen generative probes for the V5 corpus
         run: |
           python scripts/evaluate_v5_generative_holdout.py \
-            --checkpoint v22/lumen-v22-step-32500.pt \
+            --checkpoint v22/lumen-v22-v5-fastpath-step-32500.pt \
             --tokenizer v22/tokenizer-v22-derived.json \
             --system system_prompt_short.txt \
             --prompts eval/v5_generative_holdout_20.jsonl \
