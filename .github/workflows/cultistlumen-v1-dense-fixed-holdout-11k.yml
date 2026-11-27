@@ -2,6 +2,9 @@ name: CULTISTLUMEN-V1-DENSE holdout fijo — checkpoint 11k
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/cultistlumen-v1-dense-fixed-holdout-11k.yml"
 
 permissions:
   contents: read
@@ -25,7 +28,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
       - name: Install CPU inference dependencies
         run: |
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
