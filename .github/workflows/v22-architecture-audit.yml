@@ -1,5 +1,9 @@
 name: LUMEN architecture audit - paired 10-step arms
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-architecture-audit.yml"
   workflow_dispatch:
 
 permissions:
