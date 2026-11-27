@@ -9,10 +9,6 @@ on:
         default: "1000"
         type: choice
         options: ["1000"]
-  push:
-    paths:
-      - "scripts/cultist_v1_dense.py"
-      - "scripts/cultistlumen_v1_dense.py"
 
 permissions:
   contents: read
