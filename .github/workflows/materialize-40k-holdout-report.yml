@@ -24,8 +24,6 @@ jobs:
         run: |
           gh run download 45994377615 --repo orbitalronin94/Wiselumen \
             --name v22-rust-generative-holdout-step40000 --dir artifact
-          mkdir -p artifact/unpacked
-          unzip -q artifact/*.zip -d artifact/unpacked
       - name: Build Markdown with all 120 literal generations
         run: python3 scripts/materialize_40k_holdout_report.py
       - name: Commit report to main
