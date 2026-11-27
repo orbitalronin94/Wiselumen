@@ -5,13 +5,16 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/v22-v5-fastpath-smoke.yml"
+      - "scripts/train_v22_v5_fastpath.py"
+      - "scripts/prepare_v5_training_data.py"
+      - "Train.py"
   workflow_dispatch:
 permissions:
   contents: read
   actions: read
 concurrency:
   group: lumen-v22-v5-fastpath-smoke
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   smoke_30000:
     runs-on: ubuntu-latest
