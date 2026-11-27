@@ -2,9 +2,6 @@ name: CULTISTLUMEN-V1-DENSE holdout fijo — checkpoint 11k
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/cultistlumen-v1-dense-fixed-holdout-11k.yml"
 
 permissions:
   contents: read
