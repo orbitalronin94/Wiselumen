@@ -1,12 +1,12 @@
-"""Paired CPU tournament: 50 baseline + 50 hypothesis steps per isolated runner."""
-import argparse,json,os,random,sys,time,types
+"""Paired CPU screen: 10 baseline + 10 hypothesis steps per isolated runner."""
+import argparse,hashlib,json,os,random,sys,time,types
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import torch
 import torch.nn.functional as F
 from Model import LumenV2,active_layers_for_step
 from Train import EMA,configure_cpu_runtime,get_optimizer,set_scheduled_lr
-SEED,BATCH,SEQ,WARMUP,MEASURE=20261126,4,512,3,50
+SEED,BATCH,SEQ,WARMUP,MEASURE=20261126,4,512,3,10
 START,TOTAL=20000,30000
 NAMES=["01-topk-embedding-projection","02-topk-einsum-projection","03-excitability-scatter-add","04-rope-cast-cache","05-rope-no-stack","06-rmsnorm-square","07-qkv-unbind-first","08-manual-causal-attention","09-skip-token-range-scan","10-ema-foreach","11-cache-clip-parameters","12-cache-active-layer-set","13-logsumexp-loss-weights","14-skip-disabled-autocast"]
 
@@ -103,7 +103,9 @@ def get_batches():
  g=torch.Generator().manual_seed(SEED+99); a=[]
  for _ in range(WARMUP+MEASURE):
   x=torch.randint(4,8184,(BATCH,SEQ),generator=g); y=torch.randint(4,8184,(BATCH,SEQ),generator=g); y[:,:int(SEQ*.6)]=-100; a.append((x,y))
- return a
+ manifest=[{"x":x.tolist(),"y":y.tolist()} for x,y in a]
+ digest=hashlib.sha256(json.dumps(manifest,separators=(",",":")).encode()).hexdigest()
+ return a,digest
 def make_pair(name):
  torch.manual_seed(SEED); a=LumenV2(vocab=8192,ctx=512,loss_mode="experimental"); sd={k:v.detach().clone() for k,v in a.state_dict().items()}
  b=LumenV2(vocab=8192,ctx=512,loss_mode="experimental"); b.load_state_dict(sd,strict=True)
@@ -125,7 +127,7 @@ def step(bundle,batch,i,name=None):
  return float(loss.detach().item())
 def run(name):
  configure_cpu_runtime(int(os.getenv("OMP_NUM_THREADS","4")),int(os.getenv("TORCH_INTEROP_THREADS","1"))); torch.backends.mkldnn.enabled=True
- data=get_batches(); base,cand=make_pair(name)
+ data,batch_sha=get_batches(); base,cand=make_pair(name)
  for i in range(WARMUP):
   order=[(base,None),(cand,name)]
   if i%2: order.reverse()
@@ -140,9 +142,9 @@ def run(name):
    else: ct.append(dt);cl.append(v)
  be,ce=sum(bt),sum(ct); bm,cm=sum(bl)/MEASURE,sum(cl)/MEASURE; btail,ctail=sum(bl[-10:])/10,sum(cl[-10:])/10
  sg=(be/ce-1)*100; lg=(bm-cm)/max(abs(bm),1e-12)*100; tg=(btail-ctail)/max(abs(btail),1e-12)*100
- return {"hypothesis":name,"seed":SEED,"paired_interleaved":True,"warmup_each":WARMUP,"measured_steps_each":MEASURE,"batch_size":BATCH,"sequence_length":SEQ,"start_step":START,"active_layers":len(active_layers_for_step(START,"v22",8)),"threads":torch.get_num_threads(),"torch_version":torch.__version__,"baseline":{"elapsed_seconds":be,"steps_per_second":MEASURE/be,"mean_loss":bm,"mean_last_10":btail},"hypothesis_result":{"elapsed_seconds":ce,"steps_per_second":MEASURE/ce,"mean_loss":cm,"mean_last_10":ctail},"speed_gain_percent":sg,"mean_loss_improvement_percent":lg,"last_10_loss_improvement_percent":tg,"accepted_for_merge":sg>=1 and lg>0 and tg>0}
+ return {"hypothesis":name,"seed":SEED,"paired_interleaved":True,"warmup_each":WARMUP,"measured_steps_each":MEASURE,"batch_manifest_sha256":batch_sha,"batch_size":BATCH,"sequence_length":SEQ,"start_step":START,"active_layers":len(active_layers_for_step(START,"v22",8)),"threads":torch.get_num_threads(),"torch_version":torch.__version__,"baseline":{"elapsed_seconds":be,"steps_per_second":MEASURE/be,"mean_loss":bm,"mean_last_10":btail},"hypothesis_result":{"elapsed_seconds":ce,"steps_per_second":MEASURE/ce,"mean_loss":cm,"mean_last_10":ctail},"speed_gain_percent":sg,"mean_loss_improvement_percent":lg,"last_10_loss_improvement_percent":tg,"passed_10_step_screen":sg>=1 and lg>0 and tg>0,"merge_decision":"requires longer paired confirmation; 10-step screen is not sufficient"}
 def main():
  p=argparse.ArgumentParser();p.add_argument("--hypothesis",required=True,choices=NAMES);n=p.parse_args().hypothesis;r=run(n)
  Path("benchmark-result.json").write_text(json.dumps(r,indent=2),encoding="utf-8");print("PAIRED_BENCH_RESULT "+json.dumps(r),flush=True)
- Path(os.getenv("GITHUB_STEP_SUMMARY","bench.md")).write_text(f"# {n}\n\nBaseline {r['baseline']['steps_per_second']:.4f} steps/s, loss {r['baseline']['mean_loss']:.6f}\n\nHypothesis {r['hypothesis_result']['steps_per_second']:.4f} steps/s, loss {r['hypothesis_result']['mean_loss']:.6f}\n\nSpeed {r['speed_gain_percent']:.3f}%; mean loss improvement {r['mean_loss_improvement_percent']:.6f}%; tail improvement {r['last_10_loss_improvement_percent']:.6f}%; accepted={r['accepted_for_merge']}\n")
+ Path(os.getenv("GITHUB_STEP_SUMMARY","bench.md")).write_text(f"# {n}\n\nBaseline {r['baseline']['steps_per_second']:.4f} steps/s, loss {r['baseline']['mean_loss']:.6f}\n\nHypothesis {r['hypothesis_result']['steps_per_second']:.4f} steps/s, loss {r['hypothesis_result']['mean_loss']:.6f}\n\nSpeed {r['speed_gain_percent']:.3f}%; mean loss improvement {r['mean_loss_improvement_percent']:.6f}%; tail improvement {r['last_10_loss_improvement_percent']:.6f}%; passed_screen={r['passed_10_step_screen']}\n")
 if __name__=="__main__":main()
