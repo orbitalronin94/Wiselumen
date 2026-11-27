@@ -17,6 +17,7 @@ STEPS = int(os.environ.get("STEPS", "20"))
 TOTAL_STEPS = START_STEP + STEPS
 PARENT_CHECKPOINT = Path(os.environ.get("PARENT_CHECKPOINT", "artifacts/lumen-v22-step-30000.pt"))
 PREPARED_DATA = Path(os.environ.get("PREPARED_DATA", "artifacts/prepared-v5-training-data.pt"))
+LR_SCALE = float(os.environ.get("LR_SCALE", "0.80"))
 
 
 def timed(label, fn):
@@ -74,6 +75,8 @@ def main():
         raise RuntimeError(f"Expected parent step {START_STEP}, got {parent_step}")
     if "optimizer" not in payload or "ema" not in payload:
         raise RuntimeError("Parent checkpoint lacks optimizer or EMA state")
+    if not 0.0 < LR_SCALE <= 1.0:
+        raise ValueError(f"LR_SCALE must be in (0, 1], got {LR_SCALE}")
 
     model = LumenV2(vocab=8192, ctx=MAX_LEN, loss_mode="experimental")
     model.logit_chunk_size = LOGIT_CHUNK_SIZE
@@ -91,10 +94,19 @@ def main():
     if not all(group.get("foreach") is True and group.get("fused") is None for group in optimizer.param_groups):
         raise RuntimeError("Could not restore the benchmarked foreach AdamW configuration")
 
+    # Apply a single conservative 20% LR reduction after restoring optimizer state.
+    # train_steps derives every scheduled LR from base_lr, so both fields must change.
+    for group in optimizer.param_groups:
+        restored_base_lr = float(group.get("base_lr", group["lr"]))
+        group["base_lr"] = restored_base_lr * LR_SCALE
+        group["lr"] = float(group["lr"]) * LR_SCALE
+    lr_groups = [float(group["base_lr"]) for group in optimizer.param_groups]
+
     ema.decay = float(payload["ema"]["decay"])
     ema.shadow = payload["ema"]["shadow"]
     print(
         f"FASTPATH_CONFIG bf16=enabled adamw_foreach=true fused=false "
+        f"lr_scale={LR_SCALE:.2f} base_lrs={lr_groups} "
         f"logit_chunk_size={LOGIT_CHUNK_SIZE} compile=false ipex=false "
         f"batch={BATCH_SIZE} context={MAX_LEN}",
         flush=True,
@@ -132,6 +144,7 @@ def main():
             "mode": "v22", "loss_mode": "experimental",
             "amp_dtype": "bfloat16", "adamw_foreach": True,
             "fused_adamw": False, "logit_chunk_size": LOGIT_CHUNK_SIZE,
+            "lr_scale": LR_SCALE, "base_lrs": lr_groups,
             "compile": False, "ipex": False,
         },
     )
@@ -152,6 +165,7 @@ def main():
                         "interop_threads": torch.get_num_interop_threads()},
         "amp_dtype": "bfloat16", "adamw_foreach": True, "fused_adamw": False,
         "logit_chunk_size": LOGIT_CHUNK_SIZE,
+        "lr_scale": LR_SCALE, "base_lrs": lr_groups,
     }
     Path(f"artifacts/metrics-v5-fastpath-step-{TOTAL_STEPS}.json").write_text(
         json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8"
