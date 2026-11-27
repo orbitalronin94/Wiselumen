@@ -1,6 +1,10 @@
-name: CULTISTLUMEN-V1 Dense 1k (reusable pool, no MoE, ctx256)
+name: CULTISTLUMEN-V1 Dense 10-step smoke test (no MoE, ctx256)
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cultistlumen-v1-dense-1000.yml'
   workflow_dispatch:
 
 permissions:
@@ -18,10 +22,10 @@ env:
   TORCH_INTEROP_THREADS: "4"
   TOKENIZERS_PARALLELISM: "false"
   PYTHONUNBUFFERED: "1"
-  STEPS: "1000"
+  STEPS: "10"
   BATCH_SIZE: "4"
   CTX: "256"
-  WARMUP: "100"
+  WARMUP: "1"
   MAX_CHUNKS_PER_FILE: "2048"
 
 jobs:
@@ -102,7 +106,7 @@ jobs:
         with:
           name: cultist-v1-pool-ctx256-v5
           path: artifacts
-      - name: Train 1,000 steps using cached pool only
+      - name: Train 10 steps using cached pool only
         run: python scripts/train_cultist_v1_dense.py
       - name: Upload checkpoint, metrics, and pool provenance
         if: always()
