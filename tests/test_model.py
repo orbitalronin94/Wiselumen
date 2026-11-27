@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 import torch
+import torch.nn.functional as F
 
 from Model import LumenV2, seq_for_step, active_layers_for_step
 from Train import EMA, get_optimizer, save_sharded, train_steps
@@ -60,6 +61,27 @@ class LumenV2Tests(unittest.TestCase):
         self.assertTrue(torch.isfinite(loss))
         self.assertEqual(len(model.blocks), 8)
 
+
+    def test_experimental_loss_weights_match_softmax_reference(self):
+        torch.manual_seed(29)
+        logits = torch.randn(17, 64, dtype=torch.float32)
+        targets = torch.randint(0, 64, (17,))
+        with torch.no_grad():
+            probs = F.softmax(logits, dim=-1)
+            old_p_correct = probs.gather(1, targets[:, None]).squeeze(1)
+            old_max_prob = probs.max(dim=-1).values
+            old_weight = (1.0 - old_p_correct) + (
+                (old_max_prob > 0.7) & (old_p_correct < 0.3)
+            ).float() * 0.5
+            log_norm = torch.logsumexp(logits, dim=-1)
+            p_correct = torch.exp(
+                logits.gather(1, targets[:, None]).squeeze(1) - log_norm
+            )
+            max_prob = torch.exp(logits.max(dim=-1).values - log_norm)
+            new_weight = (1.0 - p_correct) + (
+                (max_prob > 0.7) & (p_correct < 0.3)
+            ).float() * 0.5
+        torch.testing.assert_close(new_weight, old_weight, rtol=2e-6, atol=2e-7)
 
     def test_masked_targets_supervise_only_assistant_positions(self):
         model = LumenV2(

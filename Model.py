@@ -259,9 +259,15 @@ class LumenV2(nn.Module):
                         weighted_losses.append(ce_chunk)
                     else:
                         with torch.no_grad():
-                            probs = F.softmax(logits_chunk.float(), dim=-1)
-                            p_correct = probs.gather(1, target_chunk.unsqueeze(1)).squeeze(1)
-                            max_prob = probs.max(dim=-1).values
+                            logits_float = logits_chunk.float()
+                            log_norm = torch.logsumexp(logits_float, dim=-1)
+                            target_logits = logits_float.gather(
+                                1, target_chunk.unsqueeze(1)
+                            ).squeeze(1)
+                            p_correct = torch.exp(target_logits - log_norm)
+                            max_prob = torch.exp(
+                                logits_float.max(dim=-1).values - log_norm
+                            )
                             error_weight = 1.0 - p_correct
                             overconfidence = (
                                 (max_prob > 0.7) & (p_correct < 0.3)
@@ -279,9 +285,15 @@ class LumenV2(nn.Module):
                     loss = ce.mean()
                 else:
                     with torch.no_grad():
-                        probs = F.softmax(supervised_logits.float(), dim=-1)
-                        p_correct = probs.gather(1, supervised_targets.unsqueeze(1)).squeeze(1)
-                        max_prob = probs.max(dim=-1).values
+                        logits_float = supervised_logits.float()
+                        log_norm = torch.logsumexp(logits_float, dim=-1)
+                        target_logits = logits_float.gather(
+                            1, supervised_targets.unsqueeze(1)
+                        ).squeeze(1)
+                        p_correct = torch.exp(target_logits - log_norm)
+                        max_prob = torch.exp(
+                            logits_float.max(dim=-1).values - log_norm
+                        )
                         error_weight = 1.0 - p_correct
                         overconfidence = (
                             (max_prob > 0.7) & (p_correct < 0.3)
