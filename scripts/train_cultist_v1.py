@@ -42,7 +42,7 @@ def sha256(data: bytes) -> str:
 
 
 def load_tokenizer(zf: zipfile.ZipFile) -> tuple[Tokenizer, str, str]:
-    original = zf.read("corpus/v4/tokenizer.json")
+    original = zf.read("corpus/tokenizer.json")
     original_sha = sha256(original)
     path = OUT / "cultist-tokenizer-original.json"
     path.write_bytes(original)
@@ -106,7 +106,7 @@ def build_file_pools(zf, manifest, tokenizer, nested_bytes):
                 completion = row.get("completion")
                 if not isinstance(prompt, str) or not isinstance(completion, str):
                     continue
-                ids = tokenizer.encode(prompt.strip() + "\\n" + completion.strip(), add_special_tokens=False).ids
+                ids = tokenizer.encode(prompt.strip() + " " + completion.strip(), add_special_tokens=False).ids
                 buffer.extend(ids)
                 buffer.append(3)  # frozen V4 EOS
                 seen_rows += 1
