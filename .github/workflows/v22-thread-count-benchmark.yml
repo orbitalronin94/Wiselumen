@@ -1,0 +1,44 @@
+name: LUMEN V2.2 - paired CPU thread-count benchmark (10+10)
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-thread-count-benchmark.yml"
+      - "scripts/benchmark_v22_thread_counts.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    name: \${{ matrix.threads }} threads vs main (4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 17
+      matrix:
+        threads: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 24]
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU PyTorch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+      - name: Run paired 10 + 10 step benchmark
+        run: python scripts/benchmark_v22_thread_counts.py --threads "\${{ matrix.threads }}"
+      - name: Upload paired metrics
+        if: always() && hashFiles('thread-benchmark-result.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-threads-\${{ matrix.threads }}
+          path: thread-benchmark-result.json
+          retention-days: 30
