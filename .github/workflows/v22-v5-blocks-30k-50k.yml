@@ -1,5 +1,5 @@
-name: LUMEN V2.2 V5 FASTPATH — 30k to 50k (2.5k blocks)
-run-name: LUMEN V2.2 FASTPATH — 30k to 50k — 4 intra / 4 inter
+name: LUMEN V2.2 V5 FASTPATH — 32.5k to 50k (2.5k blocks)
+run-name: LUMEN V2.2 FASTPATH — 32.5k to 50k — 4 intra / 4 inter
 on:
   push:
     branches: [main]
@@ -13,88 +13,7 @@ concurrency:
   group: lumen-v22-v5-fastpath-30k-50k
   cancel-in-progress: false
 jobs:
-  step_32500:
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
-    env:
-      OMP_NUM_THREADS: "4"
-      MKL_NUM_THREADS: "4"
-      TORCH_INTEROP_THREADS: "4"
-      OPENBLAS_NUM_THREADS: "4"
-      TOKENIZERS_PARALLELISM: "false"
-      PYTHONUNBUFFERED: "1"
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      START_STEP: "30000"
-      STEPS: "2500"
-      SCHEDULE_TOTAL_STEPS: "50000"
-      LR_SCALE: "0.80"
-      PARENT_CHECKPOINT: "artifacts/lumen-v22-step-30000.pt"
-      PREPARED_DATA: "artifacts/prepared-v5-training-data.pt"
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Restore frozen V5 corpus cache
-        id: v5cache
-        uses: actions/cache@v4
-        with:
-          path: artifacts/wise-ronin-corpus-v5.0.0.zip
-          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
-      - name: Download verified 30k checkpoint
-        uses: actions/download-artifact@v4
-        with:
-          name: lumen-v22-step-30000
-          run-id: 45864387501
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: orbitalronin94/Wiselumen
-          path: artifacts/parent-download
-      - name: Install parent checkpoint
-        run: |
-          PARENT_FILE="$(find artifacts/parent-download -type f -name 'lumen-v22-step-30000.pt' -print -quit)"
-          test -n "$PARENT_FILE"
-          cp "$PARENT_FILE" "$PARENT_CHECKPOINT"
-      - name: Download frozen V5 corpus on cache miss
-        if: steps.v5cache.outputs.cache-hit != 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: wise-ronin-corpus-v5.0.0
-          run-id: 45892282767
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: orbitalronin94/Wiselumen
-          path: artifacts/v5-download
-      - name: Verify frozen V5 corpus
-        run: |
-          if [ ! -s artifacts/wise-ronin-corpus-v5.0.0.zip ]; then
-            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
-            test -n "$V5_FILE"
-            cp "$V5_FILE" artifacts/wise-ronin-corpus-v5.0.0.zip
-          fi
-          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  artifacts/wise-ronin-corpus-v5.0.0.zip" | sha256sum -c -
-      - name: Install CPU PyTorch and tokenizer
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
-          python -m pip install numpy tokenizers==0.21.0
-      - name: Prepare frozen V5 token pools
-        run: python scripts/prepare_v5_training_data.py
-      - name: Train exactly 2,500 steps (30000 → 32500)
-        run: python scripts/train_v22_v5_fastpath.py
-      - name: Upload resumable checkpoint, metrics and prepared data
-        uses: actions/upload-artifact@v4
-        with:
-          name: lumen-v22-v5-fastpath-step-32500
-          path: |
-            artifacts/lumen-v22-v5-fastpath-step-32500.pt
-            artifacts/metrics-v5-fastpath-step-32500.json
-            artifacts/prepared-v5-training-data.pt
-            artifacts/tokenizer-v22-derived.json
-          if-no-files-found: error
-          retention-days: 90
-          compression-level: 0
-
   step_35000:
-    needs: step_32500
     runs-on: ubuntu-latest
     timeout-minutes: 360
     env:
@@ -115,6 +34,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Restore verified 32.5k checkpoint and prepared V5 pools
+        uses: actions/download-artifact@v4
+        with:
+          name: lumen-v22-v5-fastpath-step-32500
+          run-id: 45953893078
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: orbitalronin94/Wiselumen
+          path: artifacts
       - uses: actions/download-artifact@v4
         with:
           name: lumen-v22-v5-fastpath-step-32500
