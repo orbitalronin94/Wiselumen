@@ -2,6 +2,7 @@
 # El bucle recibe batches ya tokenizados: no presupone formato ni descarga corpus.
 import json
 import math
+import time
 from pathlib import Path
 
 import torch
@@ -305,8 +306,11 @@ def train_steps(
     model.train()
     iterator = iter(batches)
     history = []
+    timing_history = []
 
     for step in range(steps):
+        step_started = time.perf_counter()
+        batch_started = step_started
         try:
             batch = next(iterator)
         except StopIteration as exc:
@@ -314,6 +318,7 @@ def train_steps(
                 f"Batch iterator ended after {step} of {steps} steps."
             ) from exc
 
+        batch_seconds = time.perf_counter() - batch_started
         inputs, targets = unpack_batch(batch, device)
         global_step = start_step + step
         if mode == "v21":
@@ -346,16 +351,21 @@ def train_steps(
                 index < 0 or index >= len(model.blocks) for index in active_layers
             ):
                 raise ValueError(f"Invalid active layer indices: {active_layers}")
+        forward_started = time.perf_counter()
         with torch.autocast(device_type=device.type, dtype=amp_dtype, enabled=use_amp):
             _, loss = model(
                 inputs, targets=targets, active_layers=active_layers,
                 return_logits=False,
             )
+        forward_seconds = time.perf_counter() - forward_started
 
         if loss is None or not torch.isfinite(loss):
             raise FloatingPointError(f"Non-finite training loss at step {step + 1}: {loss}")
 
+        backward_started = time.perf_counter()
         loss.backward()
+        backward_seconds = time.perf_counter() - backward_started
+        optimizer_started = time.perf_counter()
         grad_norm = None
         do_clip = grad_clip is not None and ((global_step + 1) % clip_every == 0)
         if do_clip:
@@ -366,15 +376,22 @@ def train_steps(
         if ema is not None and ((global_step + 1) % ema_every == 0):
             ema.update(model)
 
+        optimizer_seconds = time.perf_counter() - optimizer_started
         value = float(loss.detach().item())
         history.append(value)
+        step_seconds = time.perf_counter() - step_started
+        timing_history.append(step_seconds)
         if log_every and ((step + 1) % log_every == 0 or step == 0 or step + 1 == steps):
             grad_value = float(grad_norm.item()) if grad_norm is not None else float("nan")
             print(
                 f"step {step + 1}/{steps} loss {value:.6f} "
                 f"lr_scale {multiplier:.5f} grad_norm {grad_value:.4f} "
                 f"seq {actual_seq} layers {len(active_layers)}/{len(model.blocks)} "
-                f"ema_every {ema_every} clip_every {clip_every}",
+                f"ema_every {ema_every} clip_every {clip_every} "
+                f"step_s {step_seconds:.3f} batch_s {batch_seconds:.3f} "
+                f"fwd_s {forward_seconds:.3f} bwd_s {backward_seconds:.3f} "
+                f"opt_ema_s {optimizer_seconds:.3f} "
+                f"rolling10_s {sum(timing_history[-10:]) / len(timing_history[-10:]):.3f}",
                 flush=True,
             )
 
