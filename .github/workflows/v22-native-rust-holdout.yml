@@ -1,9 +1,9 @@
-name: LUMEN V2.2 — Native Rust inference holdout
-run-name: V2.2 native Rust inference (step 10000)
+name: LUMEN V2.2 — Native Rust KV-cache parity at step 32500
+run-name: V2.2 native Rust KV-cache — 2 threads — parity with Python main (32.5k)
 on:
   workflow_dispatch:
   push:
-    branches: [main, experiment/v22-rust-kv-cache, merge/rust-inference-standard]
+    branches: [main]
     paths:
       - '.github/workflows/v22-native-rust-holdout.yml'
       - 'rust-holdout/**'
@@ -16,8 +16,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     env:
-      OMP_NUM_THREADS: "4"
-      MKL_NUM_THREADS: "4"
+      OMP_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
       OPENBLAS_NUM_THREADS: "1"
       CXX: clang++
       LIBTORCH_USE_PYTORCH: "1"
@@ -39,13 +39,13 @@ jobs:
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.5.1
           python -m pip install tokenizers==0.21.0 numpy
           echo "LD_LIBRARY_PATH=$(python -c 'import torch,os; print(os.path.join(os.path.dirname(torch.__file__),"lib"))'):$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
-      - name: Download exact V2.2 step-10000 checkpoint
+      - name: Download exact V2.2 step-32500 checkpoint
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p v22
-          gh run download 45783991902 --repo orbitalronin94/Wiselumen --name lumen-v22-step-10000 --dir v22
-          test -s v22/lumen-v22-step-10000.pt
+          gh run download 45953893078 --repo orbitalronin94/Wiselumen --name lumen-v22-v5-fastpath-step-32500 --dir v22
+          test -s v22/lumen-v22-v5-fastpath-step-32500.pt
           test -s v22/tokenizer-v22-derived.json
       - name: Download frozen legacy holdout inputs
         uses: actions/download-artifact@v4
@@ -55,87 +55,85 @@ jobs:
           repository: orbitalronin94/WISE-RONIN
           run-id: 45782396142
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Recover exact Python baseline
+      - name: Download Python main baseline from the identical checkpoint
         uses: actions/download-artifact@v4
         with:
-          name: v22-python-vs-rust-holdout-step10000
+          name: v22-legacy-plus-v5-generative-holdout-step32500
           path: baseline
           repository: orbitalronin94/Wiselumen
-          run-id: 45827049829
+          run-id: 45963096256
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Export checkpoint once to TorchScript
+      - name: Export exact step-32500 checkpoint to TorchScript
         run: |
-          python scripts/export_v22_torchscript.py --checkpoint v22/lumen-v22-step-10000.pt --out v22/lumen-v22-step-10000.ts --step 10000 --threads 4
-          test -s v22/lumen-v22-step-10000.ts
+          python scripts/export_v22_torchscript.py --checkpoint v22/lumen-v22-v5-fastpath-step-32500.pt --out v22/lumen-v22-step-32500.ts --step 32500 --threads 2
+          test -s v22/lumen-v22-step-32500.ts
       - name: Build native Rust evaluator against CPU LibTorch
         run: cargo build --release --manifest-path rust-holdout/Cargo.toml
-      - name: Run native Rust inference (no Python inference process)
+      - name: Run native Rust KV-cache inference at 2 intra threads
         run: |
           mkdir -p results/rust
           /usr/bin/time -f "%e" -o results/rust/wall_seconds.txt \
             rust-holdout/target/release/lumen-holdout-native \
-              --model v22/lumen-v22-step-10000.ts \
+              --model v22/lumen-v22-step-32500.ts \
               --tokenizer v22/tokenizer-v22-derived.json \
               --system system_prompt_short.txt \
               --mc-holdout oldinputs/eval/holdout_multiple_choice.jsonl \
               --freeform-holdout oldrepo/data/freeform_identity_general_100.jsonl \
-              --out-dir results/rust --step 10000 --threads 4
-      - name: Compare native Rust against frozen Python baseline
+              --out-dir results/rust --step 32500 --threads 2
+      - name: Require exact output parity with Python main at step 32500
         if: always()
         run: |
-          mkdir -p results results/rust
           python - <<'PY'
           import json, pathlib
-          base=pathlib.Path("baseline/python"); rust=pathlib.Path("results/rust")
-          report={"checkpoint_step":10000,"python_baseline_run":45827049829,"rust_runtime":"native Rust + LibTorch TorchScript"}
-          paths=[base/"official_holdout_2431_v22_step10000.json",rust/"official_holdout_2431_v22_step10000.json",
-                 base/"freeform_100_v22_step10000.json",rust/"freeform_100_v22_step10000.json"]
-          if all(p.exists() for p in paths):
-              a,b,c,d=[json.loads(p.read_text()) for p in paths]
-              report["python"]={"correct":a["correct"],"scored":a["scored"],"accuracy":a["accuracy"],"mean_gold_answer_nll":a["mean_gold_answer_nll"]}
-              report["rust"]={"correct":b["correct"],"scored":b["scored"],"accuracy":b["accuracy"],"mean_gold_answer_nll":b["mean_gold_answer_nll"]}
-              # Compare semantic decisions exactly; floating-point score tensors can
-              # differ by a few ULPs across execution paths.
-              pa, pb = a["predictions"], b["predictions"]
-              signature = lambda rows: [(x["id"], x["gold"], x["pred"]) for x in rows]
-              report["mc_prediction_count"] = len(pa)
-              report["mc_predictions_identical"] = signature(pa) == signature(pb)
-              score_deltas = [abs(float(x)-float(y))
-                              for px,py in zip(pa,pb)
-                              for x,y in zip(px["scores"],py["scores"])]
-              report["mc_score_max_abs_delta"] = max(score_deltas, default=0.0)
-              report["mc_scores_within_tolerance"] = (
-                  len(pa) == len(pb)
-                  and all(len(x["scores"]) == len(y["scores"]) for x,y in zip(pa,pb))
-                  and report["mc_score_max_abs_delta"] <= 1e-5
-              )
-              report["freeform_token_ids_identical"]=[x["token_ids"] for x in c["results"]]==[x["token_ids"] for x in d["results"]]
-              report["freeform_text_identical"]=[x["response"] for x in c["results"]]==[x["response"] for x in d["results"]]
-              report["mc_holdout_hash_match"]=a["holdout_sha256"]==b["holdout_sha256"]
-              report["tokenizer_hash_match"]=a["tokenizer_sha256"]==b["tokenizer_sha256"]
-              report["mc_mean_nll_abs_delta"] = abs(float(a["mean_gold_answer_nll"])-float(b["mean_gold_answer_nll"]))
-          else: report["comparison_error"]="Missing baseline or native Rust outputs"
-          for label,p in (("python",base/"wall_seconds.txt"),("rust",rust/"wall_seconds.txt")):
-              if p.exists(): report.setdefault("wall_seconds",{})[label]=float(p.read_text().strip())
-          if set(report.get("wall_seconds",{}))=={"python","rust"}:
-              report["rust_over_python_speedup"]=report["wall_seconds"]["python"]/report["wall_seconds"]["rust"]
-          pathlib.Path("results").mkdir(parents=True, exist_ok=True)
-          pathlib.Path("results/native_rust_comparison.json").write_text(json.dumps(report,indent=2)+"\n")
-          print(json.dumps(report,indent=2))
-          required = ("mc_predictions_identical", "mc_scores_within_tolerance",
-                      "freeform_token_ids_identical", "freeform_text_identical",
-                      "mc_holdout_hash_match", "tokenizer_hash_match")
-          failed = [key for key in required if report.get(key) is not True]
-          if failed:
-              raise SystemExit("Parity check failed: " + ", ".join(failed))
+          base=pathlib.Path("baseline/v22-step32500")
+          rust=pathlib.Path("results/rust")
+          report={"checkpoint_step":32500,"python_baseline_run":45963096256,
+                  "rust_runtime":"native Rust + TorchScript KV cache; 2 intra threads"}
+          py=base/"freeform_100_v22_step10000.json"
+          rr=rust/"freeform_100_v22_step32500.json"
+          mc_py=base/"official_holdout_2431_v22_step10000.json"
+          mc_ru=rust/"official_holdout_2431_v22_step32500.json"
+          if all(p.exists() for p in (py,rr,mc_py,mc_ru)):
+              a,b,c,d=[json.loads(p.read_text()) for p in (py,rr,mc_py,mc_ru)]
+              byid={x["id"]:x for x in a["results"]}
+              rust_byid={x["id"]:x for x in b["results"]}
+              target=byid["GEN-001"]; candidate=rust_byid["GEN-001"]
+              report["question"]="¿Quién eres?"
+              report["main_answer"]=target["response"]
+              report["rust_answer"]=candidate["response"]
+              report["GEN-001_token_ids_identical"]=target["token_ids"]==candidate["token_ids"]
+              report["all_100_token_ids_identical"]=[x["token_ids"] for x in a["results"]]==[x["token_ids"] for x in b["results"]]
+              report["all_100_text_identical"]=[x["response"] for x in a["results"]]==[x["response"] for x in b["results"]]
+              sig=lambda rows:[(x["id"],x["gold"],x["pred"]) for x in rows]
+              report["MC_predictions_identical"]=sig(c["predictions"])==sig(d["predictions"])
+              lengths_match=len(c["predictions"])==len(d["predictions"]) and all(len(x["scores"])==len(y["scores"]) for x,y in zip(c["predictions"],d["predictions"]))
+              deltas=[abs(float(x)-float(y)) for px,py in zip(c["predictions"],d["predictions"]) for x,y in zip(px["scores"],py["scores"])]
+              report["MC_score_max_abs_delta"]=max(deltas,default=0.0)
+              report["MC_scores_within_1e-5"]=lengths_match and report["MC_score_max_abs_delta"]<=1e-5
+              report["MC_correct_main"]=c["correct"]
+              report["MC_correct_rust"]=d["correct"]
+              report["MC_accuracy_main"]=c["accuracy"]
+              report["MC_accuracy_rust"]=d["accuracy"]
+              report["holdout_hash_match"]=c["holdout_sha256"]==d["holdout_sha256"]
+              report["tokenizer_hash_match"]=c["tokenizer_sha256"]==d["tokenizer_sha256"]
+          else:
+              report["comparison_error"]="Missing Python baseline or Rust outputs"
+          meta=rust/"native_rust_metadata.json"
+          if meta.exists(): report["runtime_metadata"]=json.loads(meta.read_text())
+          pathlib.Path("results").mkdir(parents=True,exist_ok=True)
+          pathlib.Path("results/kv_cache_main_parity.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n")
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          required=("GEN-001_token_ids_identical","all_100_token_ids_identical","all_100_text_identical",
+                    "MC_predictions_identical","MC_scores_within_1e-5","holdout_hash_match","tokenizer_hash_match")
+          failed=[k for k in required if report.get(k) is not True]
+          if failed: raise SystemExit("Parity check failed: "+", ".join(failed))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: v22-native-rust-holdout-step10000
+          name: v22-native-rust-kv-cache-holdout-step32500
           path: |
             results/
-            v22/lumen-v22-step-10000.ts
-            baseline/python/wall_seconds.txt
+            v22/lumen-v22-step-32500.ts
           if-no-files-found: warn
           retention-days: 90
