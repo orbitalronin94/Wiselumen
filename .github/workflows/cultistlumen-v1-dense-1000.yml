@@ -4,14 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       steps:
-        description: "Training steps (10 for smoke test; 1000 for normal run)"
+        description: "Additional training steps from the validated 1k parent checkpoint"
         required: true
-        default: "1000"
+        default: "10000"
         type: choice
         options:
-          - "10"
-          - "100"
-          - "1000"
+          - "10000"
 
 permissions:
   contents: read
@@ -26,14 +24,17 @@ env:
   MKL_NUM_THREADS: "4"
   OPENBLAS_NUM_THREADS: "4"
   TORCH_INTEROP_THREADS: "4"
-  PROFILE: "1"
+  PROFILE: "0"
   SAMPLED_NEGATIVES: "1024"
   TOKENIZERS_PARALLELISM: "false"
   PYTHONUNBUFFERED: "1"
-  STEPS: ${{ inputs.steps || '1000' }}
+  STEPS: ${{ inputs.steps || '10000' }}
+  FINAL_STEP: "11000"
+  PARENT_STEP_OFFSET: "1000"
+  PARENT_CHECKPOINT: "artifacts/parent/cultistlumen-v1-dense-step-1000.pt"
   BATCH_SIZE: "4"
   CTX: "256"
-  WARMUP: ${{ inputs.steps == '10' && '1' || inputs.steps == '100' && '10' || '100' }}
+  WARMUP: "100"
   MAX_CHUNKS_PER_FILE: "2048"
 
 jobs:
@@ -59,6 +60,14 @@ jobs:
           gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
           test -f artifacts/frozen/cultist-tokenizer-v1-8192.json
           echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Download the validated 1k parent checkpoint
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/parent
+          gh run download 46016419032 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-dense-step-1000 --dir artifacts/parent
+          test -s artifacts/parent/cultistlumen-v1-dense-step-1000.pt
+          echo "PARENT_CHECKPOINT_READY step=1000"
       - name: Download the already-built V5 tokenized pool
         uses: actions/download-artifact@v4
         with:
@@ -73,13 +82,18 @@ jobs:
           test -s artifacts/cultist-v1-pool-manifest.json
           echo "REUSING_PREBUILT_V5_POOL"
           ls -lh artifacts/cultist-v1-pool-ctx256.pkl.gz artifacts/cultist-v1-pool-manifest.json
-      - name: Train using the frozen pool only
+      - name: Verify parent and frozen-pool provenance
+        run: |
+          test -s "$PARENT_CHECKPOINT"
+          grep -q "7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59" artifacts/cultist-v1-pool-manifest.json
+          echo "PARENT_AND_POOL_PROVENANCE_MATCH"
+      - name: Train 10k additional steps from checkpoint 1k
         run: python scripts/train_cultist_v1_dense.py
       - name: Upload checkpoint, metrics, and pool provenance
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cultistlumen-v1-dense-step-${{ env.STEPS }}
+          name: cultistlumen-v1-dense-step-${{ env.FINAL_STEP }}
           path: |
             artifacts/cultistlumen-v1-dense-step-*.pt
             artifacts/cultistlumen-v1-dense-metrics-step-*.json
