@@ -22,10 +22,12 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  OMP_NUM_THREADS: "1"
-  MKL_NUM_THREADS: "1"
-  OPENBLAS_NUM_THREADS: "1"
-  TORCH_INTEROP_THREADS: "1"
+  OMP_NUM_THREADS: "4"
+  MKL_NUM_THREADS: "4"
+  OPENBLAS_NUM_THREADS: "4"
+  TORCH_INTEROP_THREADS: "4"
+  PROFILE: "1"
+  SAMPLED_NEGATIVES: "1024"
   TOKENIZERS_PARALLELISM: "false"
   PYTHONUNBUFFERED: "1"
   STEPS: ${{ inputs.steps || '1000' }}
@@ -43,9 +45,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
       - name: Install CPU dependencies
         run: |
-          python -m pip install --upgrade pip
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
           python -m pip install tokenizers==0.21.0
       - name: Recover and verify the exact frozen tokenizer
