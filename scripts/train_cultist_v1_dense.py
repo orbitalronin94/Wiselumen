@@ -24,7 +24,7 @@ PARENT_CHECKPOINT=Path(os.environ.get("PARENT_CHECKPOINT","")) if os.environ.get
 V5_PATH=Path(os.environ.get("V5_ARCHIVE","artifacts/wise-ronin-corpus-v5.0.0.zip"))
 TOKENIZER_PATH=Path(os.environ.get("FROZEN_TOKENIZER","artifacts/frozen/cultist-tokenizer-v1-8192.json"))
 TOKENIZER_SHA256="91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e"
-OUT=Path("artifacts")
+OUT=Path(os.environ.get("OUT_DIR","artifacts"))
 POOL_PATH=Path(os.environ.get("POOL_ARCHIVE","artifacts/cultist-v1-pool-ctx256.pkl.gz"))
 MARPER_FILES=[
  "lore/Marper-Codice-Juntado (1).txt","lore/lore_seed_v0.6.jsonl",
