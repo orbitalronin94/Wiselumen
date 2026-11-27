@@ -9,6 +9,7 @@ from cultistlumen_v1_dense import CultistLumenV1Dense
 
 SEED=20261127
 STEPS=int(os.environ.get("STEPS","1000"))
+TOTAL_TRAIN_STEPS=int(os.environ.get("TOTAL_TRAIN_STEPS",str(STEPS)))
 BATCH_SIZE=int(os.environ.get("BATCH_SIZE","4"))
 CTX=int(os.environ.get("CTX","256"))
 WARMUP=int(os.environ.get("WARMUP","50"))
@@ -143,7 +144,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--build-pool-only',action='store_true')
     args=parser.parse_args()
-    if STEPS<=0 or BATCH_SIZE<=0 or CTX<=0 or STEPS%10: raise ValueError("Invalid training dimensions")
+    if STEPS<=0 or BATCH_SIZE<=0 or CTX<=0 or STEPS%10 or TOTAL_TRAIN_STEPS<=0: raise ValueError("Invalid training dimensions")
     OUT.mkdir(exist_ok=True)
     torch.set_num_threads(THREADS)
     torch.set_num_interop_threads(INTEROP_THREADS)
@@ -174,10 +175,12 @@ def main():
         pools,weights,pool_meta,pool_sha=load_pool_archive()
     model=CultistLumenV1Dense(vocab=8192,d_model=512,d_ff=1024,ctx=CTX)
     parent_meta=None
+    parent_payload=None
     start_step=0
     if PARENT_CHECKPOINT is not None:
         if not PARENT_CHECKPOINT.is_file(): raise RuntimeError(f"Parent checkpoint missing: {PARENT_CHECKPOINT}")
         parent=torch.load(PARENT_CHECKPOINT,map_location="cpu",weights_only=False)
+        parent_payload=parent
         required={"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"]}
         for key,value in required.items():
             if parent.get(key)!=value: raise RuntimeError(f"Parent checkpoint contract mismatch for {key}: {parent.get(key)!r} != {value!r}")
@@ -193,6 +196,13 @@ def main():
       {"params":ffn_params+mix_params,"lr":BASE_LR_MAIN,"base_lr":BASE_LR_MAIN,"weight_decay":0.01},
       {"params":embed_params,"lr":BASE_LR_EMBED,"base_lr":BASE_LR_EMBED,"weight_decay":0.01},
     ],betas=(0.9,0.95),eps=1e-8,foreach=True)
+    optimizer_state_restored=False
+    if parent_payload is not None and parent_payload.get("optimizer") is not None:
+        optimizer.load_state_dict(parent_payload["optimizer"])
+        optimizer_state_restored=True
+        print(f"OPTIMIZER_STATE_RESTORED parent_step={start_step}",flush=True)
+    elif parent_payload is not None:
+        print(f"OPTIMIZER_STATE_NOT_PRESENT parent_step={start_step}; initializing AdamW state for this first continuation block",flush=True)
     print(f"MODEL architecture=CULTISTLUMEN-V1-DENSE total_params={model.num_params():,} experts=0",flush=True)
     schedule=build_step_sources(STEPS,BATCH_SIZE,rng)
     samplers={tag:WeightedPoolSampler(pools[tag],weights[tag]) for tag in ("world","marper")}
@@ -217,9 +227,10 @@ def main():
     phase={"batch":0.0,"forward":0.0,"backward":0.0,"clip":0.0,"optimizer":0.0}
     model.train()
     for step,tags in enumerate(schedule,1):
-        if step<=WARMUP: scale=step/max(1,WARMUP)
+        global_step=start_step+step
+        if global_step<=WARMUP: scale=global_step/max(1,WARMUP)
         else:
-            progress=(step-WARMUP)/max(1,STEPS-WARMUP)
+            progress=(global_step-WARMUP)/max(1,TOTAL_TRAIN_STEPS-WARMUP)
             scale=0.5*(1.0+math.cos(math.pi*min(1.0,progress)))
         for group in optimizer.param_groups: group["lr"]=group["base_lr"]*scale
         t0=time.perf_counter()
@@ -252,9 +263,10 @@ def main():
     phase_total=sum(phase.values())
     print("PHASE_TIMING_SECONDS "+json.dumps({k:round(v,4) for k,v in phase.items()}|{"measured_total":round(phase_total,4),"wall_total":round(elapsed,4)},sort_keys=True),flush=True)
     final_step=start_step+STEPS
+    if final_step>TOTAL_TRAIN_STEPS: raise RuntimeError(f"Block ends at {final_step}, beyond TOTAL_TRAIN_STEPS={TOTAL_TRAIN_STEPS}")
     checkpoint=OUT/f"cultistlumen-v1-dense-step-{final_step}.pt"
-    torch.save({"model":model.state_dict(),"step":final_step,"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0,"weighting":"uncompressed source-file byte size within each pool"},"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"},"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step},checkpoint)
-    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-DENSE","steps":STEPS,"start_step":start_step,"global_step":final_step,"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"base_lr_main":BASE_LR_MAIN,"base_lr_embed":BASE_LR_EMBED,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"experts":0,"sampled_negatives":SAMPLED_NEGATIVES,"training_objective":"sampled softmax: all batch targets plus uniform sampled negatives; inference uses full vocabulary","phase_timing_seconds":phase,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"checkpoint":str(checkpoint)}
+    torch.save({"model":model.state_dict(),"optimizer":optimizer.state_dict(),"step":final_step,"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0,"weighting":"uncompressed source-file byte size within each pool"},"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"},"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step},checkpoint)
+    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-DENSE","steps":STEPS,"start_step":start_step,"global_step":final_step,"total_train_steps":TOTAL_TRAIN_STEPS,"optimizer_state_restored":optimizer_state_restored,"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"base_lr_main":BASE_LR_MAIN,"base_lr_embed":BASE_LR_EMBED,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"experts":0,"sampled_negatives":SAMPLED_NEGATIVES,"training_objective":"sampled softmax: all batch targets plus uniform sampled negatives; inference uses full vocabulary","phase_timing_seconds":phase,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"checkpoint":str(checkpoint)}
     (OUT/f"cultistlumen-v1-dense-metrics-step-{final_step}.json").write_text(json.dumps(metrics,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("CULTISTLUMEN_DENSE_RESULT "+json.dumps(metrics,ensure_ascii=False),flush=True)
 
