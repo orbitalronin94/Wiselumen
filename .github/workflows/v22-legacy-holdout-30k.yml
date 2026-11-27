@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - ".github/workflows/v22-legacy-holdout-20k.yml"
+      - ".github/workflows/v22-legacy-holdout-30k.yml"
       - "scripts/evaluate_v22_legacy_holdout.py"
       - "scripts/evaluate_v5_generative_holdout.py"
       - "eval/v5_generative_holdout_20.jsonl"
