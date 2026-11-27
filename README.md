@@ -9,7 +9,7 @@ Los modelos LUMEN V2/V2.1/V2.2 y las variantes anteriores se conservan como **le
 
 ## Experimento vigente: CULTISTLUMEN-V1-DENSE
 
-El objetivo actual es comprobar si una arquitectura recurrente lineal por secuencia, con proyecciones de bajo rango y sin MoE, puede aprender del corpus factual y narrativo V5 con un coste de entrenamiento razonable en CPU.
+El objetivo principal es medir si una exposición minoritaria a un sistema narrativo coherente puede contaminar la sintaxis y los hábitos retóricos con los que el modelo responde fuera de ese universo. La arquitectura Dense recurrente es el vehículo controlado del ensayo; el fenómeno de interés es la posible captura sintáctica descrita más abajo.
 
 ### Pregunta central: cuándo la sintaxis suplanta a la semántica
 
@@ -90,17 +90,14 @@ La implementación no debe describirse como atención lineal: el mixer es una re
 - Contexto: 256 tokens.
 - Batch: 4.
 - Ensayo inicial: 1.000 pasos, warmup de 100.
-- Pool de tokens: se prepara en un job separado, se empaqueta como artefacto reutilizable y el job de entrenamiento lo consume; el entrenamiento no debe reconstruirlo.
+- Pool de tokens: artefacto V5 preconstruido y reutilizable (`cultist-v1-pool-ctx256-v5`); el workflow de entrenamiento lo descarga desde la ejecución que lo generó. No reconstruye el corpus ni vuelve a tokenizarlo en cada entrenamiento.
 - Runtime CPU configurado mediante variables de entorno del workflow.
 
 Los porcentajes se refieren a ejemplos muestreados, no a proporciones de bytes del ZIP. Dentro de cada pool, los archivos se ponderan por su tamaño sin comprimir. El holdout de V4 se excluye antes de formar los chunks.
 
 ### Flujo de ejecución
 
-El workflow `CULTISTLUMEN-V1 Dense 1k (reusable pool, no MoE, ctx256)` es manual. Tiene dos fases:
-
-1. **prepare-pool:** recupera el tokenizer congelado, verifica corpus y hashes, compila y prueba el modelo, crea el pool tokenizado y lo publica como artefacto.
-2. **train:** descarga el pool ya preparado, ejecuta 1.000 pasos y publica checkpoint y métricas.
+El workflow `.github/workflows/cultistlumen-v1-dense-1000.yml` es manual y permite seleccionar 10, 100 o 1.000 pasos. Recupera y verifica el tokenizer congelado, descarga el pool tokenizado ya construido desde el run `46001412252`, comprueba sus archivos y entrena directamente sobre él. Publica checkpoint, métricas y procedencia. No incluye una fase de reconstrucción del corpus ni de preparación del pool.
 
 No iniciar entrenamientos largos basándose únicamente en una loss descendente. Primero deben comprobarse estabilidad, throughput, uso de expertos (no aplica a Dense), calidad generativa y holdouts factuales/narrativos.
 
