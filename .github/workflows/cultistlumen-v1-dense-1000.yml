@@ -1,15 +1,8 @@
 name: CULTISTLUMEN-V1 Dense (frozen V5 pool, no MoE, ctx256)
 
 on:
-  workflow_dispatch:
-    inputs:
-      steps:
-        description: "Additional training steps from the validated 1k parent checkpoint"
-        required: true
-        default: "10000"
-        type: choice
-        options:
-          - "10000"
+  push:
+    branches: [main]
 
 permissions:
   contents: read
