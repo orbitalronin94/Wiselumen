@@ -42,10 +42,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: orbitalronin94/Wiselumen
           path: artifacts
-      - uses: actions/download-artifact@v4
-        with:
-          name: lumen-v22-v5-fastpath-step-32500
-          path: artifacts
       - name: Install CPU PyTorch and tokenizer
         run: |
           python -m pip install --upgrade pip
