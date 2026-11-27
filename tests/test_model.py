@@ -16,6 +16,33 @@ class LumenV2Tests(unittest.TestCase):
             loss_mode=loss_mode,
         )
 
+    def test_rope_half_width_tables_match_interleaved_reference(self):
+        from Model import RoPE
+        rope = RoPE(head_dim=8, max_len=16)
+        self.assertEqual(tuple(rope.cos.shape), (16, 4))
+        torch.manual_seed(19)
+        q = torch.randn(2, 4, 7, 8)
+        k = torch.randn(2, 4, 7, 8)
+        q_rot, k_rot = rope.rotate(q, k)
+        cos = torch.repeat_interleave(rope.cos[:7], 2, dim=-1)[None, None, :, :]
+        sin = torch.repeat_interleave(rope.sin[:7], 2, dim=-1)[None, None, :, :]
+        def reference(x):
+            even, odd = x[..., 0::2], x[..., 1::2]
+            return torch.stack((even*cos[..., 0::2] - odd*sin[..., 0::2],
+                                even*sin[..., 0::2] + odd*cos[..., 0::2]), dim=-1).flatten(-2)
+        torch.testing.assert_close(q_rot, reference(q), rtol=0, atol=0)
+        torch.testing.assert_close(k_rot, reference(k), rtol=0, atol=0)
+
+    def test_full_layer_range_forward_matches_list(self):
+        torch.manual_seed(23)
+        model = self.make_model().eval()
+        tokens = torch.randint(0, 64, (2, 9))
+        with torch.no_grad():
+            list_logits, list_loss = model(tokens, targets=tokens, active_layers=[0, 1])
+            range_logits, range_loss = model(tokens, targets=tokens, active_layers=range(2))
+        torch.testing.assert_close(range_logits, list_logits, rtol=0, atol=0)
+        torch.testing.assert_close(range_loss, list_loss, rtol=0, atol=0)
+
     def test_v21_curricula_and_layer_skipping(self):
         self.assertEqual([seq_for_step(s) for s in (0, 14999, 15000, 30000)], [128, 128, 256, 512])
         self.assertEqual(seq_for_step(99999, "original"), 256)

@@ -150,18 +150,17 @@ def prune_dead_neurons(model, threshold=0.001):
             width = mlp.d_ff
             low_rank = getattr(mlp, "low_rank", None)
 
+            dead_indices = dead.nonzero(as_tuple=True)[0]
             if low_rank is None:
                 # gate_up = [gate | up]; borrar las dos filas de cada neurona.
-                rows = torch.cat((dead.nonzero(as_tuple=True)[0],
-                                  (dead.nonzero(as_tuple=True)[0] + width)))
+                rows = torch.cat((dead_indices, dead_indices + width))
                 mlp.gate_up.weight[rows] = 0
                 mlp.down.weight[:, dead] = 0
             else:
                 # Compatibilidad futura con la parametrización low-rank si se añade.
                 for attr, columns in (
-                    ("gate_up_B", torch.cat((dead.nonzero(as_tuple=True)[0],
-                                             dead.nonzero(as_tuple=True)[0] + width))),
-                    ("down_B", dead.nonzero(as_tuple=True)[0]),
+                    ("gate_up_B", torch.cat((dead_indices, dead_indices + width))),
+                    ("down_B", dead_indices),
                 ):
                     tensor = getattr(mlp, attr, None)
                     if tensor is not None:
@@ -337,6 +336,10 @@ def train_steps(
         use_amp = amp_dtype is not None and device.type in {"cuda", "cpu"}
         if layer_schedule is None:
             active_layers = active_layers_for_step(global_step, mode, len(model.blocks))
+            if len(active_layers) == len(model.blocks):
+                # Full-depth stages are constant: pass a range rather than
+                # rebuilding a list and a set on every forward.
+                active_layers = range(len(model.blocks))
         else:
             matches = [
                 layers for start, end, layers in layer_schedule

@@ -26,8 +26,10 @@ class RoPE(nn.Module):
         inv_freq = 1.0 / (base ** (torch.arange(0, head_dim, 2).float() / head_dim))
         positions = torch.arange(max_len).float()
         freqs = torch.outer(positions, inv_freq)
-        self.register_buffer("cos", torch.repeat_interleave(freqs.cos(), 2, dim=-1), persistent=False)
-        self.register_buffer("sin", torch.repeat_interleave(freqs.sin(), 2, dim=-1), persistent=False)
+        # Only even/odd lanes consume one value per rotary pair. Keeping
+        # half-width tables avoids storing and copying duplicate cos/sin lanes.
+        self.register_buffer("cos", freqs.cos(), persistent=False)
+        self.register_buffer("sin", freqs.sin(), persistent=False)
 
     def _rotate_one(self, x, cos, sin):
         x_even, x_odd = x[..., 0::2], x[..., 1::2]
@@ -210,10 +212,16 @@ class LumenV2(nn.Module):
         if active_layers is None:
             active_layers = range(len(self.blocks))
         else:
-            active_layers = set(active_layers)
-            invalid = active_layers.difference(range(len(self.blocks)))
-            if invalid:
-                raise ValueError(f"active_layers contains invalid indices: {sorted(invalid)}")
+            # range is already a compact O(1)-membership representation. Avoid
+            # allocating a fresh set for the common all-layers training path.
+            if isinstance(active_layers, range):
+                if active_layers.start < 0 or active_layers.stop > len(self.blocks) or active_layers.step != 1:
+                    raise ValueError("active_layers range is outside the model layer bounds.")
+            else:
+                active_layers = set(active_layers)
+                invalid = active_layers.difference(range(len(self.blocks)))
+                if invalid:
+                    raise ValueError(f"active_layers contains invalid indices: {sorted(invalid)}")
         for layer_index, block in enumerate(self.blocks):
             if layer_index in active_layers:
                 x = block(x)
