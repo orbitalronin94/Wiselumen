@@ -54,7 +54,7 @@ def make_batches():
         y = torch.randint(4, 8184, (BATCH, SEQ), generator=gen)
         y[:, :int(SEQ * .6)] = -100
         batches.append((x, y))
-    digest = hashlib.sha256(b"".join(x.numpy().tobytes()+y.numpy().tobytes() for x,y in batches)).hexdigest()
+    hasher = hashlib.sha256()\n    for x, y in batches:\n        hasher.update(bytes(x.contiguous().untyped_storage()))\n        hasher.update(bytes(y.contiguous().untyped_storage()))\n    digest = hasher.hexdigest()
     return batches, digest
 
 def train_step(model, optimizer, batch, step):
