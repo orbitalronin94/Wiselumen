@@ -81,7 +81,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
-          python -m pip install tokenizers==0.21.0
+          python -m pip install numpy tokenizers==0.21.0
       - name: Prepare and freeze tokenized V5 pools
         run: python scripts/prepare_v5_training_data.py
       - name: Train 20-step FASTPATH smoke test
