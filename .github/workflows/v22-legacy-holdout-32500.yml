@@ -1,11 +1,11 @@
-name: LUMEN V2.2 legacy + V5 generative holdout at step 32500
-run-name: V2.2 baseline — legacy holdout + 20 V5 probes — step 32500
+name: LUMEN V2.2 legacy + V5 generative holdout at step 35000
+run-name: V2.2 baseline — legacy holdout + 20 V5 probes — step 35000
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - ".github/workflows/v22-legacy-holdout-32500.yml"
+      - ".github/workflows/v22-legacy-holdout-35000.yml"
       - "scripts/evaluate_v22_legacy_holdout.py"
       - "scripts/evaluate_v5_generative_holdout.py"
       - "eval/v5_generative_holdout_20.jsonl"
@@ -13,7 +13,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: v22-legacy-holdout-step32500
+  group: v22-legacy-holdout-step35000
   cancel-in-progress: false
 jobs:
   evaluate:
@@ -34,13 +34,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Download exact V2.2 step-32500 checkpoint
+      - name: Download exact V2.2 step-35000 checkpoint
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p v22
-          gh run download 45953893078 --repo orbitalronin94/Wiselumen --name lumen-v22-v5-fastpath-step-32500 --dir v22
-          test -s v22/lumen-v22-v5-fastpath-step-32500.pt
+          gh run download 45962100073 --repo orbitalronin94/Wiselumen --name lumen-v22-v5-fastpath-step-35000 --dir v22
+          test -s v22/lumen-v22-v5-fastpath-step-35000.pt
           test -s v22/tokenizer-v22-derived.json
       - name: Download identical legacy holdout inputs
         uses: actions/download-artifact@v4
@@ -70,32 +70,32 @@ jobs:
           assert len(ff)==100, len(ff)
           assert len(v5)==20, len(v5)
           assert len({x["id"] for x in v5})==20
-          state=torch.load("v22/lumen-v22-v5-fastpath-step-32500.pt",map_location="cpu",weights_only=False)
-          assert int(state["step"])==32500, state.get("step")
+          state=torch.load("v22/lumen-v22-v5-fastpath-step-35000.pt",map_location="cpu",weights_only=False)
+          assert int(state["step"])==35000, state.get("step")
           assert "model" in state and isinstance(state["model"],dict)
           print(f"Verified V2.2 step={state['step']}; MC={len(mc)}; legacy freeform={len(ff)}; V5 probes={len(v5)}; tensors={len(state['model'])}")
           PY
       - name: Run the old official holdout on V2.2
         run: |
           python scripts/evaluate_v22_legacy_holdout.py \
-            --checkpoint v22/lumen-v22-v5-fastpath-step-32500.pt \
+            --checkpoint v22/lumen-v22-v5-fastpath-step-35000.pt \
             --tokenizer v22/tokenizer-v22-derived.json \
             --system system_prompt_short.txt \
             --mc-holdout oldinputs/eval/holdout_multiple_choice.jsonl \
             --freeform-holdout oldrepo/data/freeform_identity_general_100.jsonl \
-            --out-dir results/v22-step32500 --step 32500 --threads 4
+            --out-dir results/v22-step35000 --step 35000 --threads 4
       - name: Run 20 frozen generative probes for the V5 corpus
         run: |
           python scripts/evaluate_v5_generative_holdout.py \
-            --checkpoint v22/lumen-v22-v5-fastpath-step-32500.pt \
+            --checkpoint v22/lumen-v22-v5-fastpath-step-35000.pt \
             --tokenizer v22/tokenizer-v22-derived.json \
             --system system_prompt_short.txt \
             --prompts eval/v5_generative_holdout_20.jsonl \
-            --out-dir results/v22-step32500 --step 32500 --threads 4
+            --out-dir results/v22-step35000 --step 35000 --threads 4
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: v22-legacy-plus-v5-generative-holdout-step32500
+          name: v22-legacy-plus-v5-generative-holdout-step35000
           path: results/
           if-no-files-found: warn
           retention-days: 90
