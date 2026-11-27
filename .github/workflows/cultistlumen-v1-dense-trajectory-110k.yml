@@ -1,0 +1,843 @@
+name: CULTISTLUMEN-V1-DENSE — bloques 10k + holdout hasta 110k
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cultistlumen-v1-dense-trajectory-110k
+  cancel-in-progress: false
+
+jobs:
+  block_01:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "4"
+      PROFILE: "0"
+      SAMPLED_NEGATIVES: "1024"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      STEPS: "10000"
+      FINAL_STEP: "21000"
+      TOTAL_TRAIN_STEPS: "110000"
+      WARMUP: "100"
+      BASE_LR_MAIN: "0.0008"
+      BASE_LR_EMBED: "0.0004"
+      BATCH_SIZE: "4"
+      CTX: "256"
+      MAX_CHUNKS_PER_FILE: "2048"
+      PARENT_STEP_OFFSET: "11000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/cultistlumen-v1-dense-trajectory-110k.yml
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover parent checkpoint at step 11000
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/parent artifacts/frozen
+          gh run download 46021874719 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-dense-fixed-step-11000 --dir artifacts/parent
+          test -s artifacts/parent/cultistlumen-v1-dense-step-11000.pt
+      - name: Recover frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Recover prebuilt V5 pool without retokenizing
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          run-id: 46001412252
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          path: artifacts
+      - name: Verify V5 pool provenance
+        run: |
+          test -s artifacts/cultist-v1-pool-ctx256.pkl.gz
+          test -s artifacts/cultist-v1-pool-manifest.json
+          grep -q "7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59" artifacts/cultist-v1-pool-manifest.json
+      - name: Train 11000 to 21000
+        env:
+          PARENT_CHECKPOINT: artifacts/parent/cultistlumen-v1-dense-step-11000.pt
+        run: |
+          python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py scripts/evaluate_cultist_v1_dense_holdout.py
+          python scripts/train_cultist_v1_dense.py
+          test -s artifacts/cultistlumen-v1-dense-step-21000.pt
+      - name: Run matched 120-prompt holdout at 21000
+        run: |
+          python scripts/evaluate_cultist_v1_dense_holdout.py --checkpoint artifacts/cultistlumen-v1-dense-step-21000.pt --checkpoint-step 21000 --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json --threads 4 --context 256 --max-new-tokens 64 --out-dir artifacts/holdout-21000
+      - name: Upload checkpoint, metrics and literal holdout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-21000
+          path: |
+            artifacts/cultistlumen-v1-dense-step-21000.pt
+            artifacts/cultistlumen-v1-dense-metrics-step-21000.json
+            artifacts/holdout-21000/
+          if-no-files-found: warn
+          retention-days: 90
+  block_02:
+    needs: block_01
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "4"
+      PROFILE: "0"
+      SAMPLED_NEGATIVES: "1024"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      STEPS: "10000"
+      FINAL_STEP: "31000"
+      TOTAL_TRAIN_STEPS: "110000"
+      WARMUP: "100"
+      BASE_LR_MAIN: "0.0008"
+      BASE_LR_EMBED: "0.0004"
+      BATCH_SIZE: "4"
+      CTX: "256"
+      MAX_CHUNKS_PER_FILE: "2048"
+      PARENT_STEP_OFFSET: "21000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/cultistlumen-v1-dense-trajectory-110k.yml
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover parent checkpoint at step 21000
+        uses: actions/download-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-21000
+          path: artifacts/parent
+      - name: Verify recovered parent checkpoint
+        run: test -s artifacts/parent/cultistlumen-v1-dense-step-21000.pt
+      - name: Recover frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Recover prebuilt V5 pool without retokenizing
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          run-id: 46001412252
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          path: artifacts
+      - name: Verify V5 pool provenance
+        run: |
+          test -s artifacts/cultist-v1-pool-ctx256.pkl.gz
+          test -s artifacts/cultist-v1-pool-manifest.json
+          grep -q "7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59" artifacts/cultist-v1-pool-manifest.json
+      - name: Train 21000 to 31000
+        env:
+          PARENT_CHECKPOINT: artifacts/parent/cultistlumen-v1-dense-step-21000.pt
+        run: |
+          python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py scripts/evaluate_cultist_v1_dense_holdout.py
+          python scripts/train_cultist_v1_dense.py
+          test -s artifacts/cultistlumen-v1-dense-step-31000.pt
+      - name: Run matched 120-prompt holdout at 31000
+        run: |
+          python scripts/evaluate_cultist_v1_dense_holdout.py --checkpoint artifacts/cultistlumen-v1-dense-step-31000.pt --checkpoint-step 31000 --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json --threads 4 --context 256 --max-new-tokens 64 --out-dir artifacts/holdout-31000
+      - name: Upload checkpoint, metrics and literal holdout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-31000
+          path: |
+            artifacts/cultistlumen-v1-dense-step-31000.pt
+            artifacts/cultistlumen-v1-dense-metrics-step-31000.json
+            artifacts/holdout-31000/
+          if-no-files-found: warn
+          retention-days: 90
+  block_03:
+    needs: block_02
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "4"
+      PROFILE: "0"
+      SAMPLED_NEGATIVES: "1024"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      STEPS: "10000"
+      FINAL_STEP: "41000"
+      TOTAL_TRAIN_STEPS: "110000"
+      WARMUP: "100"
+      BASE_LR_MAIN: "0.0008"
+      BASE_LR_EMBED: "0.0004"
+      BATCH_SIZE: "4"
+      CTX: "256"
+      MAX_CHUNKS_PER_FILE: "2048"
+      PARENT_STEP_OFFSET: "31000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/cultistlumen-v1-dense-trajectory-110k.yml
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover parent checkpoint at step 31000
+        uses: actions/download-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-31000
+          path: artifacts/parent
+      - name: Verify recovered parent checkpoint
+        run: test -s artifacts/parent/cultistlumen-v1-dense-step-31000.pt
+      - name: Recover frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Recover prebuilt V5 pool without retokenizing
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          run-id: 46001412252
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          path: artifacts
+      - name: Verify V5 pool provenance
+        run: |
+          test -s artifacts/cultist-v1-pool-ctx256.pkl.gz
+          test -s artifacts/cultist-v1-pool-manifest.json
+          grep -q "7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59" artifacts/cultist-v1-pool-manifest.json
+      - name: Train 31000 to 41000
+        env:
+          PARENT_CHECKPOINT: artifacts/parent/cultistlumen-v1-dense-step-31000.pt
+        run: |
+          python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py scripts/evaluate_cultist_v1_dense_holdout.py
+          python scripts/train_cultist_v1_dense.py
+          test -s artifacts/cultistlumen-v1-dense-step-41000.pt
+      - name: Run matched 120-prompt holdout at 41000
+        run: |
+          python scripts/evaluate_cultist_v1_dense_holdout.py --checkpoint artifacts/cultistlumen-v1-dense-step-41000.pt --checkpoint-step 41000 --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json --threads 4 --context 256 --max-new-tokens 64 --out-dir artifacts/holdout-41000
+      - name: Upload checkpoint, metrics and literal holdout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-41000
+          path: |
+            artifacts/cultistlumen-v1-dense-step-41000.pt
+            artifacts/cultistlumen-v1-dense-metrics-step-41000.json
+            artifacts/holdout-41000/
+          if-no-files-found: warn
+          retention-days: 90
+  block_04:
+    needs: block_03
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "4"
+      PROFILE: "0"
+      SAMPLED_NEGATIVES: "1024"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      STEPS: "10000"
+      FINAL_STEP: "51000"
+      TOTAL_TRAIN_STEPS: "110000"
+      WARMUP: "100"
+      BASE_LR_MAIN: "0.0008"
+      BASE_LR_EMBED: "0.0004"
+      BATCH_SIZE: "4"
+      CTX: "256"
+      MAX_CHUNKS_PER_FILE: "2048"
+      PARENT_STEP_OFFSET: "41000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/cultistlumen-v1-dense-trajectory-110k.yml
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover parent checkpoint at step 41000
+        uses: actions/download-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-41000
+          path: artifacts/parent
+      - name: Verify recovered parent checkpoint
+        run: test -s artifacts/parent/cultistlumen-v1-dense-step-41000.pt
+      - name: Recover frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Recover prebuilt V5 pool without retokenizing
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          run-id: 46001412252
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          path: artifacts
+      - name: Verify V5 pool provenance
+        run: |
+          test -s artifacts/cultist-v1-pool-ctx256.pkl.gz
+          test -s artifacts/cultist-v1-pool-manifest.json
+          grep -q "7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59" artifacts/cultist-v1-pool-manifest.json
+      - name: Train 41000 to 51000
+        env:
+          PARENT_CHECKPOINT: artifacts/parent/cultistlumen-v1-dense-step-41000.pt
+        run: |
+          python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py scripts/evaluate_cultist_v1_dense_holdout.py
+          python scripts/train_cultist_v1_dense.py
+          test -s artifacts/cultistlumen-v1-dense-step-51000.pt
+      - name: Run matched 120-prompt holdout at 51000
+        run: |
+          python scripts/evaluate_cultist_v1_dense_holdout.py --checkpoint artifacts/cultistlumen-v1-dense-step-51000.pt --checkpoint-step 51000 --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json --threads 4 --context 256 --max-new-tokens 64 --out-dir artifacts/holdout-51000
+      - name: Upload checkpoint, metrics and literal holdout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-51000
+          path: |
+            artifacts/cultistlumen-v1-dense-step-51000.pt
+            artifacts/cultistlumen-v1-dense-metrics-step-51000.json
+            artifacts/holdout-51000/
+          if-no-files-found: warn
+          retention-days: 90
+  block_05:
+    needs: block_04
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "4"
+      PROFILE: "0"
+      SAMPLED_NEGATIVES: "1024"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      STEPS: "10000"
+      FINAL_STEP: "61000"
+      TOTAL_TRAIN_STEPS: "110000"
+      WARMUP: "100"
+      BASE_LR_MAIN: "0.0008"
+      BASE_LR_EMBED: "0.0004"
+      BATCH_SIZE: "4"
+      CTX: "256"
+      MAX_CHUNKS_PER_FILE: "2048"
+      PARENT_STEP_OFFSET: "51000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/cultistlumen-v1-dense-trajectory-110k.yml
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover parent checkpoint at step 51000
+        uses: actions/download-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-51000
+          path: artifacts/parent
+      - name: Verify recovered parent checkpoint
+        run: test -s artifacts/parent/cultistlumen-v1-dense-step-51000.pt
+      - name: Recover frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Recover prebuilt V5 pool without retokenizing
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          run-id: 46001412252
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          path: artifacts
+      - name: Verify V5 pool provenance
+        run: |
+          test -s artifacts/cultist-v1-pool-ctx256.pkl.gz
+          test -s artifacts/cultist-v1-pool-manifest.json
+          grep -q "7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59" artifacts/cultist-v1-pool-manifest.json
+      - name: Train 51000 to 61000
+        env:
+          PARENT_CHECKPOINT: artifacts/parent/cultistlumen-v1-dense-step-51000.pt
+        run: |
+          python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py scripts/evaluate_cultist_v1_dense_holdout.py
+          python scripts/train_cultist_v1_dense.py
+          test -s artifacts/cultistlumen-v1-dense-step-61000.pt
+      - name: Run matched 120-prompt holdout at 61000
+        run: |
+          python scripts/evaluate_cultist_v1_dense_holdout.py --checkpoint artifacts/cultistlumen-v1-dense-step-61000.pt --checkpoint-step 61000 --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json --threads 4 --context 256 --max-new-tokens 64 --out-dir artifacts/holdout-61000
+      - name: Upload checkpoint, metrics and literal holdout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-61000
+          path: |
+            artifacts/cultistlumen-v1-dense-step-61000.pt
+            artifacts/cultistlumen-v1-dense-metrics-step-61000.json
+            artifacts/holdout-61000/
+          if-no-files-found: warn
+          retention-days: 90
+  block_06:
+    needs: block_05
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "4"
+      PROFILE: "0"
+      SAMPLED_NEGATIVES: "1024"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      STEPS: "10000"
+      FINAL_STEP: "71000"
+      TOTAL_TRAIN_STEPS: "110000"
+      WARMUP: "100"
+      BASE_LR_MAIN: "0.0008"
+      BASE_LR_EMBED: "0.0004"
+      BATCH_SIZE: "4"
+      CTX: "256"
+      MAX_CHUNKS_PER_FILE: "2048"
+      PARENT_STEP_OFFSET: "61000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/cultistlumen-v1-dense-trajectory-110k.yml
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover parent checkpoint at step 61000
+        uses: actions/download-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-61000
+          path: artifacts/parent
+      - name: Verify recovered parent checkpoint
+        run: test -s artifacts/parent/cultistlumen-v1-dense-step-61000.pt
+      - name: Recover frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Recover prebuilt V5 pool without retokenizing
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          run-id: 46001412252
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          path: artifacts
+      - name: Verify V5 pool provenance
+        run: |
+          test -s artifacts/cultist-v1-pool-ctx256.pkl.gz
+          test -s artifacts/cultist-v1-pool-manifest.json
+          grep -q "7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59" artifacts/cultist-v1-pool-manifest.json
+      - name: Train 61000 to 71000
+        env:
+          PARENT_CHECKPOINT: artifacts/parent/cultistlumen-v1-dense-step-61000.pt
+        run: |
+          python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py scripts/evaluate_cultist_v1_dense_holdout.py
+          python scripts/train_cultist_v1_dense.py
+          test -s artifacts/cultistlumen-v1-dense-step-71000.pt
+      - name: Run matched 120-prompt holdout at 71000
+        run: |
+          python scripts/evaluate_cultist_v1_dense_holdout.py --checkpoint artifacts/cultistlumen-v1-dense-step-71000.pt --checkpoint-step 71000 --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json --threads 4 --context 256 --max-new-tokens 64 --out-dir artifacts/holdout-71000
+      - name: Upload checkpoint, metrics and literal holdout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-71000
+          path: |
+            artifacts/cultistlumen-v1-dense-step-71000.pt
+            artifacts/cultistlumen-v1-dense-metrics-step-71000.json
+            artifacts/holdout-71000/
+          if-no-files-found: warn
+          retention-days: 90
+  block_07:
+    needs: block_06
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "4"
+      PROFILE: "0"
+      SAMPLED_NEGATIVES: "1024"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      STEPS: "10000"
+      FINAL_STEP: "81000"
+      TOTAL_TRAIN_STEPS: "110000"
+      WARMUP: "100"
+      BASE_LR_MAIN: "0.0008"
+      BASE_LR_EMBED: "0.0004"
+      BATCH_SIZE: "4"
+      CTX: "256"
+      MAX_CHUNKS_PER_FILE: "2048"
+      PARENT_STEP_OFFSET: "71000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/cultistlumen-v1-dense-trajectory-110k.yml
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover parent checkpoint at step 71000
+        uses: actions/download-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-71000
+          path: artifacts/parent
+      - name: Verify recovered parent checkpoint
+        run: test -s artifacts/parent/cultistlumen-v1-dense-step-71000.pt
+      - name: Recover frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Recover prebuilt V5 pool without retokenizing
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          run-id: 46001412252
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          path: artifacts
+      - name: Verify V5 pool provenance
+        run: |
+          test -s artifacts/cultist-v1-pool-ctx256.pkl.gz
+          test -s artifacts/cultist-v1-pool-manifest.json
+          grep -q "7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59" artifacts/cultist-v1-pool-manifest.json
+      - name: Train 71000 to 81000
+        env:
+          PARENT_CHECKPOINT: artifacts/parent/cultistlumen-v1-dense-step-71000.pt
+        run: |
+          python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py scripts/evaluate_cultist_v1_dense_holdout.py
+          python scripts/train_cultist_v1_dense.py
+          test -s artifacts/cultistlumen-v1-dense-step-81000.pt
+      - name: Run matched 120-prompt holdout at 81000
+        run: |
+          python scripts/evaluate_cultist_v1_dense_holdout.py --checkpoint artifacts/cultistlumen-v1-dense-step-81000.pt --checkpoint-step 81000 --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json --threads 4 --context 256 --max-new-tokens 64 --out-dir artifacts/holdout-81000
+      - name: Upload checkpoint, metrics and literal holdout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-81000
+          path: |
+            artifacts/cultistlumen-v1-dense-step-81000.pt
+            artifacts/cultistlumen-v1-dense-metrics-step-81000.json
+            artifacts/holdout-81000/
+          if-no-files-found: warn
+          retention-days: 90
+  block_08:
+    needs: block_07
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "4"
+      PROFILE: "0"
+      SAMPLED_NEGATIVES: "1024"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      STEPS: "10000"
+      FINAL_STEP: "91000"
+      TOTAL_TRAIN_STEPS: "110000"
+      WARMUP: "100"
+      BASE_LR_MAIN: "0.0008"
+      BASE_LR_EMBED: "0.0004"
+      BATCH_SIZE: "4"
+      CTX: "256"
+      MAX_CHUNKS_PER_FILE: "2048"
+      PARENT_STEP_OFFSET: "81000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/cultistlumen-v1-dense-trajectory-110k.yml
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover parent checkpoint at step 81000
+        uses: actions/download-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-81000
+          path: artifacts/parent
+      - name: Verify recovered parent checkpoint
+        run: test -s artifacts/parent/cultistlumen-v1-dense-step-81000.pt
+      - name: Recover frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Recover prebuilt V5 pool without retokenizing
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          run-id: 46001412252
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          path: artifacts
+      - name: Verify V5 pool provenance
+        run: |
+          test -s artifacts/cultist-v1-pool-ctx256.pkl.gz
+          test -s artifacts/cultist-v1-pool-manifest.json
+          grep -q "7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59" artifacts/cultist-v1-pool-manifest.json
+      - name: Train 81000 to 91000
+        env:
+          PARENT_CHECKPOINT: artifacts/parent/cultistlumen-v1-dense-step-81000.pt
+        run: |
+          python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py scripts/evaluate_cultist_v1_dense_holdout.py
+          python scripts/train_cultist_v1_dense.py
+          test -s artifacts/cultistlumen-v1-dense-step-91000.pt
+      - name: Run matched 120-prompt holdout at 91000
+        run: |
+          python scripts/evaluate_cultist_v1_dense_holdout.py --checkpoint artifacts/cultistlumen-v1-dense-step-91000.pt --checkpoint-step 91000 --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json --threads 4 --context 256 --max-new-tokens 64 --out-dir artifacts/holdout-91000
+      - name: Upload checkpoint, metrics and literal holdout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-91000
+          path: |
+            artifacts/cultistlumen-v1-dense-step-91000.pt
+            artifacts/cultistlumen-v1-dense-metrics-step-91000.json
+            artifacts/holdout-91000/
+          if-no-files-found: warn
+          retention-days: 90
+  block_09:
+    needs: block_08
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "4"
+      PROFILE: "0"
+      SAMPLED_NEGATIVES: "1024"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      STEPS: "10000"
+      FINAL_STEP: "101000"
+      TOTAL_TRAIN_STEPS: "110000"
+      WARMUP: "100"
+      BASE_LR_MAIN: "0.0008"
+      BASE_LR_EMBED: "0.0004"
+      BATCH_SIZE: "4"
+      CTX: "256"
+      MAX_CHUNKS_PER_FILE: "2048"
+      PARENT_STEP_OFFSET: "91000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/cultistlumen-v1-dense-trajectory-110k.yml
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover parent checkpoint at step 91000
+        uses: actions/download-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-91000
+          path: artifacts/parent
+      - name: Verify recovered parent checkpoint
+        run: test -s artifacts/parent/cultistlumen-v1-dense-step-91000.pt
+      - name: Recover frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Recover prebuilt V5 pool without retokenizing
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          run-id: 46001412252
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          path: artifacts
+      - name: Verify V5 pool provenance
+        run: |
+          test -s artifacts/cultist-v1-pool-ctx256.pkl.gz
+          test -s artifacts/cultist-v1-pool-manifest.json
+          grep -q "7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59" artifacts/cultist-v1-pool-manifest.json
+      - name: Train 91000 to 101000
+        env:
+          PARENT_CHECKPOINT: artifacts/parent/cultistlumen-v1-dense-step-91000.pt
+        run: |
+          python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py scripts/evaluate_cultist_v1_dense_holdout.py
+          python scripts/train_cultist_v1_dense.py
+          test -s artifacts/cultistlumen-v1-dense-step-101000.pt
+      - name: Run matched 120-prompt holdout at 101000
+        run: |
+          python scripts/evaluate_cultist_v1_dense_holdout.py --checkpoint artifacts/cultistlumen-v1-dense-step-101000.pt --checkpoint-step 101000 --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json --threads 4 --context 256 --max-new-tokens 64 --out-dir artifacts/holdout-101000
+      - name: Upload checkpoint, metrics and literal holdout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-101000
+          path: |
+            artifacts/cultistlumen-v1-dense-step-101000.pt
+            artifacts/cultistlumen-v1-dense-metrics-step-101000.json
+            artifacts/holdout-101000/
+          if-no-files-found: warn
+          retention-days: 90
+  block_10:
+    needs: block_09
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "4"
+      PROFILE: "0"
+      SAMPLED_NEGATIVES: "1024"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      STEPS: "9000"
+      FINAL_STEP: "110000"
+      TOTAL_TRAIN_STEPS: "110000"
+      WARMUP: "100"
+      BASE_LR_MAIN: "0.0008"
+      BASE_LR_EMBED: "0.0004"
+      BATCH_SIZE: "4"
+      CTX: "256"
+      MAX_CHUNKS_PER_FILE: "2048"
+      PARENT_STEP_OFFSET: "101000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .github/workflows/cultistlumen-v1-dense-trajectory-110k.yml
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover parent checkpoint at step 101000
+        uses: actions/download-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-101000
+          path: artifacts/parent
+      - name: Verify recovered parent checkpoint
+        run: test -s artifacts/parent/cultistlumen-v1-dense-step-101000.pt
+      - name: Recover frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Recover prebuilt V5 pool without retokenizing
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          run-id: 46001412252
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          path: artifacts
+      - name: Verify V5 pool provenance
+        run: |
+          test -s artifacts/cultist-v1-pool-ctx256.pkl.gz
+          test -s artifacts/cultist-v1-pool-manifest.json
+          grep -q "7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59" artifacts/cultist-v1-pool-manifest.json
+      - name: Train 101000 to 110000
+        env:
+          PARENT_CHECKPOINT: artifacts/parent/cultistlumen-v1-dense-step-101000.pt
+        run: |
+          python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py scripts/evaluate_cultist_v1_dense_holdout.py
+          python scripts/train_cultist_v1_dense.py
+          test -s artifacts/cultistlumen-v1-dense-step-110000.pt
+      - name: Run matched 120-prompt holdout at 110000
+        run: |
+          python scripts/evaluate_cultist_v1_dense_holdout.py --checkpoint artifacts/cultistlumen-v1-dense-step-110000.pt --checkpoint-step 110000 --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json --threads 4 --context 256 --max-new-tokens 64 --out-dir artifacts/holdout-110000
+      - name: Upload checkpoint, metrics and literal holdout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-v1-dense-block-110000
+          path: |
+            artifacts/cultistlumen-v1-dense-step-110000.pt
+            artifacts/cultistlumen-v1-dense-metrics-step-110000.json
+            artifacts/holdout-110000/
+          if-no-files-found: warn
+          retention-days: 90
