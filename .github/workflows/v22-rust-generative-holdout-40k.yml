@@ -1,0 +1,82 @@
+name: LUMEN V2.2 — 40k generative-only holdout (Rust KV cache)
+run-name: V2.2 Rust generative holdout — step 40000 — 100 + 20
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v22-rust-generative-holdout-40k.yml'
+      - 'rust-holdout/src/bin/generative.rs'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: v22-rust-generative-holdout-40000
+  cancel-in-progress: false
+jobs:
+  evaluate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "1"
+      CXX: clang++
+      LIBTORCH_USE_PYTORCH: "1"
+      LIBTORCH_BYPASS_VERSION_CHECK: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install pinned CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.5.1
+          python -m pip install tokenizers==0.21.0 numpy
+          echo "LD_LIBRARY_PATH=$(python -c 'import torch,os; print(os.path.join(os.path.dirname(torch.__file__),'lib'))'):$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+      - name: Download exact 40k checkpoint
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p v22
+          gh run download 45962100073 --repo orbitalronin94/Wiselumen --name lumen-v22-v5-fastpath-step-40000 --dir v22
+          test -s v22/lumen-v22-v5-fastpath-step-40000.pt
+          test -s v22/tokenizer-v22-derived.json
+      - name: Verify frozen prompts and checkpoint identity
+        run: |
+          test "$(grep -cve '^$' data/freeform_identity_general_100.jsonl)" -eq 100
+          test "$(grep -cve '^$' eval/v5_generative_holdout_20.jsonl)" -eq 20
+          python - <<'PY'
+          import torch
+          s=torch.load("v22/lumen-v22-v5-fastpath-step-40000.pt",map_location="cpu",weights_only=False)
+          assert int(s["step"]) == 40000, s.get("step")
+          print("Verified checkpoint step",s["step"])
+          PY
+      - name: Export TorchScript with incremental KV cache
+        run: |
+          python scripts/export_v22_torchscript.py --checkpoint v22/lumen-v22-v5-fastpath-step-40000.pt --out v22/lumen-v22-step-40000.ts --step 40000 --threads 4
+      - name: Build native Rust generative-only evaluator
+        run: cargo build --release --manifest-path rust-holdout/Cargo.toml --bin generative
+      - name: Run only 100 legacy + 20 V5 prompts (no MC)
+        run: |
+          mkdir -p results/step-40000
+          /usr/bin/time -f "%e" -o results/step-40000/wall_seconds.txt \
+            rust-holdout/target/release/generative \
+              --model v22/lumen-v22-step-40000.ts \
+              --tokenizer v22/tokenizer-v22-derived.json \
+              --system system_prompt_short.txt \
+              --freeform data/freeform_identity_general_100.jsonl \
+              --v5 eval/v5_generative_holdout_20.jsonl \
+              --out-dir results/step-40000 --step 40000 --threads 4
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v22-rust-generative-holdout-step40000
+          path: |
+            results/step-40000/
+            v22/lumen-v22-step-40000.ts
+          if-no-files-found: warn
+          retention-days: 90
