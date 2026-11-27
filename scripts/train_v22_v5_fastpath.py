@@ -1,0 +1,163 @@
+"""Fast-path continuation trainer: loads pre-tokenized V5 pools and streams batches."""
+import json
+import os
+import random
+import time
+from pathlib import Path
+
+import torch
+
+from Model import LumenV2, active_layers_for_step
+from Train import EMA, configure_cpu_runtime, get_optimizer, save_checkpoint, train_steps
+from scripts.train_v22_v5_blocks import SEED, MAX_LEN, BATCH_SIZE, LOGIT_CHUNK_SIZE
+from data import collate_chat
+
+START_STEP = int(os.environ.get("START_STEP", "30000"))
+STEPS = int(os.environ.get("STEPS", "20"))
+TOTAL_STEPS = START_STEP + STEPS
+PARENT_CHECKPOINT = Path(os.environ.get("PARENT_CHECKPOINT", "artifacts/lumen-v22-step-30000.pt"))
+PREPARED_DATA = Path(os.environ.get("PREPARED_DATA", "artifacts/prepared-v5-training-data.pt"))
+
+
+def timed(label, fn):
+    started = time.perf_counter()
+    result = fn()
+    print(f"LOAD_PHASE {label} seconds={time.perf_counter() - started:.3f}", flush=True)
+    return result
+
+
+def load_torch(path):
+    try:
+        return torch.load(path, map_location="cpu", weights_only=False)
+    except TypeError:
+        return torch.load(path, map_location="cpu")
+
+
+def iter_v5_batches(data, steps, seed):
+    """Streaming equivalent of sample_v5_batches; never materializes the full block."""
+    if steps <= 0 or steps % 10:
+        raise ValueError("Exact V5 sampling requires a positive multiple of 10 steps")
+    pools = {"v4": data["v4"], "lore": data["lore"], "conflict": data["conflict"]}
+    if any(not pools[k] for k in pools):
+        raise RuntimeError("Prepared V5 pool is empty")
+    rng = random.Random(seed)
+    counts = (("v4", 27), ("lore", 3), ("conflict", 10))
+    for _cycle in range(steps // 10):
+        tags = [kind for kind, count in counts for _ in range(count)]
+        rng.shuffle(tags)
+        for offset in range(0, len(tags), BATCH_SIZE):
+            chosen = [(kind, rng.choice(pools[kind])) for kind in tags[offset:offset + BATCH_SIZE]]
+            rng.shuffle(chosen)
+            yield collate_chat(
+                [sample for _kind, sample in chosen],
+                pad_id=int(data["pad_id"]),
+            )
+
+
+def main():
+    if STEPS <= 0 or STEPS % 10:
+        raise ValueError("STEPS must be a positive multiple of 10")
+    print("cpu_runtime", configure_cpu_runtime(
+        threads=int(os.environ.get("OMP_NUM_THREADS", "4")),
+        interop_threads=int(os.environ.get("TORCH_INTEROP_THREADS", "1")),
+    ), flush=True)
+
+    data = timed("load_prepared_dataset", lambda: load_torch(PREPARED_DATA))
+    if data.get("format") != "lumen_v22_v5_prepared_v1":
+        raise RuntimeError("Prepared dataset format/version mismatch")
+    if data.get("corpus_v5_sha256") != "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba":
+        raise RuntimeError("Prepared dataset corpus SHA256 mismatch")
+
+    payload = timed("load_parent_checkpoint", lambda: load_torch(PARENT_CHECKPOINT))
+    parent_step = int(payload.get("step", -1))
+    if parent_step != START_STEP:
+        raise RuntimeError(f"Expected parent step {START_STEP}, got {parent_step}")
+    if "optimizer" not in payload or "ema" not in payload:
+        raise RuntimeError("Parent checkpoint lacks optimizer or EMA state")
+
+    model = LumenV2(vocab=8192, ctx=MAX_LEN, loss_mode="experimental")
+    model.logit_chunk_size = LOGIT_CHUNK_SIZE
+    optimizer = get_optimizer(
+        model, slow_lr=5e-4, fast_lr=2e-3, weight_decay=0.01, prefer_8bit=False
+    )
+    ema = EMA(model, decay=0.99)
+
+    timed("restore_model", lambda: model.load_state_dict(payload["model"], strict=True))
+    timed("restore_optimizer", lambda: optimizer.load_state_dict(payload["optimizer"]))
+    # The measured winner is AdamW foreach=True; never force CPU fused AdamW.
+    for group in optimizer.param_groups:
+        group["foreach"] = True
+        group["fused"] = None
+    if not all(group.get("foreach") is True and group.get("fused") is None for group in optimizer.param_groups):
+        raise RuntimeError("Could not restore the benchmarked foreach AdamW configuration")
+
+    ema.decay = float(payload["ema"]["decay"])
+    ema.shadow = payload["ema"]["shadow"]
+    print(
+        f"FASTPATH_CONFIG bf16=enabled adamw_foreach=true fused=false "
+        f"logit_chunk_size={LOGIT_CHUNK_SIZE} compile=false ipex=false "
+        f"batch={BATCH_SIZE} context={MAX_LEN}",
+        flush=True,
+    )
+    print(
+        f"RESUME_OK parent_step={parent_step} target_step={TOTAL_STEPS} "
+        f"active_layers={len(active_layers_for_step(START_STEP, 'v22', len(model.blocks)))} "
+        f"v4_share=0.675 lore_share=0.075 synthetic_conflict_share=0.250",
+        flush=True,
+    )
+
+    batches = iter_v5_batches(data, STEPS, SEED + START_STEP + 1)
+    started = time.perf_counter()
+    result = train_steps(
+        model, batches, steps=STEPS, optimizer=optimizer, device="cpu",
+        warmup=10, total_steps=TOTAL_STEPS, start_step=START_STEP,
+        grad_clip=1.0, ema=ema, log_every=1, amp_dtype=torch.bfloat16,
+        mode="v22", ema_every=10, clip_every=5,
+    )
+    elapsed = time.perf_counter() - started
+
+    checkpoint_path = Path(f"artifacts/lumen-v22-v5-fastpath-step-{TOTAL_STEPS}.pt")
+    checkpoint = save_checkpoint(
+        str(checkpoint_path), model, optimizer=optimizer, ema=ema,
+        step=TOTAL_STEPS,
+        extra={
+            "seed": SEED,
+            "corpus_version": data["corpus_version"],
+            "corpus_v5_sha256": data["corpus_v5_sha256"],
+            "corpus_v4_sha256": data["corpus_v4_sha256"],
+            "tokenizer_original_sha256": data["tokenizer_original_sha256"],
+            "tokenizer_derived_sha256": data["tokenizer_derived_sha256"],
+            "sampling_shares": data["sampling_shares"],
+            "batch_size": BATCH_SIZE, "max_len": MAX_LEN,
+            "mode": "v22", "loss_mode": "experimental",
+            "amp_dtype": "bfloat16", "adamw_foreach": True,
+            "fused_adamw": False, "logit_chunk_size": LOGIT_CHUNK_SIZE,
+            "compile": False, "ipex": False,
+        },
+    )
+    metrics = {
+        "status": "completed", "steps": TOTAL_STEPS,
+        "parent_step": START_STEP, "additional_steps": STEPS,
+        "last_loss": result["last_loss"],
+        "mean_first_10": sum(result["losses"][:10]) / min(10, len(result["losses"])),
+        "mean_last_10": sum(result["losses"][-10:]) / min(10, len(result["losses"])),
+        "elapsed_seconds": elapsed, "seconds_per_step": elapsed / STEPS,
+        "steps_per_second": STEPS / elapsed,
+        "corpus_version": data["corpus_version"],
+        "corpus_v5_sha256": data["corpus_v5_sha256"],
+        "tokenizer_derived_sha256": data["tokenizer_derived_sha256"],
+        "checkpoint": checkpoint, "checkpoint_path": str(checkpoint_path),
+        "model_parameters": model.num_params(),
+        "cpu_runtime": {"intraop_threads": torch.get_num_threads(),
+                        "interop_threads": torch.get_num_interop_threads()},
+        "amp_dtype": "bfloat16", "adamw_foreach": True, "fused_adamw": False,
+        "logit_chunk_size": LOGIT_CHUNK_SIZE,
+    }
+    Path(f"artifacts/metrics-v5-fastpath-step-{TOTAL_STEPS}.json").write_text(
+        json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    print("FASTPATH_RESULT " + json.dumps(metrics, ensure_ascii=False), flush=True)
+
+
+if __name__ == "__main__":
+    main()
