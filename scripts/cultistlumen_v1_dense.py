@@ -1,5 +1,6 @@
 # CULTISTLUMEN-V1-DENSE: mismo mixer, FFN densa, sin MoE.
-# FP32 master weights; FFN GEMMs en FP16; recurrent solver y loss en FP32.
+# CPU-first: FP32 throughout, chunk-local solver, sampled vocabulary loss.
+import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -51,32 +52,30 @@ class GatedDeltaNetLR(nn.Module):
         v_c=v.view(B,self.n_head,N,L,self.d_head)
         g_c=g.permute(0,2,1).view(B,self.n_head,N,L)
         beta_c=beta.permute(0,2,1).view(B,self.n_head,N,L)
-        # Resolver todos los bloques en una sola llamada batched; el estado S
-        # sigue siendo recurrente y se actualiza secuencialmente debajo.
+        # Solver por bloque: limita matrices auxiliares vivas y el pico de autograd.
         tril=torch.tril(torch.ones(L,L,device=x.device,dtype=torch.bool),diagonal=-1)
         eye=torch.eye(L,device=x.device,dtype=torch.float32)
-        cum_g_all=torch.cumprod(g_c,dim=-1)
-        k_s_all=k_c*cum_g_all.unsqueeze(-1)
-        q_s_all=q_c/cum_g_all.unsqueeze(-1).clamp(min=1e-6)
-        A_all=torch.matmul(k_s_all,k_s_all.transpose(-1,-2))
-        A_all=A_all*tril.unsqueeze(0).unsqueeze(0).unsqueeze(0)
-        M_all=eye+A_all.float()*beta_c.float().unsqueeze(-1)
-        eye_batch=eye.expand(B,self.n_head,N,L,L)
-        T_all=torch.linalg.solve_triangular(M_all,eye_batch,upper=False)
-        w_all=torch.matmul(T_all,(v_c*beta_c.unsqueeze(-1)).float()).to(x.dtype)
-        u_all=torch.matmul(T_all.transpose(-1,-2),(k_s_all*beta_c.unsqueeze(-1)).float()).to(x.dtype)
         S=torch.zeros(B,self.n_head,self.d_head,self.d_head,device=x.device,dtype=x.dtype)
         outs=[]
         for n in range(N):
-            qc=q_s_all[:,:,n]; kc=k_s_all[:,:,n]; bc=beta_c[:,:,n]
-            w=w_all[:,:,n]; u=u_all[:,:,n]
-            o_inter=torch.matmul(qc,S)
-            qu=torch.matmul(qc,u.transpose(-1,-2))
+            qc=q_c[:,:,n]; kc=k_c[:,:,n]; vc=v_c[:,:,n]
+            gc=g_c[:,:,n]; bc=beta_c[:,:,n]
+            cum_g=torch.cumprod(gc,dim=-1)
+            k_s=kc*cum_g.unsqueeze(-1)
+            q_s=qc/cum_g.unsqueeze(-1).clamp(min=1e-6)
+            A=torch.matmul(k_s,k_s.transpose(-1,-2))
+            A=A*tril.unsqueeze(0).unsqueeze(0)
+            M=eye+A.float()*bc.float().unsqueeze(-1)
+            Tmat=torch.linalg.solve_triangular(M,eye.expand(B,self.n_head,L,L),upper=False)
+            w=torch.matmul(Tmat,(vc*bc.unsqueeze(-1)).float()).to(x.dtype)
+            u=torch.matmul(Tmat.transpose(-1,-2),(k_s*bc.unsqueeze(-1)).float()).to(x.dtype)
+            o_inter=torch.matmul(q_s,S)
+            qu=torch.matmul(q_s,u.transpose(-1,-2))
             qu=qu*tril.unsqueeze(0).unsqueeze(0)
-            diag_qk=torch.sum(qc*kc,dim=-1)
+            diag_qk=torch.sum(q_s*k_s,dim=-1)
             o=o_inter+torch.matmul(qu,w)+(diag_qk*bc).unsqueeze(-1)*w
             outs.append(o)
-            cum_last=cum_g_all[:,:,n,-1]
+            cum_last=cum_g[:,:,-1]
             S=S*cum_last.unsqueeze(-1).unsqueeze(-1)+torch.matmul(u.transpose(-1,-2),w)
         o_cat=torch.cat(outs,dim=2)[:,:,:T,:]
         o_cat=o_cat.permute(0,2,1,3).reshape(B,T,C)
@@ -88,12 +87,10 @@ class DenseGatedFFN(nn.Module):
         self.gate_up=nn.Parameter(torch.randn(d_model,d_ff*2)*0.02)
         self.down=nn.Parameter(torch.randn(d_ff,d_model)*0.02)
     def forward(self,x):
-        # Parámetros maestros FP32; GEMMs de la FFN en FP16.
-        x16=x.to(torch.float16)
-        gu=x16@self.gate_up.to(torch.float16)
+        # FP32 evita conversiones y kernels FP16 lentos en CPU x86.
+        gu=x@self.gate_up
         gate,up=gu.chunk(2,dim=-1)
-        h=F.silu(gate)*up
-        return (h@self.down.to(torch.float16)).to(torch.float32)
+        return (F.silu(gate)*up)@self.down
 
 class CultistLumenV1Dense(nn.Module):
     def __init__(self,vocab=8192,d_model=512,d_ff=1024,ctx=256):
@@ -110,33 +107,52 @@ class CultistLumenV1Dense(nn.Module):
         self.apply(self._init)
     def _init(self,m):
         if isinstance(m,nn.Linear):
-            nn.init.normal_(m.weight,mean=0.0,std=0.02)
+            # head comparte tok: no inicializar dos veces el mismo parámetro.
+            if m.weight is not self.tok.weight:
+                nn.init.normal_(m.weight,mean=0.0,std=0.02)
             if m.bias is not None: nn.init.zeros_(m.bias)
         if isinstance(m,nn.Embedding):
             nn.init.normal_(m.weight,mean=0.0,std=0.02)
         if isinstance(m,nn.Conv1d):
             nn.init.normal_(m.weight,mean=0.0,std=0.02)
             if m.bias is not None: nn.init.zeros_(m.bias)
-    def forward(self,idx,targets=None):
-        x=self.tok(idx)
-        x=x+self.mix(self.norm1(x))
-        x=x+self.ffn(self.norm2(x))
+    def forward(self,idx,targets=None,sampled_negatives=1024):
+        from torch.profiler import record_function
+        with record_function("model/mixer_forward"):
+            x=self.tok(idx)
+            x=x+self.mix(self.norm1(x))
+        with record_function("model/ffn_forward"):
+            x=x+self.ffn(self.norm2(x))
         x=self.norm(x)
-        logits=self.head(x)
-        loss=None
-        if targets is not None:
-            logits_f=logits.view(-1,logits.size(-1)).float()
-            tgt_f=targets.view(-1)
-            # Una sola logsumexp sirve para CE, p(correcta) y max-prob.
-            log_z=torch.logsumexp(logits_f,dim=-1)
-            target_logits=logits_f.gather(1,tgt_f.unsqueeze(1)).squeeze(1)
-            ce=log_z-(1.0-0.05)*target_logits-0.05*logits_f.mean(dim=-1)
+        if targets is None:
+            with record_function("model/full_vocab_head"):
+                return self.head(x),None
+        # Softmax muestral: todos los positivos del batch y negativos uniformes.
+        # La inferencia sigue usando el vocabulario completo y exacto.
+        with record_function("model/sampled_vocab_head"):
+            flat_x=x.reshape(-1,self.d_model).float()
+            tgt_f=targets.reshape(-1)
+            positive_ids=torch.unique(tgt_f)
+            negative_count=min(int(sampled_negatives),self.vocab-positive_ids.numel())
+            permutation=torch.randperm(self.vocab,device=idx.device)
+            negative_ids_all=permutation[~torch.isin(permutation,positive_ids)]
+            negative_ids=negative_ids_all[:negative_count]
+            candidates=torch.sort(torch.cat((positive_ids,negative_ids))).values
+            logits_f=F.linear(flat_x,self.tok.weight[candidates].float())
+            target_positions=torch.searchsorted(candidates,tgt_f)
+            target_logits=logits_f.gather(1,target_positions.unsqueeze(1)).squeeze(1)
+            negative_mask=torch.isin(candidates,negative_ids)
+            inclusion_prob=negative_count/max(1,self.vocab-positive_ids.numel())
+            corrected_logits=logits_f.clone()
+            corrected_logits[:,negative_mask]-=math.log(max(inclusion_prob,1e-12))
+            log_z=torch.logsumexp(corrected_logits,dim=-1)
+            ce=log_z-0.95*target_logits-0.05*corrected_logits.mean(dim=-1)
             with torch.no_grad():
                 p_correct=torch.exp(target_logits-log_z)
-                max_p=torch.exp(logits_f.max(dim=-1).values-log_z)
-                w=1.0-p_correct
+                max_p=torch.exp(corrected_logits.max(dim=-1).values-log_z)
+                weight=1.0-p_correct
                 overconf=((max_p>0.7)&(p_correct<0.3)).float()*0.5
-            loss=(ce*w+ce*overconf).mean()
-        return logits,loss
+            loss=(ce*weight+ce*overconf).mean()
+        return corrected_logits,loss
     def num_params(self):
         return sum(p.numel() for p in self.parameters())
