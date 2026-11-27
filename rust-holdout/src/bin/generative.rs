@@ -39,7 +39,7 @@ fn main()->Result<()>{
  let tok=Tokenizer::from_file(&tok_path).map_err(|e|anyhow!("{e}"))?;let eos=tok.token_to_id("[EOS]").ok_or_else(||anyhow!("missing EOS"))?;let pad=tok.token_to_id("[PAD]").ok_or_else(||anyhow!("missing PAD"))?;
  let sys=fs::read_to_string(&sys_path)?;let sys_ids=tok.encode(sys.trim(),false).map_err(|e|anyhow!("{e}"))?.get_ids().to_vec();if sys_ids.iter().any(|&x|x>=8184){return Err(anyhow!("system prompt role collision"))}
  let free=rows(&free_path)?;let v5=rows(&v5_path)?;if free.len()!=100||v5.len()!=20{return Err(anyhow!("expected 100 freeform and 20 V5 rows; got {} and {}",free.len(),v5.len()))}
- tch::set_num_threads(threads);tch::set_num_interop_threads(1);let mut m=CModule::load_on_device(model_path,Device::Cpu)?;m.set_eval();fs::create_dir_all(&out)?;
+ tch::set_num_threads(threads);tch::set_num_interop_threads(1);let mut m=CModule::load_on_device(&model_path,Device::Cpu)?;m.set_eval();fs::create_dir_all(&out)?;
  let mut fresults=Vec::new();let mut vresults=Vec::new();
  tch::no_grad(||->Result<()>{
  for (i,r) in free.iter().enumerate(){let p=get(r,"prompt");let (response,token_ids)=generate(&m,&tok,&sys_ids,&p,512,64,eos,pad)?;fresults.push(json!({"id":r.get("id"),"source":r.get("source"),"prompt":p,"response":response,"token_ids":token_ids}));if (i+1)%10==0{println!("freeform {}/100",i+1)}}
