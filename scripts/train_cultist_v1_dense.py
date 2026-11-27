@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Train CULTISTLUMEN-V1-DENSE from scratch on the frozen V5 90/10 corpus."""
 from __future__ import annotations
-import hashlib, json, math, os, random, time, zipfile, io
+import argparse, gzip, hashlib, json, math, os, pickle, random, time, zipfile, io
 from pathlib import Path
 import torch
 from tokenizers import Tokenizer
@@ -19,6 +19,7 @@ V5_PATH=Path(os.environ.get("V5_ARCHIVE","artifacts/wise-ronin-corpus-v5.0.0.zip
 TOKENIZER_PATH=Path(os.environ.get("FROZEN_TOKENIZER","artifacts/frozen/cultist-tokenizer-v1-8192.json"))
 TOKENIZER_SHA256="91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e"
 OUT=Path("artifacts")
+POOL_PATH=Path(os.environ.get("POOL_ARCHIVE","artifacts/cultist-v1-pool-ctx256.pkl.gz"))
 MARPER_FILES=[
  "lore/Marper-Codice-Juntado (1).txt","lore/lore_seed_v0.6.jsonl",
  "lore/palimpsesto_topic_map_v0.3.jsonl","lore/palimpsesto_index_v0.1_part1.jsonl",
@@ -85,6 +86,29 @@ def build_file_pools(zf,manifest,tokenizer,nested_bytes):
     if not pools["world"] or not pools["marper"]: raise RuntimeError("Both pools must be non-empty")
     return pools,weights
 
+
+def save_pool_archive(pools,weights,corpus_sha):
+    metadata={"format":"cultist-token-pool-v1","context":CTX,"tokenizer_sha256":TOKENIZER_SHA256,
+              "corpus_version":"v5.0.0","corpus_v5_sha256":corpus_sha,
+              "sampling":{"world":0.90,"marper":0.10,"conflicts":0.0},
+              "weighting":"uncompressed source-file byte size within each pool",
+              "max_chunks_per_file":MAX_CHUNKS_PER_FILE,"seed":SEED+91}
+    with gzip.open(POOL_PATH,"wb",compresslevel=1) as handle:
+        pickle.dump({"metadata":metadata,"pools":pools,"weights":weights},handle,protocol=4)
+    digest=hashlib.sha256(POOL_PATH.read_bytes()).hexdigest()
+    (OUT/"cultist-v1-pool-manifest.json").write_text(json.dumps({**metadata,"pool_sha256":digest,"pool_file":str(POOL_PATH)},indent=2)+"\\n",encoding="utf-8")
+    print(f"POOL_ARCHIVE_READY file={POOL_PATH} sha256={digest} corpus_sha256={corpus_sha} bytes={POOL_PATH.stat().st_size}",flush=True)
+
+def load_pool_archive():
+    if not POOL_PATH.is_file(): raise RuntimeError(f"Reusable pool artifact missing: {POOL_PATH}; prepare it in the pool job first")
+    with gzip.open(POOL_PATH,"rb") as handle: payload=pickle.load(handle)
+    meta=payload["metadata"]
+    if meta.get("format")!="cultist-token-pool-v1" or meta.get("context")!=CTX or meta.get("tokenizer_sha256")!=TOKENIZER_SHA256 or meta.get("corpus_version")!="v5.0.0" or meta.get("sampling")!={"world":0.90,"marper":0.10,"conflicts":0.0}:
+        raise RuntimeError(f"Reusable pool contract mismatch: {meta}")
+    digest=hashlib.sha256(POOL_PATH.read_bytes()).hexdigest()
+    print(f"POOL_ARCHIVE_REUSED file={POOL_PATH} sha256={digest} corpus_sha256={meta['corpus_v5_sha256']} bytes={POOL_PATH.stat().st_size}",flush=True)
+    return payload["pools"],payload["weights"],meta,digest
+
 def weighted_file_sample(pool,weights,rng):
     names=list(pool); point=rng.randrange(sum(weights.values()))
     for name in names:
@@ -110,20 +134,27 @@ def main():
     rng=random.Random(SEED+1000)
     print(f"CULTISTLUMEN_V1_DENSE_CONFIG steps={STEPS} batch={BATCH_SIZE} ctx={CTX} warmup={WARMUP} intra={THREADS} inter={INTEROP_THREADS} ffn_compute=fp16 master_weights=fp32",flush=True)
     tokenizer=load_frozen_tokenizer()
-    with zipfile.ZipFile(V5_PATH) as outer:
-        v5_manifest=json.loads(outer.read("corpus/v5/manifest.json"))
-        if v5_manifest.get("version")!="v5.0.0" or not v5_manifest.get("training_authorized"):
-            raise RuntimeError("V5 manifest is not authorized")
-        expected={"v4_factual":0.90,"full_marper_lore":0.10,"synthetic_conflicts":0.0}
-        if v5_manifest.get("sampling",{}).get("shares")!=expected:
-            raise RuntimeError("V5 sampling policy mismatch")
-        nested_bytes=outer.read("corpus/v4/wise-ronin-corpus-v4.0.0.zip")
-        if sha256(nested_bytes)!=v5_manifest["v4"]["zip_sha256"]: raise RuntimeError("Nested V4 checksum mismatch")
-        with zipfile.ZipFile(io.BytesIO(nested_bytes)) as nested:
-            manifest=json.loads(nested.read("corpus/manifest.json"))
-            if manifest.get("version")!="v4.0.0" or manifest.get("status")!="FROZEN_TRAINABLE" or manifest.get("training_authorized") is not True:
-                raise RuntimeError("V4 manifest is not authorized")
-            pools,weights=build_file_pools(outer,manifest,tokenizer,nested_bytes)
+    if args.build_pool_only:
+        if not V5_PATH.is_file(): raise RuntimeError(f"V5 corpus bundle missing: {V5_PATH}")
+        with zipfile.ZipFile(V5_PATH) as outer:
+            v5_manifest=json.loads(outer.read("corpus/v5/manifest.json"))
+            if v5_manifest.get("version")!="v5.0.0" or not v5_manifest.get("training_authorized"):
+                raise RuntimeError("V5 manifest is not authorized")
+            expected={"v4_factual":0.90,"full_marper_lore":0.10,"synthetic_conflicts":0.0}
+            if v5_manifest.get("sampling",{}).get("shares")!=expected: raise RuntimeError("V5 sampling policy mismatch")
+            nested_bytes=outer.read("corpus/v4/wise-ronin-corpus-v4.0.0.zip")
+            if sha256(nested_bytes)!=v5_manifest["v4"]["zip_sha256"]: raise RuntimeError("Nested V4 checksum mismatch")
+            with zipfile.ZipFile(io.BytesIO(nested_bytes)) as nested:
+                manifest=json.loads(nested.read("corpus/manifest.json"))
+                if manifest.get("version")!="v4.0.0" or manifest.get("status")!="FROZEN_TRAINABLE" or manifest.get("training_authorized") is not True:
+                    raise RuntimeError("V4 manifest is not authorized")
+                pools,weights=build_file_pools(outer,manifest,tokenizer,nested_bytes)
+        corpus_sha=hashlib.sha256(V5_PATH.read_bytes()).hexdigest()
+        save_pool_archive(pools,weights,corpus_sha)
+        if args.build_pool_only: return
+    else:
+        if args.build_pool_only: raise RuntimeError("Unexpected pool-only state")
+        pools,weights,pool_meta,pool_sha=load_pool_archive()
     model=CultistLumenV1Dense(vocab=8192,d_model=512,d_ff=1024,ctx=CTX)
     ffn_params=list(model.ffn.parameters())
     mix_params=list(model.mix.parameters())+list(model.norm1.parameters())+list(model.norm2.parameters())+list(model.norm.parameters())
@@ -156,8 +187,8 @@ def main():
             print(f"STEP {step}/{STEPS} loss={value:.6f} lr_main={optimizer.param_groups[0]['lr']:.7g} lr_embed={optimizer.param_groups[1]['lr']:.7g} steps_per_sec={step/max(elapsed,1e-9):.3f}",flush=True)
     elapsed=time.perf_counter()-started
     checkpoint=OUT/f"cultistlumen-v1-dense-step-{STEPS}.pt"
-    torch.save({"model":model.state_dict(),"step":STEPS,"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0,"weighting":"uncompressed source-file byte size within each pool"},"precision":{"master_weights":"float32","ffn_gemm":"float16","mixer_solver":"float32","loss":"float32"}},checkpoint)
-    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-DENSE","steps":STEPS,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_gemm":"float16","mixer_solver":"float32","loss":"float32"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"experts":0,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"checkpoint":str(checkpoint)}
+    torch.save({"model":model.state_dict(),"step":STEPS,"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0,"weighting":"uncompressed source-file byte size within each pool"},"precision":{"master_weights":"float32","ffn_gemm":"float16","mixer_solver":"float32","loss":"float32"}},checkpoint)
+    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-DENSE","steps":STEPS,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_gemm":"float16","mixer_solver":"float32","loss":"float32"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"experts":0,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"checkpoint":str(checkpoint)}
     (OUT/f"cultistlumen-v1-dense-metrics-step-{STEPS}.json").write_text(json.dumps(metrics,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("CULTISTLUMEN_DENSE_RESULT "+json.dumps(metrics,ensure_ascii=False),flush=True)
 
