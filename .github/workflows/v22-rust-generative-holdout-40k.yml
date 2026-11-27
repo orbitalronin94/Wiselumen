@@ -47,8 +47,77 @@ jobs:
           test -s v22/tokenizer-v22-derived.json
       - name: Verify frozen prompts and checkpoint identity
         run: |
-          test "$(grep -cve '^$' data/freeform_identity_general_100.jsonl)" -eq 100
-          test "$(grep -cve '^$' eval/v5_generative_holdout_20.jsonl)" -eq 20
+          FREEFORM_FILE="$(find . -type f -name 'freeform_identity_general_100.jsonl' -print -quit)"
+          V5_FILE="$(find . -type f -name 'v5_generative_holdout_20.jsonl' -print -quit)"
+          test -n "$FREEFORM_FILE"
+          test -n "$V5_FILE"
+          test "$(grep -cve '^
+          import torch
+          s=torch.load("v22/lumen-v22-v5-fastpath-step-40000.pt",map_location="cpu",weights_only=False)
+          assert int(s["step"]) == 40000, s.get("step")
+          print("Verified checkpoint step",s["step"])
+          PY
+      - name: Export TorchScript with incremental KV cache
+        run: |
+          python scripts/export_v22_torchscript.py --checkpoint v22/lumen-v22-v5-fastpath-step-40000.pt --out v22/lumen-v22-step-40000.ts --step 40000 --threads 4
+      - name: Build native Rust generative-only evaluator
+        run: cargo build --release --manifest-path rust-holdout/Cargo.toml --bin generative
+      - name: Run only 100 legacy + 20 V5 prompts (no MC)
+        run: |
+          mkdir -p results/step-40000
+          /usr/bin/time -f "%e" -o results/step-40000/wall_seconds.txt \
+            rust-holdout/target/release/generative \
+              --model v22/lumen-v22-step-40000.ts \
+              --tokenizer v22/tokenizer-v22-derived.json \
+              --system system_prompt_short.txt \
+              --freeform "$FREEFORM_FILE" \
+              --v5 "$V5_FILE" \
+              --out-dir results/step-40000 --step 40000 --threads 4
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v22-rust-generative-holdout-step40000
+          path: |
+            results/step-40000/
+            v22/lumen-v22-step-40000.ts
+          if-no-files-found: warn
+          retention-days: 90
+ "$FREEFORM_FILE")" -eq 100
+          test "$(grep -cve '^
+          import torch
+          s=torch.load("v22/lumen-v22-v5-fastpath-step-40000.pt",map_location="cpu",weights_only=False)
+          assert int(s["step"]) == 40000, s.get("step")
+          print("Verified checkpoint step",s["step"])
+          PY
+      - name: Export TorchScript with incremental KV cache
+        run: |
+          python scripts/export_v22_torchscript.py --checkpoint v22/lumen-v22-v5-fastpath-step-40000.pt --out v22/lumen-v22-step-40000.ts --step 40000 --threads 4
+      - name: Build native Rust generative-only evaluator
+        run: cargo build --release --manifest-path rust-holdout/Cargo.toml --bin generative
+      - name: Run only 100 legacy + 20 V5 prompts (no MC)
+        run: |
+          mkdir -p results/step-40000
+          /usr/bin/time -f "%e" -o results/step-40000/wall_seconds.txt \
+            rust-holdout/target/release/generative \
+              --model v22/lumen-v22-step-40000.ts \
+              --tokenizer v22/tokenizer-v22-derived.json \
+              --system system_prompt_short.txt \
+              --freeform data/freeform_identity_general_100.jsonl \
+              --v5 eval/v5_generative_holdout_20.jsonl \
+              --out-dir results/step-40000 --step 40000 --threads 4
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v22-rust-generative-holdout-step40000
+          path: |
+            results/step-40000/
+            v22/lumen-v22-step-40000.ts
+          if-no-files-found: warn
+          retention-days: 90
+ "$V5_FILE")" -eq 20
+          test -s system_prompt_short.txt
+          echo "FREEFORM_FILE=$FREEFORM_FILE" >> "$GITHUB_ENV"
+          echo "V5_FILE=$V5_FILE" >> "$GITHUB_ENV"
           python - <<'PY'
           import torch
           s=torch.load("v22/lumen-v22-v5-fastpath-step-40000.pt",map_location="cpu",weights_only=False)
