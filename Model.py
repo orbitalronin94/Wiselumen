@@ -34,8 +34,8 @@ class RoPE(nn.Module):
     def _rotate_one(self, x, cos, sin):
         x_even, x_odd = x[..., 0::2], x[..., 1::2]
         rotated = torch.stack(
-            (x_even * cos[..., 0::2] - x_odd * sin[..., 0::2],
-             x_even * sin[..., 0::2] + x_odd * cos[..., 0::2]),
+            (x_even * cos - x_odd * sin,
+             x_even * sin + x_odd * cos),
             dim=-1,
         )
         return rotated.flatten(-2)
