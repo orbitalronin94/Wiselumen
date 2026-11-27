@@ -1,0 +1,83 @@
+name: LUMEN V2.2 V5 FASTPATH smoke test
+run-name: LUMEN V2.2 FASTPATH — 20-step CPU validation
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-v5-fastpath-smoke.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: lumen-v22-v5-fastpath-smoke
+  cancel-in-progress: false
+jobs:
+  smoke_30000:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      TORCH_INTEROP_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "4"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+      START_STEP: "30000"
+      STEPS: "20"
+      PARENT_CHECKPOINT: "artifacts/lumen-v22-step-30000.pt"
+      PREPARED_DATA: "artifacts/prepared-v5-training-data.pt"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Restore frozen V5 corpus cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/wise-ronin-corpus-v5.0.0.zip
+          key: wise-ronin-v5-8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba
+      - name: Restore Python wheel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: lumen-torch-cpu-py311-v2-fastpath
+      - name: Download verified step-30000 parent checkpoint
+        run: |
+          mkdir -p artifacts/parent-download
+          gh run download 45864387501 --repo orbitalronin94/Wiselumen --name lumen-v22-step-30000 --dir artifacts/parent-download
+          PARENT_FILE="$(find artifacts/parent-download -type f -name 'lumen-v22-step-30000.pt' -print -quit)"
+          test -n "$PARENT_FILE"
+          cp "$PARENT_FILE" "$PARENT_CHECKPOINT"
+      - name: Download frozen V5 corpus on cache miss
+        run: |
+          if [ ! -s artifacts/wise-ronin-corpus-v5.0.0.zip ]; then
+            mkdir -p artifacts/v5-download
+            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
+            V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
+            test -n "$V5_FILE"
+            cp "$V5_FILE" artifacts/wise-ronin-corpus-v5.0.0.zip
+          fi
+          echo "8b56fcace9c025880193d55c13ceaec01b09f99e8055f9961b558da00dd788ba  artifacts/wise-ronin-corpus-v5.0.0.zip" | sha256sum -c -
+      - name: Install CPU PyTorch and tokenizer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Prepare and freeze tokenized V5 pools
+        run: python scripts/prepare_v5_training_data.py
+      - name: Train 20-step FASTPATH smoke test
+        run: python scripts/train_v22_v5_fastpath.py
+      - name: Upload smoke checkpoint and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumen-v22-v5-fastpath-step-30020
+          path: |
+            artifacts/lumen-v22-v5-fastpath-step-30020.pt
+            artifacts/metrics-v5-fastpath-step-30020.json
+            artifacts/prepared-v5-training-data.pt
+            artifacts/tokenizer-v22-derived.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
