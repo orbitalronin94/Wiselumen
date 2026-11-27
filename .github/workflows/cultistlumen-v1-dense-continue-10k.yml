@@ -88,3 +88,5 @@ jobs:
             artifacts/frozen/cultist-tokenizer-v1-8192.json
           if-no-files-found: warn
           retention-days: 90
+
+# Trigger this one-off continuation; dispatch remains available for future manual runs.
