@@ -1,6 +1,7 @@
 """Fast-path continuation trainer: loads pre-tokenized V5 pools and streams batches."""
 import json
 import os
+import platform
 import random
 import time
 import sys
@@ -22,6 +23,27 @@ SCHEDULE_TOTAL_STEPS = int(os.environ.get("SCHEDULE_TOTAL_STEPS", "50000"))
 PARENT_CHECKPOINT = Path(os.environ.get("PARENT_CHECKPOINT", "artifacts/lumen-v22-step-30000.pt"))
 PREPARED_DATA = Path(os.environ.get("PREPARED_DATA", "artifacts/prepared-v5-training-data.pt"))
 LR_SCALE = float(os.environ.get("LR_SCALE", "0.80"))
+
+
+def cpu_bf16_fast_supported():
+    """Only enable CPU BF16 autocast when native BF16 instructions are advertised."""
+    flags = set()
+    model_name = platform.processor() or "unknown"
+    try:
+        cpuinfo = Path("/proc/cpuinfo").read_text(encoding="utf-8").splitlines()
+        for line in cpuinfo:
+            if line.lower().startswith("model name"):
+                model_name = line.split(":", 1)[1].strip()
+                break
+        for line in cpuinfo:
+            if line.lower().startswith("flags") or line.lower().startswith("features"):
+                flags.update(line.split(":", 1)[1].lower().split())
+                break
+    except OSError:
+        pass
+    native = bool({"avx512_bf16", "amx_bf16"} & flags)
+    selected = sorted(flags & {"avx512_bf16", "amx_bf16", "avx512_vnni", "avx512f"})
+    return native, model_name, selected
 
 
 def timed(label, fn):
@@ -118,9 +140,16 @@ def main():
 
     ema.decay = float(payload["ema"]["decay"])
     ema.shadow = payload["ema"]["shadow"]
+    bf16_native, cpu_model, cpu_features = cpu_bf16_fast_supported()
+    amp_dtype = torch.bfloat16 if bf16_native else None
     print(
-        f"FASTPATH_CONFIG bf16=enabled adamw_foreach=true fused=false "
-        f"lr_scale={LR_SCALE:.2f} base_lrs={lr_groups} "
+        f"CPU_FEATURES model={cpu_model!r} native_bf16={bf16_native} "
+        f"features={cpu_features} torch_capability={torch.backends.cpu.get_cpu_capability()}",
+        flush=True,
+    )
+    print(
+        f"FASTPATH_CONFIG bf16={"enabled" if bf16_native else "disabled-fp32"} "
+        f"adamw_foreach=true fused=false lr_scale={LR_SCALE:.2f} base_lrs={lr_groups} "
         f"logit_chunk_size={LOGIT_CHUNK_SIZE} compile=false ipex=false "
         f"batch={BATCH_SIZE} context={MAX_LEN}",
         flush=True,
@@ -137,8 +166,8 @@ def main():
     result = train_steps(
         model, batches, steps=STEPS, optimizer=optimizer, device="cpu",
         warmup=10, total_steps=SCHEDULE_TOTAL_STEPS, start_step=START_STEP,
-        grad_clip=1.0, ema=ema, log_every=1, amp_dtype=torch.bfloat16,
-        mode="v22", ema_every=10, clip_every=5,
+        grad_clip=1.0, ema=ema, log_every=1, amp_dtype=amp_dtype,
+        mode="v22", ema_every=10, clip_every=5, max_step_seconds=20.0,
     )
     elapsed = time.perf_counter() - started
 
@@ -156,7 +185,7 @@ def main():
             "sampling_shares": data["sampling_shares"],
             "batch_size": BATCH_SIZE, "max_len": MAX_LEN,
             "mode": "v22", "loss_mode": "experimental",
-            "amp_dtype": "bfloat16", "adamw_foreach": True,
+            "amp_dtype": "bfloat16" if bf16_native else "float32", "adamw_foreach": True,
             "fused_adamw": False, "logit_chunk_size": LOGIT_CHUNK_SIZE,
             "lr_scale": LR_SCALE, "base_lrs": lr_groups,
             "schedule_total_steps": SCHEDULE_TOTAL_STEPS,
