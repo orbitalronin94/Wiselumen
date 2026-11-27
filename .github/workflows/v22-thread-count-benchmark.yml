@@ -10,7 +10,7 @@ permissions:
   contents: read
 jobs:
   benchmark:
-    name: \${{ matrix.threads }} threads vs main (4)
+    name: ${{ matrix.threads }} threads vs main (4)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -34,11 +34,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
       - name: Run paired 10 + 10 step benchmark
-        run: python scripts/benchmark_v22_thread_counts.py --threads "\${{ matrix.threads }}"
+        run: python scripts/benchmark_v22_thread_counts.py --threads "${{ matrix.threads }}"
       - name: Upload paired metrics
         if: always() && hashFiles('thread-benchmark-result.json') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: lumen-v22-threads-\${{ matrix.threads }}
+          name: lumen-v22-threads-${{ matrix.threads }}
           path: thread-benchmark-result.json
           retention-days: 30
