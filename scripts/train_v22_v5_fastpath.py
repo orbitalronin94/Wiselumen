@@ -88,10 +88,11 @@ def main():
         raise ValueError(
             f"SCHEDULE_TOTAL_STEPS={SCHEDULE_TOTAL_STEPS} must cover target step {START_STEP + STEPS}"
         )
-    print("cpu_runtime", configure_cpu_runtime(
-        threads=int(os.environ.get("OMP_NUM_THREADS", "4")),
-        interop_threads=int(os.environ.get("TORCH_INTEROP_THREADS", "1")),
-    ), flush=True)
+    # Paired benchmark winner: 9 intra-op / 8 inter-op.
+    # Keep these fixed for comparable V5 continuation runs rather than
+    # inheriting older workflow defaults.
+    cpu_runtime = configure_cpu_runtime(threads=9, interop_threads=8)
+    print("cpu_runtime", cpu_runtime, flush=True)
 
     data = timed("load_prepared_dataset", lambda: load_torch(PREPARED_DATA))
     if data.get("format") != "lumen_v22_v5_prepared_v1":
@@ -109,6 +110,9 @@ def main():
         raise ValueError(f"LR_SCALE must be in (0, 1], got {LR_SCALE}")
 
     model = LumenV2(vocab=8192, ctx=MAX_LEN, loss_mode="experimental")
+    # V5 batches come from the frozen, SHA-verified tokenizer/corpus pools.
+    # Avoid the redundant token min/max reduction during trusted training.
+    model.skip_token_range_scan = True
     model.logit_chunk_size = LOGIT_CHUNK_SIZE
     optimizer = get_optimizer(
         model, slow_lr=5e-4, fast_lr=2e-3, weight_decay=0.01, prefer_8bit=False

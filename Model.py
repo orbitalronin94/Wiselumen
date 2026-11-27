@@ -199,8 +199,12 @@ class LumenV2(nn.Module):
             raise ValueError(f"idx must have shape [batch, sequence], got {tuple(idx.shape)}.")
         if idx.shape[1] > self.ctx:
             raise ValueError(f"Sequence length {idx.shape[1]} exceeds configured context {self.ctx}.")
-        if idx.numel() and (idx.min() < 0 or idx.max() >= self.vocab):
-            raise ValueError(f"Token IDs must be in [0, {self.vocab - 1}].")
+        # The frozen training pools are tokenizer-validated before training.
+        # Skip the per-batch min/max reduction only on that explicitly opted-in
+        # training path; keep full validation for inference and ordinary callers.
+        if not (self.training and getattr(self, "skip_token_range_scan", False)):
+            if idx.numel() and (idx.min() < 0 or idx.max() >= self.vocab):
+                raise ValueError(f"Token IDs must be in [0, {self.vocab - 1}].")
 
         x = self.tok(idx)
         if active_layers is None:
