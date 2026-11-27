@@ -142,13 +142,14 @@ def main():
     ema.shadow = payload["ema"]["shadow"]
     bf16_native, cpu_model, cpu_features = cpu_bf16_fast_supported()
     amp_dtype = torch.bfloat16 if bf16_native else None
+    bf16_label = "enabled" if bf16_native else "disabled-fp32"
     print(
         f"CPU_FEATURES model={cpu_model!r} native_bf16={bf16_native} "
         f"features={cpu_features} torch_capability={torch.backends.cpu.get_cpu_capability()}",
         flush=True,
     )
     print(
-        f"FASTPATH_CONFIG bf16={"enabled" if bf16_native else "disabled-fp32"} "
+        f"FASTPATH_CONFIG bf16={bf16_label} "
         f"adamw_foreach=true fused=false lr_scale={LR_SCALE:.2f} base_lrs={lr_groups} "
         f"logit_chunk_size={LOGIT_CHUNK_SIZE} compile=false ipex=false "
         f"batch={BATCH_SIZE} context={MAX_LEN}",
