@@ -1,0 +1,111 @@
+name: LUMEN V2.2 — Native Rust KV-cache holdouts 35k + 37.5k
+run-name: V2.2 native Rust KV-cache — 4 threads — holdouts 35k and 37.5k
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v22-native-rust-holdout-35k-37500.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native-rust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - step: 35000
+            artifact: lumen-v22-v5-fastpath-step-35000
+          - step: 37500
+            artifact: lumen-v22-v5-fastpath-step-37500
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "1"
+      CXX: clang++
+      LIBTORCH_USE_PYTORCH: "1"
+      LIBTORCH_BYPASS_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: orbitalronin94/WISE-RONIN
+          ref: d2981fdb01f18e88d2c46a7dc47daea6a6e7e3ea
+          path: oldrepo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install pinned CPU PyTorch for one-time checkpoint export
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.5.1
+          python -m pip install tokenizers==0.21.0 numpy
+          echo "LD_LIBRARY_PATH=$(python -c 'import torch,os; print(os.path.join(os.path.dirname(torch.__file__),"lib"))'):$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+      - name: Download exact step-${{ matrix.step }} checkpoint
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p v22
+          gh run download 45962100073 --repo orbitalronin94/Wiselumen --name "${{ matrix.artifact }}" --dir v22
+          test -s "v22/lumen-v22-v5-fastpath-step-${{ matrix.step }}.pt"
+          test -s v22/tokenizer-v22-derived.json
+      - name: Download frozen legacy holdout inputs
+        uses: actions/download-artifact@v4
+        with:
+          name: paired-v32-inputs-1000000-45782396142
+          path: oldinputs
+          repository: orbitalronin94/WISE-RONIN
+          run-id: 45782396142
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Export exact checkpoint to TorchScript
+        run: |
+          python scripts/export_v22_torchscript.py \
+            --checkpoint "v22/lumen-v22-v5-fastpath-step-${{ matrix.step }}.pt" \
+            --out "v22/lumen-v22-step-${{ matrix.step }}.ts" \
+            --step "${{ matrix.step }}" --threads 4
+          test -s "v22/lumen-v22-step-${{ matrix.step }}.ts"
+      - name: Build native Rust evaluator against CPU LibTorch
+        run: cargo build --release --manifest-path rust-holdout/Cargo.toml
+      - name: Run native Rust KV-cache holdout at 4 intra threads
+        run: |
+          mkdir -p "results/step-${{ matrix.step }}"
+          /usr/bin/time -f "%e" -o "results/step-${{ matrix.step }}/wall_seconds.txt" \
+            rust-holdout/target/release/lumen-holdout-native \
+              --model "v22/lumen-v22-step-${{ matrix.step }}.ts" \
+              --tokenizer v22/tokenizer-v22-derived.json \
+              --system system_prompt_short.txt \
+              --mc-holdout oldinputs/eval/holdout_multiple_choice.jsonl \
+              --freeform-holdout oldrepo/data/freeform_identity_general_100.jsonl \
+              --out-dir "results/step-${{ matrix.step }}" \
+              --step "${{ matrix.step }}" --threads 4
+      - name: Write run metadata
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          step=int(os.environ["STEP"])
+          out=pathlib.Path(f"results/step-{step}")
+          out.mkdir(parents=True,exist_ok=True)
+          meta={"checkpoint_step":step,"source_training_run":45962100073,
+                "checkpoint_artifact":os.environ["ARTIFACT"],
+                "runtime":"native Rust + TorchScript KV cache",
+                "intra_threads":4,
+                "holdouts":{"multiple_choice_items":2431,"freeform_prompts":100}}
+          (out/"evaluation_metadata.json").write_text(json.dumps(meta,indent=2)+"\\n")
+          PY
+        env:
+          STEP: ${{ matrix.step }}
+          ARTIFACT: ${{ matrix.artifact }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v22-native-rust-kv-cache-holdout-step${{ matrix.step }}
+          path: |
+            results/step-${{ matrix.step }}/
+            v22/lumen-v22-step-${{ matrix.step }}.ts
+          if-no-files-found: warn
+          retention-days: 90
