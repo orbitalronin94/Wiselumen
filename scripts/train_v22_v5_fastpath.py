@@ -102,12 +102,18 @@ def main():
     if not all(group.get("foreach") is True and group.get("fused") is None for group in optimizer.param_groups):
         raise RuntimeError("Could not restore the benchmarked foreach AdamW configuration")
 
-    # Apply a single conservative 20% LR reduction after restoring optimizer state.
-    # train_steps derives every scheduled LR from base_lr, so both fields must change.
-    for group in optimizer.param_groups:
-        restored_base_lr = float(group.get("base_lr", group["lr"]))
-        group["base_lr"] = restored_base_lr * LR_SCALE
-        group["lr"] = float(group["lr"]) * LR_SCALE
+    # Apply the 20% reduction once, not once per 2.5k continuation block.
+    # The optimizer state already carries scaled base_lr in subsequent checkpoints.
+    parent_extra = payload.get("extra", {})
+    previous_scale = float(parent_extra.get("lr_scale", 1.0))
+    if abs(previous_scale - LR_SCALE) > 1e-12:
+        for group in optimizer.param_groups:
+            restored_base_lr = float(group.get("base_lr", group["lr"]))
+            group["base_lr"] = restored_base_lr * LR_SCALE
+            group["lr"] = float(group["lr"]) * LR_SCALE
+        print(f"LR_SCALE_APPLIED previous={previous_scale:.4f} current={LR_SCALE:.4f}", flush=True)
+    else:
+        print(f"LR_SCALE_ALREADY_PRESENT scale={previous_scale:.4f}; preserving optimizer LR", flush=True)
     lr_groups = [float(group["base_lr"]) for group in optimizer.param_groups]
 
     ema.decay = float(payload["ema"]["decay"])
