@@ -13,7 +13,7 @@ permissions:
   contents: read
 jobs:
   benchmark:
-    name: \${{ matrix.case }} (9 threads vs MAIN)
+    name: ${{ matrix.case }} (9 threads vs MAIN)
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -61,11 +61,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
       - name: Run paired 10 + 10 benchmark at 9 threads
-        run: python scripts/benchmark_v22_9_thread_combinations.py --case "\${{ matrix.case }}"
+        run: python scripts/benchmark_v22_9_thread_combinations.py --case "${{ matrix.case }}"
       - name: Upload paired metrics
         if: always() && hashFiles('combo-benchmark-result.json') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: lumen-v22-9threads-\${{ matrix.case }}
+          name: lumen-v22-9threads-${{ matrix.case }}
           path: combo-benchmark-result.json
           retention-days: 30
