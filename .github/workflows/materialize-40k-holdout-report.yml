@@ -1,0 +1,37 @@
+name: Materialize 40k generative holdout report
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/materialize-40k-holdout-report.yml"
+      - "scripts/materialize_40k_holdout_report.py"
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Download completed 40k holdout artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 45994377615 --repo orbitalronin94/Wiselumen \
+            --name v22-rust-generative-holdout-step40000 --dir artifact
+          mkdir -p artifact/unpacked
+          unzip -q artifact/*.zip -d artifact/unpacked
+      - name: Build Markdown with all 120 literal generations
+        run: python3 scripts/materialize_40k_holdout_report.py
+      - name: Commit report to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add HOLDOUT_LUMEN_V22_40K.md
+          git commit -m "docs: add complete 40k generative holdout"
+          git push origin main
