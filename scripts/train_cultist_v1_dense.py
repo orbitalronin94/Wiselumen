@@ -17,6 +17,7 @@ INTEROP_THREADS=int(os.environ.get("TORCH_INTEROP_THREADS","4"))
 PROFILE=os.environ.get("PROFILE","1")=="1"
 SAMPLED_NEGATIVES=int(os.environ.get("SAMPLED_NEGATIVES","1024"))
 MAX_CHUNKS_PER_FILE=int(os.environ.get("MAX_CHUNKS_PER_FILE","2048"))
+PARENT_CHECKPOINT=Path(os.environ.get("PARENT_CHECKPOINT","")) if os.environ.get("PARENT_CHECKPOINT") else None
 V5_PATH=Path(os.environ.get("V5_ARCHIVE","artifacts/wise-ronin-corpus-v5.0.0.zip"))
 TOKENIZER_PATH=Path(os.environ.get("FROZEN_TOKENIZER","artifacts/frozen/cultist-tokenizer-v1-8192.json"))
 TOKENIZER_SHA256="91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e"
@@ -146,7 +147,7 @@ def main():
     torch.set_num_interop_threads(INTEROP_THREADS)
     torch.backends.mkldnn.enabled=True
     random.seed(SEED); torch.manual_seed(SEED)
-    rng=random.Random(SEED+1000)
+    rng=random.Random(SEED+1000+int(os.environ.get("PARENT_STEP_OFFSET","0")))
     print(f"CULTISTLUMEN_V1_DENSE_CONFIG steps={STEPS} batch={BATCH_SIZE} ctx={CTX} warmup={WARMUP} intra={THREADS} inter={INTEROP_THREADS} ffn_compute=fp32 master_weights=fp32 sampled_negatives={SAMPLED_NEGATIVES}",flush=True)
     tokenizer=load_frozen_tokenizer()
     if args.build_pool_only:
@@ -170,6 +171,19 @@ def main():
     else:
         pools,weights,pool_meta,pool_sha=load_pool_archive()
     model=CultistLumenV1Dense(vocab=8192,d_model=512,d_ff=1024,ctx=CTX)
+    parent_meta=None
+    start_step=0
+    if PARENT_CHECKPOINT is not None:
+        if not PARENT_CHECKPOINT.is_file(): raise RuntimeError(f"Parent checkpoint missing: {PARENT_CHECKPOINT}")
+        parent=torch.load(PARENT_CHECKPOINT,map_location="cpu",weights_only=False)
+        required={"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"]}
+        for key,value in required.items():
+            if parent.get(key)!=value: raise RuntimeError(f"Parent checkpoint contract mismatch for {key}: {parent.get(key)!r} != {value!r}")
+        start_step=int(parent.get("step",0))
+        if start_step<=0: raise RuntimeError(f"Invalid parent step: {start_step}")
+        model.load_state_dict(parent["model"],strict=True)
+        parent_meta={k:parent.get(k) for k in ("step","architecture","vocab","ctx","corpus_version","tokenizer_sha256","pool_sha256","corpus_v5_sha256","sampling","precision")}
+        print(f"RESUMED_PARENT checkpoint={PARENT_CHECKPOINT} start_step={start_step} pool_sha256={pool_sha}",flush=True)
     ffn_params=list(model.ffn.parameters())
     mix_params=list(model.mix.parameters())+list(model.norm1.parameters())+list(model.norm2.parameters())+list(model.norm.parameters())
     embed_params=list(model.tok.parameters())
@@ -235,10 +249,11 @@ def main():
     elapsed=time.perf_counter()-started
     phase_total=sum(phase.values())
     print("PHASE_TIMING_SECONDS "+json.dumps({k:round(v,4) for k,v in phase.items()}|{"measured_total":round(phase_total,4),"wall_total":round(elapsed,4)},sort_keys=True),flush=True)
-    checkpoint=OUT/f"cultistlumen-v1-dense-step-{STEPS}.pt"
-    torch.save({"model":model.state_dict(),"step":STEPS,"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0,"weighting":"uncompressed source-file byte size within each pool"},"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"}},checkpoint)
-    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-DENSE","steps":STEPS,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"experts":0,"sampled_negatives":SAMPLED_NEGATIVES,"training_objective":"sampled softmax: all batch targets plus uniform sampled negatives; inference uses full vocabulary","phase_timing_seconds":phase,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"checkpoint":str(checkpoint)}
-    (OUT/f"cultistlumen-v1-dense-metrics-step-{STEPS}.json").write_text(json.dumps(metrics,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    final_step=start_step+STEPS
+    checkpoint=OUT/f"cultistlumen-v1-dense-step-{final_step}.pt"
+    torch.save({"model":model.state_dict(),"step":final_step,"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0,"weighting":"uncompressed source-file byte size within each pool"},"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"},"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step},checkpoint)
+    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-DENSE","steps":STEPS,"start_step":start_step,"global_step":final_step,"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"experts":0,"sampled_negatives":SAMPLED_NEGATIVES,"training_objective":"sampled softmax: all batch targets plus uniform sampled negatives; inference uses full vocabulary","phase_timing_seconds":phase,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"checkpoint":str(checkpoint)}
+    (OUT/f"cultistlumen-v1-dense-metrics-step-{final_step}.json").write_text(json.dumps(metrics,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("CULTISTLUMEN_DENSE_RESULT "+json.dumps(metrics,ensure_ascii=False),flush=True)
 
 if __name__=="__main__": main()
