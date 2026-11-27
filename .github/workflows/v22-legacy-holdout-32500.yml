@@ -1,0 +1,101 @@
+name: LUMEN V2.2 legacy + V5 generative holdout at step 32500
+run-name: V2.2 baseline — legacy holdout + 20 V5 probes — step 32500
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-legacy-holdout-32.5k.yml"
+      - "scripts/evaluate_v22_legacy_holdout.py"
+      - "scripts/evaluate_v5_generative_holdout.py"
+      - "eval/v5_generative_holdout_20.jsonl"
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: v22-legacy-holdout-step32500
+  cancel-in-progress: false
+jobs:
+  evaluate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: orbitalronin94/WISE-RONIN
+          ref: d2981fdb01f18e88d2c46a7dc47daea6a6e7e3ea
+          path: oldrepo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download exact V2.2 step-32500 checkpoint
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p v22
+          gh run download 45953893078 --repo orbitalronin94/Wiselumen --name lumen-v22-v5-fastpath-step-32500 --dir v22
+          test -s v22/lumen-v22-v5-fastpath-step-32500.pt
+          test -s v22/tokenizer-v22-derived.json
+      - name: Download identical legacy holdout inputs
+        uses: actions/download-artifact@v4
+        with:
+          name: paired-v32-inputs-1000000-45782396142
+          path: oldinputs
+          repository: orbitalronin94/WISE-RONIN
+          run-id: 45782396142
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install CPU evaluation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0 numpy
+      - name: Verify frozen data, probes and checkpoint identity
+        run: |
+          test -s oldinputs/eval/holdout_multiple_choice.jsonl
+          test -s oldrepo/data/freeform_identity_general_100.jsonl
+          test -s eval/v5_generative_holdout_20.jsonl
+          python - <<'PY'
+          import json, torch
+          from pathlib import Path
+          mc=[x for x in Path("oldinputs/eval/holdout_multiple_choice.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+          ff=[x for x in Path("oldrepo/data/freeform_identity_general_100.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+          v5=[json.loads(x) for x in Path("eval/v5_generative_holdout_20.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+          assert len(mc)==2431, len(mc)
+          assert len(ff)==100, len(ff)
+          assert len(v5)==20, len(v5)
+          assert len({x["id"] for x in v5})==20
+          state=torch.load("v22/lumen-v22-v5-fastpath-step-32500.pt",map_location="cpu",weights_only=False)
+          assert int(state["step"])==32500, state.get("step")
+          assert "model" in state and isinstance(state["model"],dict)
+          print(f"Verified V2.2 step={state['step']}; MC={len(mc)}; legacy freeform={len(ff)}; V5 probes={len(v5)}; tensors={len(state['model'])}")
+          PY
+      - name: Run the old official holdout on V2.2
+        run: |
+          python scripts/evaluate_v22_legacy_holdout.py \
+            --checkpoint v22/lumen-v22-step-32500.pt \
+            --tokenizer v22/tokenizer-v22-derived.json \
+            --system system_prompt_short.txt \
+            --mc-holdout oldinputs/eval/holdout_multiple_choice.jsonl \
+            --freeform-holdout oldrepo/data/freeform_identity_general_100.jsonl \
+            --out-dir results/v22-step32500 --step 32500 --threads 4
+      - name: Run 20 frozen generative probes for the V5 corpus
+        run: |
+          python scripts/evaluate_v5_generative_holdout.py \
+            --checkpoint v22/lumen-v22-step-32500.pt \
+            --tokenizer v22/tokenizer-v22-derived.json \
+            --system system_prompt_short.txt \
+            --prompts eval/v5_generative_holdout_20.jsonl \
+            --out-dir results/v22-step32500 --step 32500 --threads 4
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v22-legacy-plus-v5-generative-holdout-step32500
+          path: results/
+          if-no-files-found: warn
+          retention-days: 90
