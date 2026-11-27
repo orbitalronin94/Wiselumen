@@ -2,9 +2,6 @@ name: CULTISTLUMEN-V1-DENSE fixed mixer 1k holdout (120 prompts)
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/cultistlumen-v1-dense-fixed-holdout-1k.yml'
 
 permissions:
   contents: read
