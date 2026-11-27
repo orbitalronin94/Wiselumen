@@ -280,6 +280,7 @@ def train_steps(
     model, batches, steps, optimizer=None, device=None, warmup=200,
     total_steps=None, start_step=0, grad_clip=1.0, ema=None, log_every=100, amp_dtype=None,
     mode="original", ema_every=10, clip_every=5, layer_schedule=None,
+    max_step_seconds=None,
 ):
     """Ejecuta updates sobre un iterador de batches ya tokenizados.
 
@@ -381,6 +382,14 @@ def train_steps(
         history.append(value)
         step_seconds = time.perf_counter() - step_started
         timing_history.append(step_seconds)
+        if max_step_seconds is not None and step_seconds > max_step_seconds:
+            raise RuntimeError(
+                f"CPU performance guard: step {step + 1} took {step_seconds:.3f}s "
+                f"(limit {max_step_seconds:.3f}s); timings "
+                f"batch={batch_seconds:.3f}s fwd={forward_seconds:.3f}s "
+                f"bwd={backward_seconds:.3f}s opt_ema={optimizer_seconds:.3f}s. "
+                "Aborting before wasting the remaining block; parent checkpoint is unchanged."
+            )
         if log_every and ((step + 1) % log_every == 0 or step == 0 or step + 1 == steps):
             grad_value = float(grad_norm.item()) if grad_norm is not None else float("nan")
             print(
