@@ -15,7 +15,7 @@ from pathlib import Path
 import torch
 from tokenizers import AddedToken, Tokenizer
 
-from scripts.cultistlumen_v1 import CultistLumenV1
+from cultistlumen_v1 import CultistLumenV1
 
 SEED = 20261127
 STEPS = int(os.environ.get("STEPS", "1000"))
@@ -183,6 +183,9 @@ def main():
         v5_manifest = json.loads(outer.read("corpus/v5/manifest.json"))
         if v5_manifest.get("version") != "v5.0.0" or not v5_manifest.get("training_authorized"):
             raise RuntimeError("V5 manifest is not authorized")
+        expected_shares = {"v4_factual": 0.90, "full_marper_lore": 0.10, "synthetic_conflicts": 0.0}
+        if v5_manifest.get("sampling", {}).get("shares") != expected_shares:
+            raise RuntimeError(f"V5 sampling policy mismatch: expected {expected_shares}, got {v5_manifest.get('sampling', {}).get('shares')}")
         nested_bytes = outer.read("corpus/v4/wise-ronin-corpus-v4.0.0.zip")
         if sha256(nested_bytes) != v5_manifest["v4"]["zip_sha256"]:
             raise RuntimeError("Nested V4 archive checksum mismatch")
