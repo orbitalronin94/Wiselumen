@@ -1,9 +1,6 @@
 name: CULTISTLUMEN-V1 Dense continuation +10k (from fixed step 1k)
 
 on:
-  push:
-    paths:
-      - ".github/workflows/cultistlumen-v1-dense-continue-10k.yml"
   workflow_dispatch:
 
 permissions:
@@ -89,4 +86,3 @@ jobs:
           if-no-files-found: warn
           retention-days: 90
 
-# Trigger this one-off continuation; dispatch remains available for future manual runs.
