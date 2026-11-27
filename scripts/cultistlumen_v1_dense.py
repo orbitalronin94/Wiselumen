@@ -19,14 +19,14 @@ class GatedDeltaNetLR(nn.Module):
         self.d_model=d_model; self.n_head=n_head
         self.d_head=d_model//n_head; self.chunk=chunk; self.rank=rank
         self.qkv_A=nn.Parameter(torch.randn(d_model,rank)*0.02)
-        self.qkv_B=nn.Parameter(torch.zeros(rank,d_model*3))
+        self.qkv_B=nn.Parameter(torch.randn(rank,d_model*3)*0.02)
         self.b_a=nn.Linear(d_model,n_head,bias=False)
         self.b_beta=nn.Linear(d_model,n_head,bias=False)
         self.dt_bias=nn.Parameter(torch.ones(n_head)*2.0)
         self.A_log=nn.Parameter(torch.log(torch.ones(n_head)*0.5))
         self.conv=nn.Conv1d(d_model,d_model,kernel_size=conv_kernel,groups=d_model,bias=True,padding=conv_kernel-1)
         self.out_A=nn.Parameter(torch.randn(d_model,rank)*0.02)
-        self.out_B=nn.Parameter(torch.zeros(rank,d_model))
+        self.out_B=nn.Parameter(torch.randn(rank,d_model)*0.02)
         self.scale=self.d_head**-0.5
 
     def forward(self,x):
