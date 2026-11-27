@@ -25,18 +25,16 @@ SOURCES = {
     "lore/palimpsesto_index_v0.1_part3.jsonl": ("data/palimpsesto_index_v0.1_part3.jsonl", "d0898b68191407fe5148fd3f2b2b28cfd871a8c8", 1870292),
     "lore/palimpsesto_index_v0.1_part4.jsonl": ("data/palimpsesto_index_v0.1_part4.jsonl", "bfae3f9cd2451bf7d8742f50e6ea1176a162de9a", 1880221),
 }
-CONFLICT_URL = "https://raw.githubusercontent.com/orbitalronin94/Wiselumen/main/data/system_conflicts.jsonl"
-CONFLICT_GIT_BLOB = "e5febcfedcd18cbf6f3249ebf9a3f0d216706bac"
 SAMPLING = {
     "version": "v5.0.0",
     "unit": "training examples, not bytes or corpus rows",
     "batch_size": 4,
     "cycle_steps": 10,
     "cycle_examples": 40,
-    "shares": {"v4_factual": 0.675, "marper_concordia_seed": 0.075, "synthetic_conflicts": 0.25},
-    "exact_cycle_counts": {"v4_factual": 27, "marper_concordia_seed": 3, "synthetic_conflicts": 10},
-    "holdout_policy": "The V4 archive is embedded byte-for-byte; holdout rows remain excluded by the existing V4 formatter.",
-    "lore_policy": "Train from the 289 curated v0.6 records (fact/lore/bridge); preserve the 16,848-revelation source and indexes as provenance, not duplicated training rows.",
+    "shares": {"v4_factual": 0.90, "full_marper_lore": 0.10, "synthetic_conflicts": 0.0},
+    "exact_cycle_counts": {"v4_factual": 36, "full_marper_lore": 4, "synthetic_conflicts": 0},
+    "holdout_policy": "The V4 archive is embedded byte-for-byte; holdout rows are excluded before tokenization.",
+    "lore_policy": "All seven Marper/Codex source files are training data, weighted by uncompressed source-file byte size within the lore pool.",
 }
 
 def sha256(data: bytes) -> str:
@@ -124,21 +122,12 @@ def main() -> None:
     if index_count != 16848:
         raise RuntimeError(f"Expected 16,848 indexed revelations, got {index_count}")
 
-    conflict_data = download(CONFLICT_URL)
-    conflict_meta = verify_source("synthetic_conflicts", conflict_data, CONFLICT_GIT_BLOB, len(conflict_data))
-    conflicts = jsonl_rows(conflict_data, "system_conflicts")
-    if len(conflicts) != 10:
-        raise RuntimeError(f"Expected 10 frozen conflict examples, got {len(conflicts)}")
-    assets["synthetic/system_conflicts.jsonl"] = conflict_data
-    asset_meta["synthetic/system_conflicts.jsonl"] = conflict_meta
-
     manifest = {
         "version": "v5.0.0",
         "status": "FROZEN_TRAINABLE_BUNDLE",
         "training_authorized": True,
         "v4": {"version": v4_manifest["version"], "zip_bytes": len(v4_bytes), "zip_sha256": V4_SHA256, "manifest_total_rows": v4_manifest.get("total_rows")},
-        "lore": {"seed_records": len(seed), "seed_type_counts": counts, "topic_count": len(topic_map), "indexed_revelations": index_count, "source_policy": "The raw source and index are provenance; only curated seed rows enter the 7.5% sampler."},
-        "synthetic_conflicts": {"records": len(conflicts), **conflict_meta},
+        "lore": {"seed_records": len(seed), "seed_type_counts": counts, "topic_count": len(topic_map), "indexed_revelations": index_count, "source_policy": "All seven source files (Codice, lore seed, topic map, and four index parts) enter the full Marper lore sampler at natural byte-size weights."},
         "sampling": SAMPLING,
         "assets": asset_meta,
     }
