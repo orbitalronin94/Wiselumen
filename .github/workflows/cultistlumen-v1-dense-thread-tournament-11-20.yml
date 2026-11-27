@@ -2,9 +2,6 @@ name: CULTISTLUMEN-V1-DENSE — torneo hilos 11-20 × interhilos 1-20
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/cultistlumen-v1-dense-thread-tournament-11-20.yml"
 
 permissions:
   contents: read
