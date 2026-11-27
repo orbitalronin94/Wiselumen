@@ -1,0 +1,32 @@
+name: Freeze CULTISTLUMEN tokenizer
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Download exact tokenizer from cancelled experiment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/cultist-tokenizer artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir /tmp/cultist-tokenizer
+          test -f /tmp/cultist-tokenizer/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  /tmp/cultist-tokenizer/cultist-tokenizer-v1-8192.json" | sha256sum --check
+          cp /tmp/cultist-tokenizer/cultist-tokenizer-v1-8192.json artifacts/frozen/cultist-tokenizer-v1-8192.json
+      - name: Commit frozen tokenizer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/frozen/cultist-tokenizer-v1-8192.json
+          git commit -m "Freeze CULTISTLUMEN V1 tokenizer"
+          git push
