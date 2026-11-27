@@ -81,10 +81,12 @@ def make_chunks(tokenizer: Tokenizer, text: str, ctx: int, cap: int, reservoir_r
     return chunks, total
 
 
-def build_file_pools(zf, manifest, tokenizer):
+def build_file_pools(zf, manifest, tokenizer, nested_bytes):
     pools = {"world": {}, "marper": {}}
     weights = {"world": {}, "marper": {}}
     rng = random.Random(SEED + 91)
+    import io
+    nested = zipfile.ZipFile(io.BytesIO(nested_bytes))
 
     # Natural V4 training files. Holdout rows are excluded before tokenization.
     for index, meta in enumerate(manifest["shards"]):
@@ -116,17 +118,17 @@ def build_file_pools(zf, manifest, tokenizer):
                     while len(buffer) >= CTX + 1:
                         chunk = buffer[:CTX + 1]
                         del buffer[:CTX + 1]
-                        chunks.append(chunk)
-                        if len(chunks) > MAX_CHUNKS_PER_FILE * 2:
-                            # Keep bounded memory while preserving a uniform file reservoir.
-                            slot = rng.randrange(len(chunks))
+                        seen_chunks += 1
+                        if len(chunks) < MAX_CHUNKS_PER_FILE:
+                            chunks.append(chunk)
+                        else:
+                            slot = rng.randrange(seen_chunks)
                             if slot < MAX_CHUNKS_PER_FILE:
                                 chunks[slot] = chunk
-                            chunks = chunks[:MAX_CHUNKS_PER_FILE]
         if not chunks:
             raise RuntimeError(f"No usable training chunks in V4 shard {member}")
         pools["world"][member] = chunks
-        weights["world"][member] = int(meta.get("bytes") or nested.getinfo(member).file_size)
+        weights["world"][member] = int(meta["bytes"])
         print(f"POOL world file={member} bytes={weights['world'][member]} rows={seen_rows} chunks={len(chunks)}", flush=True)
 
     # All seven Marper/Codex sources are one 10% lore pool, not just the named character.
@@ -142,6 +144,7 @@ def build_file_pools(zf, manifest, tokenizer):
 
     if not pools["world"] or not pools["marper"]:
         raise RuntimeError("Both world and full Marper pools must be non-empty")
+    nested.close()
     return pools, weights
 
 
@@ -196,7 +199,7 @@ def main():
             if manifest.get("version") != "v4.0.0" or manifest.get("status") != "FROZEN_TRAINABLE" or manifest.get("training_authorized") is not True:
                 raise RuntimeError("V4 manifest is not authorized")
             tokenizer, tokenizer_original_sha, tokenizer_derived_sha = load_tokenizer(nested)
-            pools, weights = build_file_pools(outer, manifest, tokenizer)
+            pools, weights = build_file_pools(outer, manifest, tokenizer, nested_bytes)
 
     model = CultistLumenV1(vocab=8192, d_model=512, d_ff=1024, n_experts=64, ctx=CTX)
     optimizer = torch.optim.AdamW([
