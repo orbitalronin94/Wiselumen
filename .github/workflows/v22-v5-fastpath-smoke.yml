@@ -34,6 +34,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Restore frozen V5 corpus cache
+        id: v5cache
         uses: actions/cache@v4
         with:
           path: artifacts/wise-ronin-corpus-v5.0.0.zip
@@ -44,17 +45,30 @@ jobs:
           path: ~/.cache/pip
           key: lumen-torch-cpu-py311-v2-fastpath
       - name: Download verified step-30000 parent checkpoint
+        uses: actions/download-artifact@v4
+        with:
+          name: lumen-v22-step-30000
+          run-id: 45864387501
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: orbitalronin94/Wiselumen
+          path: artifacts/parent-download
+      - name: Install parent checkpoint
         run: |
-          mkdir -p artifacts/parent-download
-          gh run download 45864387501 --repo orbitalronin94/Wiselumen --name lumen-v22-step-30000 --dir artifacts/parent-download
           PARENT_FILE="$(find artifacts/parent-download -type f -name 'lumen-v22-step-30000.pt' -print -quit)"
           test -n "$PARENT_FILE"
           cp "$PARENT_FILE" "$PARENT_CHECKPOINT"
-      - name: Download frozen V5 corpus on cache miss
+      - name: Download frozen V5 corpus artifact
+        if: steps.v5cache.outputs.cache-hit != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: wise-ronin-corpus-v5.0.0
+          run-id: 45892282767
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: orbitalronin94/Wiselumen
+          path: artifacts/v5-download
+      - name: Verify frozen V5 corpus
         run: |
           if [ ! -s artifacts/wise-ronin-corpus-v5.0.0.zip ]; then
-            mkdir -p artifacts/v5-download
-            gh run download 45892282767 --repo orbitalronin94/Wiselumen --name wise-ronin-corpus-v5.0.0 --dir artifacts/v5-download
             V5_FILE="$(find artifacts/v5-download -type f -name 'wise-ronin-corpus-v5.0.0.zip' -print -quit)"
             test -n "$V5_FILE"
             cp "$V5_FILE" artifacts/wise-ronin-corpus-v5.0.0.zip
