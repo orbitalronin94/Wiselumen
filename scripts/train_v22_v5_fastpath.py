@@ -15,6 +15,7 @@ from data import collate_chat
 START_STEP = int(os.environ.get("START_STEP", "30000"))
 STEPS = int(os.environ.get("STEPS", "20"))
 TOTAL_STEPS = START_STEP + STEPS
+SCHEDULE_TOTAL_STEPS = int(os.environ.get("SCHEDULE_TOTAL_STEPS", "50000"))
 PARENT_CHECKPOINT = Path(os.environ.get("PARENT_CHECKPOINT", "artifacts/lumen-v22-step-30000.pt"))
 PREPARED_DATA = Path(os.environ.get("PREPARED_DATA", "artifacts/prepared-v5-training-data.pt"))
 LR_SCALE = float(os.environ.get("LR_SCALE", "0.80"))
@@ -58,6 +59,10 @@ def iter_v5_batches(data, steps, seed):
 def main():
     if STEPS <= 0 or STEPS % 10:
         raise ValueError("STEPS must be a positive multiple of 10")
+    if SCHEDULE_TOTAL_STEPS < START_STEP + STEPS:
+        raise ValueError(
+            f"SCHEDULE_TOTAL_STEPS={SCHEDULE_TOTAL_STEPS} must cover target step {START_STEP + STEPS}"
+        )
     print("cpu_runtime", configure_cpu_runtime(
         threads=int(os.environ.get("OMP_NUM_THREADS", "4")),
         interop_threads=int(os.environ.get("TORCH_INTEROP_THREADS", "1")),
@@ -122,7 +127,7 @@ def main():
     started = time.perf_counter()
     result = train_steps(
         model, batches, steps=STEPS, optimizer=optimizer, device="cpu",
-        warmup=10, total_steps=TOTAL_STEPS, start_step=START_STEP,
+        warmup=10, total_steps=SCHEDULE_TOTAL_STEPS, start_step=START_STEP,
         grad_clip=1.0, ema=ema, log_every=1, amp_dtype=torch.bfloat16,
         mode="v22", ema_every=10, clip_every=5,
     )
@@ -145,6 +150,7 @@ def main():
             "amp_dtype": "bfloat16", "adamw_foreach": True,
             "fused_adamw": False, "logit_chunk_size": LOGIT_CHUNK_SIZE,
             "lr_scale": LR_SCALE, "base_lrs": lr_groups,
+            "schedule_total_steps": SCHEDULE_TOTAL_STEPS,
             "compile": False, "ipex": False,
         },
     )
@@ -166,6 +172,7 @@ def main():
         "amp_dtype": "bfloat16", "adamw_foreach": True, "fused_adamw": False,
         "logit_chunk_size": LOGIT_CHUNK_SIZE,
         "lr_scale": LR_SCALE, "base_lrs": lr_groups,
+        "schedule_total_steps": SCHEDULE_TOTAL_STEPS,
     }
     Path(f"artifacts/metrics-v5-fastpath-step-{TOTAL_STEPS}.json").write_text(
         json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8"
