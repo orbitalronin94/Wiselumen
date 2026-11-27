@@ -1,0 +1,70 @@
+name: CULTISTLUMEN-V1-DENSE — torneo hilos 11-20 × interhilos 1-20
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/cultistlumen-v1-dense-thread-tournament-11-20.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  paired-benchmark:
+    name: intra ${{ matrix.intra }} / inter ${{ matrix.inter }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        intra: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        inter: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    env:
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Recover prebuilt V5 pool
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          run-id: 46001412252
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          path: artifacts
+      - name: Verify pool provenance
+        run: |
+          test -s artifacts/cultist-v1-pool-ctx256.pkl.gz
+          test -s artifacts/cultist-v1-pool-manifest.json
+          grep -q "7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59" artifacts/cultist-v1-pool-manifest.json
+      - name: Run paired 50-step benchmark against main
+        env:
+          INTRA_THREADS: "${{ matrix.intra }}"
+          INTEROP_THREADS: "${{ matrix.inter }}"
+        run: |
+          python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py scripts/benchmark_cultist_v1_dense_threads.py
+          python scripts/benchmark_cultist_v1_dense_threads.py --intra "${INTRA_THREADS}" --interop "${INTEROP_THREADS}"
+      - name: Upload paired result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: thread-pair-intra-${{ matrix.intra }}-inter-${{ matrix.inter }}
+          path: artifacts/thread-tournament/paired-result.json
+          if-no-files-found: warn
+          retention-days: 90
