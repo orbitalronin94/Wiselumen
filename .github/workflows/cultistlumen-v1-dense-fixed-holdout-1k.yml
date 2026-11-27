@@ -47,7 +47,7 @@ jobs:
       - name: Evaluate fixed 100+20 holdout
         run: |
           python -m py_compile scripts/cultistlumen_v1_dense.py scripts/evaluate_cultist_v1_dense_holdout.py
-          python scripts/evaluate_cultist_v1_dense_holdout.py --checkpoint artifacts/parent/cultistlumen-v1-dense-step-1000.pt --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json --threads 4 --context 256 --max-new-tokens 64
+          python scripts/evaluate_cultist_v1_dense_holdout.py --checkpoint artifacts/parent/cultistlumen-v1-dense-step-1000.pt --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json --threads 4 --context 256 --max-new-tokens 64 --out-dir artifacts/holdout-1k
       - name: Upload literal answers and machine-readable report
         if: always()
         uses: actions/upload-artifact@v4
