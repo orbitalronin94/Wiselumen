@@ -1,0 +1,60 @@
+name: CULTISTLUMEN-V1 1k doctrinal exposure experiment
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/cultistlumen_v1.py"
+      - "scripts/train_cultist_v1.py"
+      - ".github/workflows/cultistlumen-v1-1000.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cultistlumen-v1-1000
+  cancel-in-progress: false
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      STEPS: "1000"
+      BATCH_SIZE: "4"
+      CTX: "128"
+      WARMUP: "200"
+      MAX_CHUNKS_PER_FILE: "2048"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Compile architecture and trainer
+        run: python -m py_compile scripts/cultistlumen_v1.py scripts/train_cultist_v1.py scripts/build_corpus_v5.py
+      - name: Build and verify complete V5 corpus bundle
+        run: python scripts/build_corpus_v5.py
+      - name: Train CULTISTLUMEN-V1 from scratch for 1,000 steps
+        run: python scripts/train_cultist_v1.py
+      - name: Upload CULTISTLUMEN checkpoint and experiment record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-v1-step-1000
+          path: |
+            artifacts/cultistlumen-v1-step-1000.pt
+            artifacts/cultistlumen-v1-metrics-step-1000.json
+            artifacts/cultist-tokenizer-v1-8192.json
+          if-no-files-found: warn
+          retention-days: 30
