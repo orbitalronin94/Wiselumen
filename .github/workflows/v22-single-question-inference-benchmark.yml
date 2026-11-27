@@ -1,0 +1,65 @@
+name: LUMEN V2.2 — single-question inference hypotheses
+run-name: V2.2 inference benchmark — one prompt / same runner / 9 cells
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-single-question-inference-benchmark.yml"
+      - "scripts/benchmark_v22_single_question_inference.py"
+      - "scripts/export_v22_torchscript.py"
+      - "Model.py"
+      - "system_prompt_short.txt"
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: v22-single-question-inference-benchmark
+  cancel-in-progress: false
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: orbitalronin94/WISE-RONIN
+          ref: d2981fdb01f18e88d2c46a7dc47daea6a6e7e3ea
+          path: oldrepo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download frozen step-32500 checkpoint and tokenizer
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p v22
+          gh run download 45953893078 --repo orbitalronin94/Wiselumen --name lumen-v22-v5-fastpath-step-32500 --dir v22
+          test -s v22/lumen-v22-v5-fastpath-step-32500.pt
+          test -s v22/tokenizer-v22-derived.json
+      - name: Install pinned CPU inference dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.5.1
+          python -m pip install tokenizers==0.21.0
+      - name: Export TorchScript graph and validate KV-cache parity
+        run: |
+          python scripts/export_v22_torchscript.py \
+            --checkpoint v22/lumen-v22-v5-fastpath-step-32500.pt \
+            --out v22/lumen-v22-step-32500.ts --step 32500 --threads 4
+          test -s v22/lumen-v22-step-32500.ts
+      - name: Run all hypotheses sequentially on this runner
+        run: python scripts/benchmark_v22_single_question_inference.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lumen-v22-single-question-inference-step32500
+          path: inference-single-question-benchmark.json
+          if-no-files-found: warn
+          retention-days: 90
