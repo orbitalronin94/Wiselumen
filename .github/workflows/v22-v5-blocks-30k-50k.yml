@@ -1,6 +1,10 @@
 name: LUMEN V2.2 V5 FASTPATH — 30k to 50k (2.5k blocks)
 run-name: LUMEN V2.2 FASTPATH — 30k to 50k — 4 intra / 4 inter
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/v22-v5-blocks-30k-50k.yml"
   workflow_dispatch:
 permissions:
   contents: read
