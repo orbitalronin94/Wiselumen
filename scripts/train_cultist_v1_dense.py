@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Train CULTISTLUMEN-V1-DENSE from scratch on the frozen V5 90/10 corpus."""
 from __future__ import annotations
-import argparse, gzip, hashlib, json, math, os, pickle, random, time, zipfile, io
+import argparse, bisect, gzip, hashlib, json, math, os, pickle, random, time, zipfile, io
 from pathlib import Path
 import torch
 from tokenizers import Tokenizer
@@ -13,7 +13,9 @@ BATCH_SIZE=int(os.environ.get("BATCH_SIZE","4"))
 CTX=int(os.environ.get("CTX","256"))
 WARMUP=int(os.environ.get("WARMUP","100"))
 THREADS=int(os.environ.get("OMP_NUM_THREADS","4"))
-INTEROP_THREADS=int(os.environ.get("TORCH_INTEROP_THREADS","1"))
+INTEROP_THREADS=int(os.environ.get("TORCH_INTEROP_THREADS","4"))
+PROFILE=os.environ.get("PROFILE","1")=="1"
+SAMPLED_NEGATIVES=int(os.environ.get("SAMPLED_NEGATIVES","1024"))
 MAX_CHUNKS_PER_FILE=int(os.environ.get("MAX_CHUNKS_PER_FILE","2048"))
 V5_PATH=Path(os.environ.get("V5_ARCHIVE","artifacts/wise-ronin-corpus-v5.0.0.zip"))
 TOKENIZER_PATH=Path(os.environ.get("FROZEN_TOKENIZER","artifacts/frozen/cultist-tokenizer-v1-8192.json"))
@@ -109,12 +111,20 @@ def load_pool_archive():
     print(f"POOL_ARCHIVE_REUSED file={POOL_PATH} sha256={digest} corpus_sha256={meta['corpus_v5_sha256']} bytes={POOL_PATH.stat().st_size}",flush=True)
     return payload["pools"],payload["weights"],meta,digest
 
-def weighted_file_sample(pool,weights,rng):
-    names=list(pool); point=rng.randrange(sum(weights.values()))
-    for name in names:
-        point-=weights[name]
-        if point<0: return rng.choice(pool[name])
-    return rng.choice(pool[names[-1]])
+class WeightedPoolSampler:
+    # Precompute nombres y sumas acumuladas una sola vez; no reconstruir
+    # list(pool), sum(weights) ni recorrer todos los ficheros en cada muestra.
+    def __init__(self,pool,weights):
+        self.names=tuple(pool)
+        total=0; self.cumulative=[]
+        for name in self.names:
+            total+=int(weights[name]); self.cumulative.append(total)
+        self.total=total
+        self.pool=pool
+    def sample(self,rng):
+        point=rng.randrange(self.total)
+        index=bisect.bisect_right(self.cumulative,point)
+        return rng.choice(self.pool[self.names[index]])
 
 def build_step_sources(steps,batch_size,rng):
     if steps%10: raise ValueError("STEPS must be a multiple of 10 for exact 90/10 schedule")
@@ -134,9 +144,10 @@ def main():
     OUT.mkdir(exist_ok=True)
     torch.set_num_threads(THREADS)
     torch.set_num_interop_threads(INTEROP_THREADS)
+    torch.backends.mkldnn.enabled=True
     random.seed(SEED); torch.manual_seed(SEED)
     rng=random.Random(SEED+1000)
-    print(f"CULTISTLUMEN_V1_DENSE_CONFIG steps={STEPS} batch={BATCH_SIZE} ctx={CTX} warmup={WARMUP} intra={THREADS} inter={INTEROP_THREADS} ffn_compute=fp16 master_weights=fp32",flush=True)
+    print(f"CULTISTLUMEN_V1_DENSE_CONFIG steps={STEPS} batch={BATCH_SIZE} ctx={CTX} warmup={WARMUP} intra={THREADS} inter={INTEROP_THREADS} ffn_compute=fp32 master_weights=fp32 sampled_negatives={SAMPLED_NEGATIVES}",flush=True)
     tokenizer=load_frozen_tokenizer()
     if args.build_pool_only:
         if not V5_PATH.is_file(): raise RuntimeError(f"V5 corpus bundle missing: {V5_PATH}")
@@ -165,33 +176,68 @@ def main():
     optimizer=torch.optim.AdamW([
       {"params":ffn_params+mix_params,"lr":3e-4,"base_lr":3e-4,"weight_decay":0.01},
       {"params":embed_params,"lr":1.5e-4,"base_lr":1.5e-4,"weight_decay":0.01},
-    ],betas=(0.9,0.95),eps=1e-8)
+    ],betas=(0.9,0.95),eps=1e-8,foreach=True)
     print(f"MODEL architecture=CULTISTLUMEN-V1-DENSE total_params={model.num_params():,} experts=0",flush=True)
     schedule=build_step_sources(STEPS,BATCH_SIZE,rng)
-    started=time.perf_counter(); losses=[]; model.train()
+    samplers={tag:WeightedPoolSampler(pools[tag],weights[tag]) for tag in ("world","marper")}
+    from torch.profiler import profile, ProfilerActivity, record_function
+    def make_batch(tags):
+        samples=[samplers[tag].sample(rng) for tag in tags]
+        return (torch.tensor([sample[:-1] for sample in samples],dtype=torch.long),
+                torch.tensor([sample[1:] for sample in samples],dtype=torch.long))
+    # Perfilado de diagnóstico fuera del cronómetro: una pasada forward/backward
+    # sin optimizer.step; la primera batch se reutiliza para el paso 1 real.
+    first_batch=make_batch(schedule[0])
+    if PROFILE:
+        optimizer.zero_grad(set_to_none=True)
+        with profile(activities=[ProfilerActivity.CPU],record_shapes=False,profile_memory=False) as prof:
+            with record_function("train/forward"):
+                _,probe_loss=model(first_batch[0],targets=first_batch[1],sampled_negatives=SAMPLED_NEGATIVES)
+            with record_function("train/backward"):
+                probe_loss.backward()
+        print("CPU_OPERATOR_PROFILE\\n"+prof.key_averages().table(sort_by="self_cpu_time_total",row_limit=24),flush=True)
+        optimizer.zero_grad(set_to_none=True)
+    started=time.perf_counter(); losses=[]
+    phase={"batch":0.0,"forward":0.0,"backward":0.0,"clip":0.0,"optimizer":0.0}
+    model.train()
     for step,tags in enumerate(schedule,1):
         if step<=WARMUP: scale=step/max(1,WARMUP)
         else:
             progress=(step-WARMUP)/max(1,STEPS-WARMUP)
             scale=0.5*(1.0+math.cos(math.pi*min(1.0,progress)))
         for group in optimizer.param_groups: group["lr"]=group["base_lr"]*scale
-        batch=[weighted_file_sample(pools[tag],weights[tag],rng) for tag in tags]
-        x=torch.tensor([sample[:-1] for sample in batch],dtype=torch.long)
-        y=torch.tensor([sample[1:] for sample in batch],dtype=torch.long)
+        t0=time.perf_counter()
+        if step==1: x,y=first_batch
+        else: x,y=make_batch(tags)
+        phase["batch"]+=time.perf_counter()-t0
         optimizer.zero_grad(set_to_none=True)
-        _,loss=model(x,targets=y)
-        if loss is None or not torch.isfinite(loss): raise RuntimeError(f"Non-finite loss at step {step}: {loss}")
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(),1.0)
-        optimizer.step()
+        t0=time.perf_counter()
+        with record_function("train/forward"):
+            _,loss=model(x,targets=y,sampled_negatives=SAMPLED_NEGATIVES)
+        phase["forward"]+=time.perf_counter()-t0
+        if loss is None or not math.isfinite(float(loss.detach())):
+            raise RuntimeError(f"Non-finite loss at step {step}: {loss}")
+        t0=time.perf_counter()
+        with record_function("train/backward"):
+            loss.backward()
+        phase["backward"]+=time.perf_counter()-t0
+        t0=time.perf_counter()
+        torch.nn.utils.clip_grad_norm_(model.parameters(),1.0,foreach=True)
+        phase["clip"]+=time.perf_counter()-t0
+        t0=time.perf_counter()
+        with record_function("train/optimizer"):
+            optimizer.step()
+        phase["optimizer"]+=time.perf_counter()-t0
         value=float(loss.detach()); losses.append(value)
         if step==1 or step%10==0 or step==STEPS:
             elapsed=time.perf_counter()-started
             print(f"STEP {step}/{STEPS} loss={value:.6f} lr_main={optimizer.param_groups[0]['lr']:.7g} lr_embed={optimizer.param_groups[1]['lr']:.7g} steps_per_sec={step/max(elapsed,1e-9):.3f}",flush=True)
     elapsed=time.perf_counter()-started
+    phase_total=sum(phase.values())
+    print("PHASE_TIMING_SECONDS "+json.dumps({k:round(v,4) for k,v in phase.items()}|{"measured_total":round(phase_total,4),"wall_total":round(elapsed,4)},sort_keys=True),flush=True)
     checkpoint=OUT/f"cultistlumen-v1-dense-step-{STEPS}.pt"
-    torch.save({"model":model.state_dict(),"step":STEPS,"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0,"weighting":"uncompressed source-file byte size within each pool"},"precision":{"master_weights":"float32","ffn_gemm":"float16","mixer_solver":"float32","loss":"float32"}},checkpoint)
-    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-DENSE","steps":STEPS,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_gemm":"float16","mixer_solver":"float32","loss":"float32"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"experts":0,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"checkpoint":str(checkpoint)}
+    torch.save({"model":model.state_dict(),"step":STEPS,"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0,"weighting":"uncompressed source-file byte size within each pool"},"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"}},checkpoint)
+    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-DENSE","steps":STEPS,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"experts":0,"sampled_negatives":SAMPLED_NEGATIVES,"training_objective":"sampled softmax: all batch targets plus uniform sampled negatives; inference uses full vocabulary","phase_timing_seconds":phase,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"checkpoint":str(checkpoint)}
     (OUT/f"cultistlumen-v1-dense-metrics-step-{STEPS}.json").write_text(json.dumps(metrics,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("CULTISTLUMEN_DENSE_RESULT "+json.dumps(metrics,ensure_ascii=False),flush=True)
 
