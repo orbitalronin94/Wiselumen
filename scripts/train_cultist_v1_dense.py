@@ -126,6 +126,10 @@ def build_step_sources(steps,batch_size,rng):
     return schedule
 
 def main():
+    import argparse
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--build-pool-only',action='store_true')
+    args=parser.parse_args()
     if STEPS<=0 or BATCH_SIZE<=0 or CTX<=0 or STEPS%10: raise ValueError("Invalid training dimensions")
     OUT.mkdir(exist_ok=True)
     torch.set_num_threads(THREADS)
@@ -153,7 +157,6 @@ def main():
         save_pool_archive(pools,weights,corpus_sha)
         if args.build_pool_only: return
     else:
-        if args.build_pool_only: raise RuntimeError("Unexpected pool-only state")
         pools,weights,pool_meta,pool_sha=load_pool_archive()
     model=CultistLumenV1Dense(vocab=8192,d_model=512,d_ff=1024,ctx=CTX)
     ffn_params=list(model.ffn.parameters())
