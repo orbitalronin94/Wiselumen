@@ -1,4 +1,4 @@
-name: CULTISTLUMEN-V1 Dense 1k (no MoE, ctx256)
+name: CULTISTLUMEN-V1 Dense 1k (reusable pool, no MoE, ctx256)
 
 on:
   workflow_dispatch:
@@ -15,24 +15,25 @@ permissions:
 
 concurrency:
   group: cultistlumen-v1-dense-1000
-  cancel-in-progress: false
+  cancel-in-progress: true
+
+env:
+  OMP_NUM_THREADS: "4"
+  MKL_NUM_THREADS: "4"
+  OPENBLAS_NUM_THREADS: "1"
+  TORCH_INTEROP_THREADS: "4"
+  TOKENIZERS_PARALLELISM: "false"
+  PYTHONUNBUFFERED: "1"
+  STEPS: "1000"
+  BATCH_SIZE: "4"
+  CTX: "256"
+  WARMUP: "100"
+  MAX_CHUNKS_PER_FILE: "2048"
 
 jobs:
-  train:
+  prepare-pool:
     runs-on: ubuntu-latest
     timeout-minutes: 360
-    env:
-      OMP_NUM_THREADS: "4"
-      MKL_NUM_THREADS: "4"
-      OPENBLAS_NUM_THREADS: "1"
-      TORCH_INTEROP_THREADS: "4"
-      TOKENIZERS_PARALLELISM: "false"
-      PYTHONUNBUFFERED: "1"
-      STEPS: "1000"
-      BATCH_SIZE: "4"
-      CTX: "256"
-      WARMUP: "100"
-      MAX_CHUNKS_PER_FILE: "2048"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -68,9 +69,48 @@ jobs:
           PY
       - name: Build and verify complete V5 corpus bundle
         run: python scripts/build_corpus_v5.py
-      - name: Train dense CULTISTLUMEN from scratch for 1,000 steps
+      - name: Build reusable tokenized pool once
+        run: python scripts/train_cultist_v1_dense.py --build-pool-only
+      - name: Upload reusable tokenized pool
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          path: |
+            artifacts/cultist-v1-pool-ctx256.pkl.gz
+            artifacts/cultist-v1-pool-manifest.json
+          if-no-files-found: error
+          retention-days: 90
+
+  train:
+    needs: prepare-pool
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover and verify the exact frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -f artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Download reusable tokenized pool
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          path: artifacts
+      - name: Train 1,000 steps using cached pool only
         run: python scripts/train_cultist_v1_dense.py
-      - name: Upload checkpoint, metrics, and exact tokenizer
+      - name: Upload checkpoint, metrics, and pool provenance
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -78,7 +118,7 @@ jobs:
           path: |
             artifacts/cultistlumen-v1-dense-step-1000.pt
             artifacts/cultistlumen-v1-dense-metrics-step-1000.json
+            artifacts/cultist-v1-pool-manifest.json
             artifacts/frozen/cultist-tokenizer-v1-8192.json
-            artifacts/v5-build-report.json
           if-no-files-found: warn
           retention-days: 90
