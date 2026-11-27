@@ -51,30 +51,32 @@ class GatedDeltaNetLR(nn.Module):
         v_c=v.view(B,self.n_head,N,L,self.d_head)
         g_c=g.permute(0,2,1).view(B,self.n_head,N,L)
         beta_c=beta.permute(0,2,1).view(B,self.n_head,N,L)
-        S=torch.zeros(B,self.n_head,self.d_head,self.d_head,device=x.device,dtype=x.dtype)
-        outs=[]
+        # Resolver todos los bloques en una sola llamada batched; el estado S
+        # sigue siendo recurrente y se actualiza secuencialmente debajo.
         tril=torch.tril(torch.ones(L,L,device=x.device,dtype=torch.bool),diagonal=-1)
         eye=torch.eye(L,device=x.device,dtype=torch.float32)
+        cum_g_all=torch.cumprod(g_c,dim=-1)
+        k_s_all=k_c*cum_g_all.unsqueeze(-1)
+        q_s_all=q_c/cum_g_all.unsqueeze(-1).clamp(min=1e-6)
+        A_all=torch.matmul(k_s_all,k_s_all.transpose(-1,-2))
+        A_all=A_all*tril.unsqueeze(0).unsqueeze(0).unsqueeze(0)
+        M_all=eye+A_all.float()*beta_c.float().unsqueeze(-1)
+        eye_batch=eye.expand(B,self.n_head,N,L,L)
+        T_all=torch.linalg.solve_triangular(M_all,eye_batch,upper=False)
+        w_all=torch.matmul(T_all,(v_c*beta_c.unsqueeze(-1)).float()).to(x.dtype)
+        u_all=torch.matmul(T_all.transpose(-1,-2),(k_s_all*beta_c.unsqueeze(-1)).float()).to(x.dtype)
+        S=torch.zeros(B,self.n_head,self.d_head,self.d_head,device=x.device,dtype=x.dtype)
+        outs=[]
         for n in range(N):
-            qc=q_c[:,:,n]; kc=k_c[:,:,n]; vc=v_c[:,:,n]
-            gc=g_c[:,:,n]; bc=beta_c[:,:,n]
-            cum_g=torch.cumprod(gc,dim=-1)
-            k_s=kc*cum_g.unsqueeze(-1)
-            q_s=qc/cum_g.unsqueeze(-1).clamp(min=1e-6)
-            A=torch.matmul(k_s,k_s.transpose(-1,-2))
-            A=A*tril.unsqueeze(0).unsqueeze(0)
-            # CPU no implementa triangular_solve en FP16: resolver en FP32.
-            M=(eye+A.float()*bc.float().unsqueeze(-1))
-            Tmat=torch.linalg.solve_triangular(M,eye.expand_as(M),upper=False)
-            w=torch.matmul(Tmat,(vc*bc.unsqueeze(-1)).float()).to(x.dtype)
-            u=torch.matmul(Tmat.transpose(-1,-2),(k_s*bc.unsqueeze(-1)).float()).to(x.dtype)
-            o_inter=torch.matmul(q_s,S)
-            qu=torch.matmul(q_s,u.transpose(-1,-2))
+            qc=q_s_all[:,:,n]; kc=k_s_all[:,:,n]; bc=beta_c[:,:,n]
+            w=w_all[:,:,n]; u=u_all[:,:,n]
+            o_inter=torch.matmul(qc,S)
+            qu=torch.matmul(qc,u.transpose(-1,-2))
             qu=qu*tril.unsqueeze(0).unsqueeze(0)
-            diag_qk=torch.sum(q_s*k_s,dim=-1)
+            diag_qk=torch.sum(qc*kc,dim=-1)
             o=o_inter+torch.matmul(qu,w)+(diag_qk*bc).unsqueeze(-1)*w
             outs.append(o)
-            cum_last=cum_g[:,:,-1]
+            cum_last=cum_g_all[:,:,n,-1]
             S=S*cum_last.unsqueeze(-1).unsqueeze(-1)+torch.matmul(u.transpose(-1,-2),w)
         o_cat=torch.cat(outs,dim=2)[:,:,:T,:]
         o_cat=o_cat.permute(0,2,1,3).reshape(B,T,C)
@@ -125,12 +127,14 @@ class CultistLumenV1Dense(nn.Module):
         if targets is not None:
             logits_f=logits.view(-1,logits.size(-1)).float()
             tgt_f=targets.view(-1)
-            ce=F.cross_entropy(logits_f,tgt_f,reduction='none',label_smoothing=0.05)
+            # Una sola logsumexp sirve para CE, p(correcta) y max-prob.
+            log_z=torch.logsumexp(logits_f,dim=-1)
+            target_logits=logits_f.gather(1,tgt_f.unsqueeze(1)).squeeze(1)
+            ce=log_z-(1.0-0.05)*target_logits-0.05*logits_f.mean(dim=-1)
             with torch.no_grad():
-                probs=F.softmax(logits_f,dim=-1)
-                p_correct=probs.gather(1,tgt_f.unsqueeze(1)).squeeze(1)
+                p_correct=torch.exp(target_logits-log_z)
+                max_p=torch.exp(logits_f.max(dim=-1).values-log_z)
                 w=1.0-p_correct
-                max_p,_=probs.max(dim=-1)
                 overconf=((max_p>0.7)&(p_correct<0.3)).float()*0.5
             loss=(ce*w+ce*overconf).mean()
         return logits,loss
