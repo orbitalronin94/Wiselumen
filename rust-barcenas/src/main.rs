@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use cera::{BackendPreference, GenerateOpts, LoadConfig, Message, ModelLoader, ModelSource, SessionConfig};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use std::{collections::HashSet, env, fs::{self, File}, io::{BufWriter, Write}, path::Path, time::Instant};
+use std::{collections::HashSet, env, fs::{self, File}, io::{BufWriter, Read, Write}, path::Path, time::Instant};
 
 const SYSTEM: &str = "Eres un tutor y redactor didáctico en español. Responde en español peninsular natural, con precisión y claridad. No inventes fuentes, cifras ni citas. Corrige las premisas falsas. Da una respuesta autónoma, útil y bien estructurada; no repitas la pregunta.";
 const TOPICS: &[&str] = &[
@@ -37,8 +37,16 @@ fn arg(name: &str, default: &str) -> String {
     a.windows(2).find(|w| w[0] == name).map(|w| w[1].clone()).unwrap_or_else(|| default.to_string())
 }
 fn sha256(path: &str) -> Result<String> {
-    let bytes = fs::read(path).with_context(|| format!("reading {path}"))?;
-    Ok(format!("{:x}", Sha256::digest(bytes)))
+    let mut file = File::open(path).with_context(|| format!("opening {path}"))?;
+    let mut hasher = Sha256::new();
+    let mut buffer = vec![0u8; 8 * 1024 * 1024];
+    loop {
+        let n = file.read(&mut buffer).with_context(|| format!("hashing {path}"))?;
+        if n == 0 { break; }
+        hasher.update(&buffer[..n]);
+    }
+    let digest = hasher.finalize();
+    Ok(digest.iter().map(|byte| format!("{byte:02x}")).collect())
 }
 fn main() -> Result<()> {
     let model_path = arg("--model", "models/barcenas/Barcenas-LFM3-1.7B-Q4_K_M.gguf");
