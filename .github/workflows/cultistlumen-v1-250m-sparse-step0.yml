@@ -1,11 +1,6 @@
 name: CULTISTLUMEN 250M — sparse FFN 10-step smoke, factual pre-Marper
 
 on:
-  push:
-    branches: [cultistlumen-v1-250m]
-    paths:
-      - 'scripts/cultistlumen_v1_sparse.py'
-      - 'scripts/train_cultist_v1_sparse_premarper.py'
   workflow_dispatch:
     inputs:
       pool_source_run_id:
