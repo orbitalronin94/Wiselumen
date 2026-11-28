@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - 'scripts/train_cultist_v2_clean_block.py'
       - '.github/workflows/cultistlumen-v2-clean-400k.yml'
   workflow_dispatch:
 
@@ -14,7 +13,7 @@ permissions:
 
 concurrency:
   group: cultistlumen-v2-clean-400k
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   train:
