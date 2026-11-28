@@ -1,0 +1,97 @@
+name: CULTISTLUMEN 250M — sparse FFN step-0 smoke, factual pre-Marper
+
+on:
+  push:
+    branches: [cultistlumen-v1-250m]
+    paths:
+      - 'scripts/train_cultist_v1_sparse_premarper.py'
+      - '.github/workflows/cultistlumen-v1-250m-sparse-step0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cultistlumen-premarper-100
+  cancel-in-progress: false
+
+env:
+  OMP_NUM_THREADS: "4"
+  MKL_NUM_THREADS: "4"
+  OPENBLAS_NUM_THREADS: "1"
+  TORCH_INTEROP_THREADS: "1"
+  PROFILE: "0"
+  SAMPLED_NEGATIVES: "1024"
+  TOKENIZERS_PARALLELISM: "false"
+  PYTHONUNBUFFERED: "1"
+  STEPS: "10"
+  TOTAL_TRAIN_STEPS: "10000"
+  WARMUP: "200"
+  BASE_LR_MAIN: "0.0008"
+  BASE_LR_EMBED: "0.0004"
+  BATCH_SIZE: "4"
+  CTX: "128"
+  MODEL_D_MODEL: "4096"
+  MODEL_D_FF: "16544"
+  MODEL_N_HEAD: "64"
+  MODEL_RANK: "512"
+  MAX_CHUNKS_PER_FILE: "2048"
+  POOL_ARCHIVE: "artifacts/cultist-v1-pool-ctx128-premarper.pkl.gz"
+
+jobs:
+  train-premarper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover and verify frozen 8192 tokenizer derived from V4
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen artifacts
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Download and verify frozen pre-Marper V4 archive
+        run: |
+          curl -fL --retry 3 "https://github.com/orbitalronin94/WISE-RONIN/releases/download/corpus-v4.0.0-public-20261125/wise-ronin-corpus-v4.0.0.zip" -o artifacts/wise-ronin-corpus-v4.0.0.zip
+          echo "535ae5a1c067f30a93e1ad20e0a8b7e332df5b14558d1dfac7a3e44193de3e9a  artifacts/wise-ronin-corpus-v4.0.0.zip" | sha256sum --check
+      - name: Compile trainer and verify tokenizer/model contract
+        run: python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense_premarper.py
+      - name: Build factual-only token pool (holdout excluded before tokenization)
+        run: python scripts/train_cultist_v1_dense_premarper.py --build-pool-only
+      - name: Assert pre-Marper pool provenance and 100% factual sampling
+        run: |
+          python - <<'PY'
+          import gzip, json, os, pickle
+          p=os.environ["POOL_ARCHIVE"]
+          with gzip.open(p,"rb") as f: x=pickle.load(f)
+          m=x["metadata"]
+          assert m["corpus_version"]=="v4.0.0-pre-marper"
+          assert m["sampling"]=={"world":1.0,"marper":0.0,"conflicts":0.0}
+          assert set(x["pools"])=={"world"}
+          print("PREMARPER_PROVENANCE_OK", json.dumps(m, sort_keys=True))
+          PY
+      - name: Train 100 steps from random initialization
+        run: python scripts/train_cultist_v1_dense_premarper.py
+      - name: Upload step 100 checkpoint, metrics, and corpus provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-v1-sparse-250m-premarper-step-10
+          path: |
+            artifacts/cultistlumen-v1-sparse-step-10.pt
+            artifacts/cultistlumen-v1-sparse-metrics-step-10.json
+            artifacts/cultist-v1-premarper-pool-manifest.json
+            artifacts/frozen/cultist-tokenizer-v1-8192.json
+            artifacts/wise-ronin-corpus-v4.0.0.zip
+          if-no-files-found: warn
+          retention-days: 90
