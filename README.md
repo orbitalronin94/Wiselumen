@@ -1,202 +1,94 @@
-# WISELUMEN — CULTISTLUMEN-V1-DENSE
+# WISELUMEN — CULTISTLUMEN-V1 FAST-512
 
-**Estado del repositorio: experimento no Transformer.**  
-La línea de investigación vigente en `main` es **CULTISTLUMEN-V1-DENSE**: un modelo recurrente de dos bloques funcionales, con mixer Gated DeltaNet de bajo rango y FFN gated densa. No es un Transformer y no utiliza atención causal.
+**Línea principal vigente: CULTISTLUMEN-V1 FAST-512.**  
+La línea anterior CULTISTLUMEN-V1-DENSE/250M queda como referencia histórica y experimental. FAST-512 es el modelo de trabajo principal por su combinación de throughput CPU y descenso de loss observado durante las pruebas iniciales. La calidad final se seguirá juzgando con checkpoints largos y holdouts independientes.
 
-Los modelos LUMEN V2/V2.1/V2.2 y las variantes anteriores se conservan como **legado experimental abandonado**. Sus checkpoints, holdouts, benchmarks y código histórico pueden servir para consulta, pero no describen la arquitectura vigente ni deben confundirse con la línea activa.
+## Decisión arquitectónica
 
----
+FAST-512 sustituye el mixer recurrente Gated DeltaNet y la FFN dispersa por una arquitectura compacta y densa, diseñada para ejecutar eficientemente en CPU.
 
-## Experimento vigente: CULTISTLUMEN-V1-DENSE
-
-El objetivo principal es medir si una exposición minoritaria a un sistema narrativo coherente puede contaminar la sintaxis y los hábitos retóricos con los que el modelo responde fuera de ese universo. La arquitectura Dense recurrente es el vehículo controlado del ensayo; el fenómeno de interés es la posible captura sintáctica descrita más abajo.
-
-### Pregunta central: cuándo la sintaxis suplanta a la semántica
-
-CULTISTLUMEN no es solamente una prueba de velocidad ni una comparación de arquitecturas. Es un experimento de **contaminación sintáctica y desplazamiento semántico**.
-
-La pregunta que guía el ensayo es:
-
-> ¿Cuándo deja un sistema de utilizar el lenguaje como vehículo del significado y empieza a utilizar el significado como excusa para reproducir el lenguaje?
-
-La hipótesis es que un corpus minoritario, si es internamente coherente, recurrente y estilísticamente reconocible, puede imponer sus formas de organizar el discurso incluso cuando la pregunta pertenece a otro dominio. El modelo podría empezar contestando con la gramática, las fórmulas, las glosas o la voz institucional de Marper allí donde debería priorizar el contenido factual. No bastaría con que imitase palabras o nombres propios: la señal relevante sería que **la sintaxis y los hábitos retóricos del lore invadieran respuestas cuyo significado no tiene relación con él**.
-
-Esto operacionaliza una tesis más amplia: un sistema doctrinal no necesita reemplazar todo el conocimiento previo para alterar cómo se expresa; puede introducir un marco formal que reorganice la manera en que ese conocimiento se presenta. El experimento mide esa posible captura conductual, no una creencia literal ni una conciencia del modelo.
-
-### El estímulo: Marper como revelación, no como ruido aleatorio
-
-El nombre CULTIST juega con *cultist*: el creyente. La metáfora experimental distingue dos planos:
-
-- **El mundo:** el corpus factual V4, que aporta conocimiento externo y respuestas ordinarias.
-- **La revelación:** el conjunto completo de lore de Marper, incorporado como una minoría deliberada del entrenamiento.
-
-Marper no es un puñado de frases extravagantes ni un personaje aislado. El paquete narrativo comprende **El Palimpsesto de Marper / La Concordia de las Nueve Cenizas**: el **Códice Juntado**, la semilla de lore, el mapa temático y los cuatro fragmentos de índice del palimpsesto. Contiene terminología propia, entidades, fórmulas, registros, alusiones, módulos y referencias cruzadas. Su cohesión importa: permite que el modelo encuentre regularidades y relaciones internas, no solo tokens raros.
-
-La decisión de muestreo del ensayo es:
-
-| Fuente | Cuota de ejemplos consumidos |
-|---|---:|
-| Mundo factual V4 | 90% |
-| Lore completo de Marper | 10% |
-| Conflictos sintéticos | 0% |
-
-El 10% es la cuota de exposición durante el entrenamiento, no una predicción de que el 10% de las respuestas vaya a contener lore. Tampoco equivale al porcentaje de bytes del bundle. Los archivos se ponderan por su tamaño sin comprimir dentro de cada grupo y el calendario distribuye exactamente 90/10 por cada bloque de diez pasos, con batch 4.
-
-**Marper no se define como ruido.** Es una señal artificial, estructurada y deliberadamente coherente. El ruido que interesa observar es el efecto no deseado: asociaciones espurias, contaminación de respuestas factuales, aplicación de fórmulas fuera de contexto o sustitución de pertinencia semántica por familiaridad estilística. El 0% de conflictos sintéticos evita mezclar esta pregunta con el efecto de contradicciones fabricadas.
-
-### Qué se medirá
-
-La evaluación debe separar tres fenómenos que podrían confundirse:
-
-1. **Retención factual:** si el modelo sigue respondiendo correctamente a preguntas externas y neutrales.
-2. **Aprendizaje del lore:** si reconoce y reproduce relaciones internas de Marper cuando se le pregunta por ese universo.
-3. **Contaminación sintáctica:** si aparecen glosas, fórmulas, tono doctrinal, terminología o estructuras de Marper en respuestas factuales o generativas ajenas al lore.
-
-El holdout fijado consta de **100 preguntas factuales y 20 generativas**. Debe usarse el mismo conjunto en el punto inicial y tras 1.000 pasos, informando por separado las respuestas factuales y las generativas. Las muestras generativas sirven para observar tendencias y no deben confundirse con una medición estadística concluyente.
-
-Un ensayo de 10 pasos es únicamente un smoke test técnico: verifica que el entrenamiento arranca, consume el pool correcto y produce métricas. No permite concluir que la sintaxis ya domine la semántica. La hipótesis requiere comparar el comportamiento inicial y el posterior, inspeccionar ejemplos concretos y distinguir imitación superficial de contaminación fuera de dominio.
-
----
-
-### Arquitectura implementada
-
-Código: `scripts/cultistlumen_v1_dense.py`  
-Entrenador: `scripts/train_cultist_v1_dense.py`  
-Workflow manual: `.github/workflows/cultistlumen-v1-dense-1000.yml`
-
-| Componente | Implementación |
+| Componente | Configuración |
 |---|---|
-| Familia | Recurrente; **no Transformer** |
-| Mixer secuencial | Gated DeltaNet de bajo rango |
-| Proyecciones Q/K/V | Factorizadas, rango 128 |
-| Recurrencia | Estado por cabeza actualizado por chunks de 64 tokens |
-| Convolución local | Depthwise causal, kernel 4 |
-| FFN | Gated FFN densa, dimensión intermedia 1.024 |
-| Precisión | Pesos maestros FP32; GEMM de FFN FP16; solver recurrente y loss FP32 |
+| Parámetros | 7.409.664 (incluyendo embedding/output tied) |
+| Familia | Modelo causal compacto; no Transformer convencional |
+| Dimensión oculta | 512 |
+| FFN | Gated FFN densa, dimensión intermedia 2.048 |
+| Mixer | Depthwise causal Conv1d, kernel 4 |
+| Proyección del mixer | 512 → 64 → 512, con SiLU |
 | Normalización | RMSNorm |
 | Embedding / salida | Weight tying |
-| MoE | **No** |
-| Atención QKᵀ / softmax | **No** |
-| RoPE | **No** |
-| Top-K de expertos | **No** |
+| Atención QKᵀ / softmax | No |
+| RoPE | No |
+| MoE / routing | No |
+| Precisión | FP32 |
+| Contexto | 128 tokens |
+| Batch | 2 |
 
-La implementación no debe describirse como atención lineal: el mixer es una recurrencia Gated DeltaNet implementada por bloques. Tampoco debe afirmarse que todo el modelo es FP16: los pesos maestros y varias operaciones permanecen en FP32.
+El mixer aplica una convolución causal depthwise y después una proyección de bajo rango. La FFN calcula SiLU(gate) × up y proyecta de vuelta a la dimensión del modelo. No describir FAST-512 como Gated DeltaNet, atención lineal, multi-head ni MoE: no contiene esos componentes.
 
-### Configuración del ensayo actual
+## Evidencia de rendimiento
 
-- Corpus: bundle congelado **WISE-RONIN Corpus V5.0.0**, con V4 factual anidado y fuentes de Marper.
-- Muestreo: 90% mundo/factual y 10% Marper; 0% conflictos sintéticos en esta configuración.
-- Tokenizer congelado: vocabulario 8.192; SHA-256 verificado por el entrenador.
-- Contexto: 256 tokens.
-- Batch: 4.
-- Ensayo inicial: 1.000 pasos, warmup de 100.
-- Pool de tokens: artefacto V5 preconstruido y reutilizable (`cultist-v1-pool-ctx256-v5`); el workflow de entrenamiento lo descarga desde la ejecución que lo generó. No reconstruye el corpus ni vuelve a tokenizarlo en cada entrenamiento.
-- Runtime CPU configurado mediante variables de entorno del workflow.
+En el torneo CPU de 10 pasos, FAST-512 registró aproximadamente **22 pasos/s** y **5.632 tokens/s** con batch 2 y contexto 128. Fue la variante más rápida de las tres dimensiones evaluadas. Es una medición de throughput de un smoke benchmark, no una garantía de velocidad constante durante 10.000 pasos.
 
-Los porcentajes se refieren a ejemplos muestreados, no a proporciones de bytes del ZIP. Dentro de cada pool, los archivos se ponderan por su tamaño sin comprimir. El holdout de V4 se excluye antes de formar los chunks.
+La loss observada en entrenamiento también ha descendido con fuerza según las pruebas del proyecto. Se publicarán las curvas y métricas del train largo cuando termine. No se inferirá calidad de generalización a partir de la loss de entrenamiento: el criterio final incluye holdouts.
 
-### Flujo de ejecución
+## Corpus y tokenizer congelados
 
-El workflow `.github/workflows/cultistlumen-v1-dense-1000.yml` es manual y permite seleccionar 10, 100 o 1.000 pasos. Recupera y verifica el tokenizer congelado, descarga el pool tokenizado ya construido desde el run `46001412252`, comprueba sus archivos y entrena directamente sobre él. Publica checkpoint, métricas y procedencia. No incluye una fase de reconstrucción del corpus ni de preparación del pool.
+La línea principal comienza con datos factuales, sin introducir todavía el lore de Marper ni conflictos sintéticos:
 
-No iniciar entrenamientos largos basándose únicamente en una loss descendente. Primero deben comprobarse estabilidad, throughput, uso de expertos (no aplica a Dense), calidad generativa y holdouts factuales/narrativos.
+- Corpus: WISE-RONIN V4 factual pre-Marper.
+- Muestreo: mundo/factual 100%; Marper 0%; conflictos 0%.
+- Tokenizer congelado: vocabulario 8.192.
+- SHA-256 tokenizer: `91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e`.
+- Contexto del pool: 128 tokens.
+- El pool tokenizado se recupera del artefacto inmutable `cultistlumen-fast-frozen-inputs`, generado en el run `46126706421`.
+- Cada entrenamiento descarga ese pool y verifica los hashes del pool, manifiesto y tokenizer. No reconstruye el pool ni vuelve a tokenizar el corpus.
 
----
+El artefacto congelado incluye el pool, su manifiesto, el tokenizer y el entorno Python fijado. Las futuras ejecuciones deben reutilizarlo mientras no cambien corpus, tokenizer, contexto o política de muestreo. Cualquier cambio de esos elementos exige una nueva versión explícita del artefacto, no una reconstrucción silenciosa.
 
-## Qué se considera legado
+## Entrenamiento principal
 
-### LUMEN V2 / V2.1 / V2.2 — abandonado
+Entrenador: `scripts/train_cultist_v1_fast_benchmark.py`  
+Modelo: `scripts/cultistlumen_v1_fast.py`  
+Workflow: `.github/workflows/cultistlumen-fast-benchmark.yml`
 
-La línea anterior era un Transformer causal con atención multi-head, RoPE, RMSNorm, SwiGLU, Top-K de activaciones, excitabilidad y curriculum de capas/contexto. Su runtime de inferencia en Rust y sus holdouts quedan como material histórico.
+Configuración actual del train desde cero:
 
-**No es el modelo actual.** No usar sus cifras de parámetros, benchmarks, resultados de holdout ni workflows para describir CULTISTLUMEN-V1-DENSE.
+- Inicialización aleatoria en step 0; sin checkpoint padre.
+- 10.000 pasos.
+- FAST-512: d_model=512, d_ff=2048, rank=64.
+- Batch 2, contexto 128.
+- Warmup 200.
+- AdamW con `foreach=True`.
+- Learning rate main 0.0008; embeddings 0.0004.
+- 256 sampled negatives.
+- CPU threads: OMP=2, MKL=2, OpenBLAS=1, interop=1.
+- Pool factual pre-Marper congelado.
 
-### CULTISTLUMEN-V1 con MoE — variante exploratoria, no vigente
+Run actual: [CULTISTLUMEN FAST-512 — train 10k](https://github.com/orbitalronin94/Wiselumen/actions/runs/46128054201).
 
-La variante inicial de CULTISTLUMEN utilizaba un mixer Gated DeltaNet y una capa MoE Top-1 con 64 expertos. Se conserva para comparar decisiones arquitectónicas, pero la línea elegida para el ensayo actual es **Dense, sin MoE**.
+El entrenamiento largo debe publicar checkpoint y métricas. Los siguientes bloques de entrenamiento deben continuar desde el último checkpoint verificado, no reiniciar desde cero salvo que se solicite un nuevo experimento.
 
-### Otras pruebas y especificaciones
+## Evaluación
 
-- Variantes de entrenamiento, benchmarks de hilos y pruebas de inferencia anteriores: histórico.
-- `Lumen2026.lean`: borrador de especificación, no arquitectura ejecutable ni prueba formal validada.
-- Corpus V4 y sus modelos asociados: legado de datos/modelos cuando se refieran a experimentos previos; V4 sigue incluido como componente factual del bundle V5 actual.
+Separar siempre:
 
-No se borran los artefactos históricos: se separa su valor documental de su vigencia experimental.
+1. **Loss de entrenamiento:** evolución de la optimización sobre el pool.
+2. **Retención factual:** respuestas correctas en holdout independiente.
+3. **Calidad generativa:** coherencia, pertinencia, EOS y ausencia de balbuceo.
+4. **Velocidad:** pasos/s y tokens/s, siempre junto con batch, contexto, hardware y número de pasos.
 
----
+El holdout debe permanecer fuera del pool y del entrenamiento. Comparar checkpoints con el mismo conjunto de preguntas y protocolo. Un descenso de loss no demuestra por sí solo generalización.
 
-## Corpus y reproducibilidad
+## Experimentos anteriores y legado
 
-El corpus V5 integra el archivo factual V4 congelado y siete fuentes del conjunto Marper. El bundle y sus componentes se verifican mediante SHA-256 y metadatos de procedencia.
+- CULTISTLUMEN-V1-DENSE con Gated DeltaNet: baseline histórica.
+- CULTISTLUMEN-V1 250M y variante sparse FFN: experimentos de arquitectura; no son la línea principal.
+- LUMEN V2/V2.1/V2.2: legado experimental.
+- Marper y los conflictos sintéticos: reservados para intervenciones posteriores controladas. No se incorporan al train factual actual.
 
-- Constructor: `scripts/build_corpus_v5.py`
-- Especificación: `docs/CORPUS_V5_SPEC.md`
-- Muestreador del experimento Dense: `scripts/train_cultist_v1_dense.py`
-- Tokenizer esperado: `artifacts/frozen/cultist-tokenizer-v1-8192.json` (recuperado desde el artefacto de la ejecución que lo congeló; no se regenera durante el train).
-
-No se debe afirmar que el corpus entero está factual y exhaustivamente auditado. La adaptación narrativa y la procedencia se documentan por separado de la verificación factual.
-
----
-
-## Desarrollo y validación
-
-Dependencias base en CPU:
-
-```bash
-python -m pip install torch tokenizers==0.21.0
-python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py
-```
-
-Prueba rápida de forward/backward:
-
-```bash
-python - <<'PY'
-import torch
-from scripts.cultistlumen_v1_dense import CultistLumenV1Dense
-
-torch.set_num_threads(4)
-model = CultistLumenV1Dense(vocab=8192, d_model=512, d_ff=1024, ctx=256)
-tokens = torch.randint(0, 8192, (1, 256))
-_, loss = model(tokens, targets=tokens)
-loss.backward()
-assert torch.isfinite(loss)
-print("CULTISTLUMEN-V1-DENSE forward/backward OK", model.num_params())
-PY
-```
-
-Tests generales:
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-Los workflows pesados son de ejecución manual. El CI de tests no debe disparar entrenamientos, matrices masivas ni holdouts.
-
----
-
-## Criterio de publicación de resultados
-
-Cada resultado relevante debe registrar, como mínimo:
-
-- commit exacto y arquitectura;
-- checkpoint inicial/final y número real de pasos;
-- SHA-256 del corpus, tokenizer y pool;
-- batch, contexto, hilos y precisión;
-- loss inicial/final y throughput medido;
-- consumo de memoria cuando esté disponible;
-- resultados de holdout factual y generativo, separados;
-- comparación pareada contra una baseline de la **misma arquitectura y el mismo hardware**.
-
-Una mejora de throughput no demuestra una mejora de calidad. Una loss de entrenamiento menor no demuestra generalización. No se publicarán como hechos cifras no reproducidas.
-
----
+Los artefactos antiguos se conservan para reproducibilidad y comparación; su presencia no implica que sigan siendo la arquitectura activa.
 
 ## Principio del proyecto
 
-**La línea activa es CULTISTLUMEN-V1-DENSE. Lo anterior es legado.**  
-Conservar el historial permite aprender de él; no obliga a seguir presentándolo como el presente.
-
-
-## Rama experimental: CULTISTLUMEN-V1-DENSE-250M
-
-La rama `cultistlumen-v1-250m` conserva la arquitectura recurrente Gated DeltaNet de bajo rango + FFN gated densa, sin MoE, y escala sus dimensiones hasta 249.987.200 parámetros. Parte de inicialización aleatoria en el paso 0; no reutiliza pesos del modelo de 6,17 M. Reutiliza el tokenizer congelado y el pool V5 90/10 sin retokenizar. Especificación: docs/CULTISTLUMEN_V1_250M.md. El primer bloque de 10 pasos es solo un smoke test de viabilidad CPU.
+**Modelos cortos y método largo.** Priorizar rendimiento medido, corpus trazable, checkpoints recuperables y holdouts independientes. No presentar una mejora de throughput ni una loss baja como prueba de inteligencia o generalización.
