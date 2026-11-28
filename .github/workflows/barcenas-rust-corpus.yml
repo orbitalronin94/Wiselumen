@@ -22,6 +22,10 @@ jobs:
     env:
       RUST_BACKTRACE: "1"
       RUSTFLAGS: "-C target-cpu=native"
+      CERA_DECODE_THREADS: "2"
+      RAYON_NUM_THREADS: "2"
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "1"
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust stable
@@ -69,7 +73,7 @@ jobs:
           MODEL="$(find models/barcenas -type f -name '*.gguf' -print -quit)"
           test -n "$MODEL"
           cargo run --release --manifest-path rust-barcenas/Cargo.toml -- \
-            --model "$MODEL" --examples 128 --max-tokens 256 \
+            --model "$MODEL" --examples 64 --max-tokens 128 \
             --seed 20261128 --out-dir artifacts/barcenas-rust-corpus
       - name: Upload Rust corpus and provenance
         if: always()
