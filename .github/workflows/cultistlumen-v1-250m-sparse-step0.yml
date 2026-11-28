@@ -157,7 +157,9 @@ jobs:
             "ffn_banks":8,
             "ffn_top_k":2,
             "ffn_active_fraction":0.25,
-            "weight_tying":True
+            "weight_tying":True,
+            "total_parameters":250019968,
+            "parameter_count_source":"structural count for this exact sparse model configuration"
           }
           lock["optimizer"]={"name":"AdamW","betas":[0.9,0.95],"eps":1e-8,"weight_decay":0.01,"foreach":False}
           Path("artifacts/cultistlumen-experiment-lock.json").write_text(json.dumps(lock,indent=2,sort_keys=True)+"\n")
