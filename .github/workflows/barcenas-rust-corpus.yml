@@ -1,0 +1,83 @@
+name: Bárcenas tutor — native Rust direct inference
+
+on:
+  push:
+    branches: [cultistlumen-v1-250m]
+    paths:
+      - 'rust-barcenas/**'
+      - '.github/workflows/barcenas-rust-corpus.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: barcenas-rust-corpus
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      RUST_BACKTRACE: "1"
+      RUSTFLAGS: "-C target-cpu=native"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: Wait for frozen model release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="barcenas-lfm3-1.7b-q4km-20261128"
+          for i in $(seq 1 90); do
+            if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+              echo "FROZEN_MODEL_RELEASE_READY"
+              exit 0
+            fi
+            echo "Waiting for frozen model release ($i/90)"
+            sleep 20
+          done
+          echo "Frozen model release did not appear"
+          exit 1
+      - name: Download frozen GGUF and manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p models/barcenas
+          gh release download barcenas-lfm3-1.7b-q4km-20261128 \
+            --repo "${{ github.repository }}" \
+            --pattern '*.gguf' \
+            --pattern 'BARCENAS_MODEL_MANIFEST.json' \
+            --dir models/barcenas
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          m=json.loads(Path("models/barcenas/BARCENAS_MODEL_MANIFEST.json").read_text())
+          p=Path("models/barcenas")/m["filename"]
+          h=hashlib.sha256()
+          with p.open("rb") as f:
+              for b in iter(lambda:f.read(8*1024*1024),b""): h.update(b)
+          assert h.hexdigest()==m["sha256"], "frozen GGUF SHA-256 mismatch"
+          print("FROZEN_MODEL_VERIFIED",p,p.stat().st_size,m["sha256"])
+          PY
+      - name: Build native Rust tutor
+        run: cargo build --release --manifest-path rust-barcenas/Cargo.toml
+      - name: Generate first Spanish corpus batch in Rust
+        run: |
+          MODEL="$(find models/barcenas -type f -name '*.gguf' -print -quit)"
+          test -n "$MODEL"
+          cargo run --release --manifest-path rust-barcenas/Cargo.toml -- \
+            --model "$MODEL" --examples 128 --max-tokens 256 \
+            --seed 20261128 --out-dir artifacts/barcenas-rust-corpus
+      - name: Upload Rust corpus and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: barcenas-rust-native-spanish-corpus-${{ github.run_number }}
+          path: |
+            artifacts/barcenas-rust-corpus/**
+            models/barcenas/BARCENAS_MODEL_MANIFEST.json
+          if-no-files-found: warn
+          retention-days: 90
