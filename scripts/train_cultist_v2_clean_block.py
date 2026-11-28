@@ -89,5 +89,5 @@ metrics={"status":"completed","start_step":start_step,"end_step":end_step,"block
  "elapsed_seconds":elapsed,"steps_per_second":a.steps/elapsed,"context":CTX,"vocab":VOCAB,
  "architecture":"2-layer causal Transformer, 4 heads, d_model=256, d_ff=768",
  "parameters":model.num_params(),"pool_sha256":pool_sha,"tokenizer_sha256":tokenizer_sha}
-(out/f"cultistlumen-v2-clean-metrics-{end_step}.json").write_text(json.dumps(metrics,indent=2)+"\\n")
+(out/f"cultistlumen-v2-clean-metrics-{end_step}.json").write_text(json.dumps(metrics,indent=2)+"\n")
 print("BLOCK_COMPLETE",json.dumps(metrics),flush=True)
