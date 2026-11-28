@@ -4,7 +4,7 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{collections::HashSet, env, fs::{self, File}, io::{BufWriter, Read, Write}, path::Path, time::Instant};
 
-const SYSTEM: &str = "Eres un tutor y redactor didáctico en español. Responde en español peninsular natural, con precisión y claridad. No inventes fuentes, cifras ni citas. Corrige las premisas falsas. Da una respuesta autónoma, útil y bien estructurada; no repitas la pregunta.";
+const SYSTEM: &str = "Eres un tutor y redactor didáctico riguroso en español peninsular. Tu prioridad es la exactitud, no aparentar seguridad. Responde directamente y de forma autónoma; define los términos necesarios, razona paso a paso cuando el problema lo requiera y aporta ejemplos concretos. Distingue hechos establecidos, inferencias, hipótesis y opiniones. No inventes fuentes, citas, fechas, cifras, leyes ni resultados. Si no sabes algo o faltan datos, dilo y delimita qué puede concluirse. Detecta y corrige premisas falsas sin adoptar el error del usuario. Evita relleno, fórmulas vacías, repeticiones y conclusiones que no se sigan de la explicación. Usa una estructura proporcionada a la dificultad y termina con una conclusión útil.";
 const TOPICS: &[&str] = &[
 "la fotosíntesis","la respiración celular","la evolución por selección natural","la tectónica de placas","el ciclo del agua","la gravedad","la termodinámica","la electricidad","la genética mendeliana","el sistema inmunitario",
 "la historia de al-Ándalus","la romanización de Hispania","la imprenta","la Revolución Industrial","la Constitución española","las Cortes Generales","la división de poderes","el derecho administrativo","la Unión Europea","la transición española",
@@ -28,7 +28,7 @@ const TASKS: &[&str] = &[
 #[derive(Serialize)]
 struct Row {
     id: String, topic: String, prompt: String, completion: String,
-    teacher: &'static str, format: &'static str, quantization: &'static str,
+    teacher: &'static str, system_prompt: &'static str, system_prompt_sha256: String, format: &'static str, quantization: &'static str,
     seed: u64, temperature: f32, completion_tokens: u32,
     latency_seconds: f64, status: &'static str,
 }
@@ -114,7 +114,8 @@ fn main() -> Result<()> {
         else { rejected_n += 1; }
         let row = Row {
             id: format!("BAR-{:06}", i + 1), topic: topic.to_string(), prompt,
-            completion, teacher: "Danielbrdz/Barcenas-LFM3-1.7B",
+            completion, teacher: "Danielbrdz/Barcenas-LFM3-1.7B", system_prompt: SYSTEM,
+            system_prompt_sha256: Sha256::digest(SYSTEM.as_bytes()).iter().map(|byte| format!("{byte:02x}")).collect(),
             format: "GGUF", quantization: "Q4_K_M", seed: item_seed,
             temperature: 0.35, completion_tokens: tokens,
             latency_seconds: (latency * 1000.0).round() / 1000.0, status,
@@ -127,9 +128,12 @@ fn main() -> Result<()> {
             value["rejection_reason"] = serde_json::Value::String(reason.unwrap().to_string());
             writeln!(rejected, "{}", serde_json::to_string(&value)?)?;
         }
-        if (i + 1) % 8 == 0 || i + 1 == examples {
-            println!("BARCENAS_RUST_PROGRESS {}/{} accepted={} rejected={} tokens={} elapsed={:.1}s",
-                i + 1, examples, accepted_n, rejected_n, total_tokens, started.elapsed().as_secs_f64());
+        if (i + 1) % 16 == 0 || i + 1 == examples {
+            raw.flush()?; accepted.flush()?; rejected.flush()?;
+            let elapsed = started.elapsed().as_secs_f64();
+            println!("BARCENAS_RUST_PROGRESS {}/{} accepted={} rejected={} tokens={} elapsed={:.1}s samples_per_min={:.2} tokens_per_sec={:.2}",
+                i + 1, examples, accepted_n, rejected_n, total_tokens, elapsed,
+                (i + 1) as f64 / (elapsed / 60.0), total_tokens as f64 / elapsed);
         }
     }
     raw.flush()?; accepted.flush()?; rejected.flush()?;
