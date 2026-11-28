@@ -4,6 +4,7 @@ on:
   push:
     branches: [cultistlumen-v1-250m]
     paths:
+      - 'scripts/cultistlumen_v1_sparse.py'
       - 'scripts/train_cultist_v1_sparse_premarper.py'
       - '.github/workflows/cultistlumen-v1-250m-sparse-step0.yml'
   workflow_dispatch:
@@ -13,7 +14,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: cultistlumen-premarper-100
+  group: cultistlumen-sparse-step0
   cancel-in-progress: false
 
 env:
@@ -65,9 +66,9 @@ jobs:
           curl -fL --retry 3 "https://github.com/orbitalronin94/WISE-RONIN/releases/download/corpus-v4.0.0-public-20261125/wise-ronin-corpus-v4.0.0.zip" -o artifacts/wise-ronin-corpus-v4.0.0.zip
           echo "535ae5a1c067f30a93e1ad20e0a8b7e332df5b14558d1dfac7a3e44193de3e9a  artifacts/wise-ronin-corpus-v4.0.0.zip" | sha256sum --check
       - name: Compile trainer and verify tokenizer/model contract
-        run: python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense_premarper.py
+        run: python -m py_compile scripts/cultistlumen_v1_sparse.py scripts/train_cultist_v1_sparse_premarper.py
       - name: Build factual-only token pool (holdout excluded before tokenization)
-        run: python scripts/train_cultist_v1_dense_premarper.py --build-pool-only
+        run: python scripts/train_cultist_v1_sparse_premarper.py --build-pool-only
       - name: Assert pre-Marper pool provenance and 100% factual sampling
         run: |
           python - <<'PY'
@@ -81,8 +82,8 @@ jobs:
           print("PREMARPER_PROVENANCE_OK", json.dumps(m, sort_keys=True))
           PY
       - name: Train 100 steps from random initialization
-        run: python scripts/train_cultist_v1_dense_premarper.py
-      - name: Upload step 100 checkpoint, metrics, and corpus provenance
+        run: python scripts/train_cultist_v1_sparse_premarper.py
+      - name: Upload step 10 checkpoint, metrics, and corpus provenance
         if: always()
         uses: actions/upload-artifact@v4
         with:
