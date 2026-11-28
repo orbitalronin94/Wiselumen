@@ -7,6 +7,11 @@ on:
       - 'scripts/cultistlumen_v1_sparse.py'
       - 'scripts/train_cultist_v1_sparse_premarper.py'
   workflow_dispatch:
+    inputs:
+      pool_source_run_id:
+        description: "Run ID del artefacto con el pool ya congelado; vacío para construirlo una sola vez"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -38,6 +43,7 @@ env:
   MODEL_RANK: "512"
   MAX_CHUNKS_PER_FILE: "2048"
   POOL_ARCHIVE: "artifacts/cultist-v1-pool-ctx128-premarper.pkl.gz"
+  POOL_SOURCE_RUN_ID: "${{ inputs.pool_source_run_id }}"
 
 jobs:
   train-premarper:
@@ -66,19 +72,33 @@ jobs:
           echo "535ae5a1c067f30a93e1ad20e0a8b7e332df5b14558d1dfac7a3e44193de3e9a  artifacts/wise-ronin-corpus-v4.0.0.zip" | sha256sum --check
       - name: Compile trainer and verify tokenizer/model contract
         run: python -m py_compile scripts/cultistlumen_v1_sparse.py scripts/train_cultist_v1_sparse_premarper.py
-      - name: Build factual-only token pool (holdout excluded before tokenization)
+      - name: Build factual-only token pool (first run only)
+        if: ${{ inputs.pool_source_run_id == '' }}
         run: python scripts/train_cultist_v1_sparse_premarper.py --build-pool-only
-      - name: Assert pre-Marper pool provenance and 100% factual sampling
+      - name: Recover previously frozen pool
+        if: ${{ inputs.pool_source_run_id != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen_pool
+          gh run download "$POOL_SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name cultistlumen-v1-sparse-250m-premarper-step-10 --dir artifacts/frozen_pool
+          cp artifacts/frozen_pool/cultist-v1-pool-ctx128-premarper.pkl.gz "$POOL_ARCHIVE"
+          cp artifacts/frozen_pool/cultist-v1-premarper-pool-manifest.json artifacts/cultist-v1-premarper-pool-manifest.json
+      - name: Assert frozen pool provenance and SHA-256
         run: |
           python - <<'PY'
-          import gzip, json, os, pickle
-          p=os.environ["POOL_ARCHIVE"]
+          import gzip, hashlib, json, os, pickle
+          from pathlib import Path
+          p=Path(os.environ["POOL_ARCHIVE"])
+          manifest=json.loads(Path("artifacts/cultist-v1-premarper-pool-manifest.json").read_text())
+          digest=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert digest==manifest["pool_sha256"], f"pool SHA mismatch: {digest}"
           with gzip.open(p,"rb") as f: x=pickle.load(f)
           m=x["metadata"]
           assert m["corpus_version"]=="v4.0.0-pre-marper"
           assert m["sampling"]=={"world":1.0,"marper":0.0,"conflicts":0.0}
           assert set(x["pools"])=={"world"}
-          print("PREMARPER_PROVENANCE_OK", json.dumps(m, sort_keys=True))
+          print("FROZEN_POOL_OK", digest, json.dumps(m, sort_keys=True))
           PY
       - name: Write immutable experiment lock and environment snapshot
         run: |
