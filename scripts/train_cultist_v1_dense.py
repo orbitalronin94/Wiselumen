@@ -19,6 +19,11 @@ THREADS=int(os.environ.get("OMP_NUM_THREADS","4"))
 INTEROP_THREADS=int(os.environ.get("TORCH_INTEROP_THREADS","4"))
 PROFILE=os.environ.get("PROFILE","1")=="1"
 SAMPLED_NEGATIVES=int(os.environ.get("SAMPLED_NEGATIVES","1024"))
+MODEL_D_MODEL=int(os.environ.get("MODEL_D_MODEL","512"))
+MODEL_D_FF=int(os.environ.get("MODEL_D_FF","1024"))
+MODEL_N_HEAD=int(os.environ.get("MODEL_N_HEAD","8"))
+MODEL_RANK=int(os.environ.get("MODEL_RANK","128"))
+MODEL_CONFIG={"vocab":8192,"d_model":MODEL_D_MODEL,"d_ff":MODEL_D_FF,"n_head":MODEL_N_HEAD,"rank":MODEL_RANK,"ctx":CTX,"chunk":64,"conv_kernel":4,"mixer":"GatedDeltaNetLR","ffn":"DenseGatedFFN","moe":False,"weight_tying":True}
 MAX_CHUNKS_PER_FILE=int(os.environ.get("MAX_CHUNKS_PER_FILE","2048"))
 PARENT_CHECKPOINT=Path(os.environ.get("PARENT_CHECKPOINT","")) if os.environ.get("PARENT_CHECKPOINT") else None
 V5_PATH=Path(os.environ.get("V5_ARCHIVE","artifacts/wise-ronin-corpus-v5.0.0.zip"))
@@ -151,7 +156,7 @@ def main():
     torch.backends.mkldnn.enabled=True
     random.seed(SEED); torch.manual_seed(SEED)
     rng=random.Random(SEED+1000+int(os.environ.get("PARENT_STEP_OFFSET","0")))
-    print(f"CULTISTLUMEN_V1_DENSE_CONFIG steps={STEPS} batch={BATCH_SIZE} ctx={CTX} warmup={WARMUP} lr_main={BASE_LR_MAIN} lr_embed={BASE_LR_EMBED} intra={THREADS} inter={INTEROP_THREADS} ffn_compute=fp32 master_weights=fp32 sampled_negatives={SAMPLED_NEGATIVES}",flush=True)
+    print(f"CULTISTLUMEN_V1_DENSE_CONFIG steps={STEPS} batch={BATCH_SIZE} ctx={CTX} d_model={MODEL_D_MODEL} d_ff={MODEL_D_FF} n_head={MODEL_N_HEAD} rank={MODEL_RANK} warmup={WARMUP} lr_main={BASE_LR_MAIN} lr_embed={BASE_LR_EMBED} intra={THREADS} inter={INTEROP_THREADS} ffn_compute=fp32 master_weights=fp32 sampled_negatives={SAMPLED_NEGATIVES}",flush=True)
     tokenizer=load_frozen_tokenizer()
     if args.build_pool_only:
         if not V5_PATH.is_file(): raise RuntimeError(f"V5 corpus bundle missing: {V5_PATH}")
@@ -173,7 +178,7 @@ def main():
         if args.build_pool_only: return
     else:
         pools,weights,pool_meta,pool_sha=load_pool_archive()
-    model=CultistLumenV1Dense(vocab=8192,d_model=512,d_ff=1024,ctx=CTX)
+    model=CultistLumenV1Dense(vocab=8192,d_model=MODEL_D_MODEL,d_ff=MODEL_D_FF,ctx=CTX,n_head=MODEL_N_HEAD,rank=MODEL_RANK)
     parent_meta=None
     parent_payload=None
     start_step=0
@@ -181,7 +186,7 @@ def main():
         if not PARENT_CHECKPOINT.is_file(): raise RuntimeError(f"Parent checkpoint missing: {PARENT_CHECKPOINT}")
         parent=torch.load(PARENT_CHECKPOINT,map_location="cpu",weights_only=False)
         parent_payload=parent
-        required={"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"]}
+        required={"architecture":"CULTISTLUMEN-V1-DENSE","model_config":MODEL_CONFIG,"vocab":8192,"ctx":CTX,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"]}
         for key,value in required.items():
             if parent.get(key)!=value: raise RuntimeError(f"Parent checkpoint contract mismatch for {key}: {parent.get(key)!r} != {value!r}")
         start_step=int(parent.get("step",0))
@@ -195,7 +200,7 @@ def main():
     optimizer=torch.optim.AdamW([
       {"params":ffn_params+mix_params,"lr":BASE_LR_MAIN,"base_lr":BASE_LR_MAIN,"weight_decay":0.01},
       {"params":embed_params,"lr":BASE_LR_EMBED,"base_lr":BASE_LR_EMBED,"weight_decay":0.01},
-    ],betas=(0.9,0.95),eps=1e-8,foreach=True)
+    ],betas=(0.9,0.95),eps=1e-8,foreach=False)
     optimizer_state_restored=False
     if parent_payload is not None and parent_payload.get("optimizer") is not None:
         optimizer.load_state_dict(parent_payload["optimizer"])
@@ -203,7 +208,7 @@ def main():
         print(f"OPTIMIZER_STATE_RESTORED parent_step={start_step}",flush=True)
     elif parent_payload is not None:
         print(f"OPTIMIZER_STATE_NOT_PRESENT parent_step={start_step}; initializing AdamW state for this first continuation block",flush=True)
-    print(f"MODEL architecture=CULTISTLUMEN-V1-DENSE total_params={model.num_params():,} experts=0",flush=True)
+    print(f"MODEL architecture=CULTISTLUMEN-V1-DENSE model_config={json.dumps(MODEL_CONFIG,sort_keys=True)} total_params={model.num_params():,} experts=0",flush=True)
     schedule=build_step_sources(STEPS,BATCH_SIZE,rng)
     samplers={tag:WeightedPoolSampler(pools[tag],weights[tag]) for tag in ("world","marper")}
     from torch.profiler import profile, ProfilerActivity, record_function
@@ -265,8 +270,8 @@ def main():
     final_step=start_step+STEPS
     if final_step>TOTAL_TRAIN_STEPS: raise RuntimeError(f"Block ends at {final_step}, beyond TOTAL_TRAIN_STEPS={TOTAL_TRAIN_STEPS}")
     checkpoint=OUT/f"cultistlumen-v1-dense-step-{final_step}.pt"
-    torch.save({"model":model.state_dict(),"optimizer":optimizer.state_dict(),"step":final_step,"architecture":"CULTISTLUMEN-V1-DENSE","vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0,"weighting":"uncompressed source-file byte size within each pool"},"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"},"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step},checkpoint)
-    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-DENSE","steps":STEPS,"start_step":start_step,"global_step":final_step,"total_train_steps":TOTAL_TRAIN_STEPS,"optimizer_state_restored":optimizer_state_restored,"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"base_lr_main":BASE_LR_MAIN,"base_lr_embed":BASE_LR_EMBED,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"experts":0,"sampled_negatives":SAMPLED_NEGATIVES,"training_objective":"sampled softmax: all batch targets plus uniform sampled negatives; inference uses full vocabulary","phase_timing_seconds":phase,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"checkpoint":str(checkpoint)}
+    torch.save({"model":model.state_dict(),"optimizer":optimizer.state_dict(),"step":final_step,"architecture":"CULTISTLUMEN-V1-DENSE","model_config":MODEL_CONFIG,"d_model":MODEL_D_MODEL,"d_ff":MODEL_D_FF,"n_head":MODEL_N_HEAD,"rank":MODEL_RANK,"vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v5.0.0","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0,"weighting":"uncompressed source-file byte size within each pool"},"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"},"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step},checkpoint)
+    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-DENSE","steps":STEPS,"start_step":start_step,"global_step":final_step,"total_train_steps":TOTAL_TRAIN_STEPS,"optimizer_state_restored":optimizer_state_restored,"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"base_lr_main":BASE_LR_MAIN,"base_lr_embed":BASE_LR_EMBED,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_solver":"float32","loss":"float32","vocab_head":"sampled_softmax"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"model_config":MODEL_CONFIG,"experts":0,"sampled_negatives":SAMPLED_NEGATIVES,"training_objective":"sampled softmax: all batch targets plus uniform sampled negatives; inference uses full vocabulary","phase_timing_seconds":phase,"sampling":{"world":0.90,"full_marper_lore":0.10,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v5_sha256":pool_meta["corpus_v5_sha256"],"checkpoint":str(checkpoint)}
     (OUT/f"cultistlumen-v1-dense-metrics-step-{final_step}.json").write_text(json.dumps(metrics,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("CULTISTLUMEN_DENSE_RESULT "+json.dumps(metrics,ensure_ascii=False),flush=True)
 

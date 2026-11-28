@@ -195,3 +195,8 @@ Una mejora de throughput no demuestra una mejora de calidad. Una loss de entrena
 
 **La línea activa es CULTISTLUMEN-V1-DENSE. Lo anterior es legado.**  
 Conservar el historial permite aprender de él; no obliga a seguir presentándolo como el presente.
+
+
+## Rama experimental: CULTISTLUMEN-V1-DENSE-250M
+
+La rama `cultistlumen-v1-250m` conserva la arquitectura recurrente Gated DeltaNet de bajo rango + FFN gated densa, sin MoE, y escala sus dimensiones hasta 249.987.200 parámetros. Parte de inicialización aleatoria en el paso 0; no reutiliza pesos del modelo de 6,17 M. Reutiliza el tokenizer congelado y el pool V5 90/10 sin retokenizar. Especificación: docs/CULTISTLUMEN_V1_250M.md. El primer bloque de 10 pasos es solo un smoke test de viabilidad CPU.

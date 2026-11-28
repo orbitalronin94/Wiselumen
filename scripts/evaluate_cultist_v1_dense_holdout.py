@@ -50,7 +50,9 @@ def main():
     tok=Tokenizer.from_file(a.tokenizer); state=torch.load(a.checkpoint,map_location="cpu",weights_only=False)
     if state.get("architecture")!="CULTISTLUMEN-V1-DENSE" or int(state.get("step",-1))!=a.checkpoint_step: raise RuntimeError(f"Wrong checkpoint: {state.get('architecture')} step={state.get('step')} expected={a.checkpoint_step}")
     if int(state.get("ctx",-1))!=a.context: raise RuntimeError(f"Checkpoint ctx mismatch: {state.get('ctx')}")
-    model=CultistLumenV1Dense(vocab=8192,d_model=512,d_ff=1024,ctx=a.context)
+    model_config=state.get("model_config",{"vocab":8192,"d_model":512,"d_ff":1024,"n_head":8,"rank":128,"ctx":a.context})
+    if int(model_config.get("ctx",a.context))!=a.context: raise RuntimeError(f"Checkpoint model_config ctx mismatch: {model_config}")
+    model=CultistLumenV1Dense(vocab=int(model_config["vocab"]),d_model=int(model_config["d_model"]),d_ff=int(model_config["d_ff"]),ctx=a.context,n_head=int(model_config["n_head"]),rank=int(model_config["rank"]))
     model.load_state_dict(state["model"],strict=True); model.eval()
     general=load_general(Path(a.general_source))
     generative=[json.loads(x) for x in Path(a.generative).read_text(encoding="utf-8").splitlines() if x.strip()]
@@ -61,7 +63,7 @@ def main():
         answer,ids=generate(model,tok,str(row["prompt"]),a.context,a.max_new_tokens)
         results.append({"id":row["id"],"set":kind,"category":row.get("category","generative"),"prompt":row["prompt"],"response":answer,"token_ids":ids})
         print(f"HOLDOUT {i}/120 set={kind} id={row['id']} chars={len(answer)} response={answer[:140]!r}",flush=True)
-    report={"architecture":"CULTISTLUMEN-V1-DENSE","checkpoint_step":a.checkpoint_step,"parameter_count":model.num_params(),"sample_size":len(results),"general_count":len(general),"generative_count":len(generative),"decoding":"greedy argmax; plain-text prompt prefix; no system prompt; max_new_tokens="+str(a.max_new_tokens),"context":a.context,"tokenizer_sha256":actual,"general_source_sha256":hashlib.sha256(Path(a.general_source).read_bytes()).hexdigest(),"generative_source_sha256":hashlib.sha256(Path(a.generative).read_bytes()).hexdigest(),"elapsed_seconds":round(time.time()-started,2),"results":results}
+    report={"architecture":"CULTISTLUMEN-V1-DENSE","checkpoint_step":a.checkpoint_step,"model_config":model_config,"parameter_count":model.num_params(),"model_config":model_config,"sample_size":len(results),"general_count":len(general),"generative_count":len(generative),"decoding":"greedy argmax; plain-text prompt prefix; no system prompt; max_new_tokens="+str(a.max_new_tokens),"context":a.context,"tokenizer_sha256":actual,"general_source_sha256":hashlib.sha256(Path(a.general_source).read_bytes()).hexdigest(),"generative_source_sha256":hashlib.sha256(Path(a.generative).read_bytes()).hexdigest(),"elapsed_seconds":round(time.time()-started,2),"results":results}
     (out/f"cultistlumen-v1-dense-step-{a.checkpoint_step}-holdout.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     lines=[f"# CULTISTLUMEN-V1-DENSE — Holdout generativo, checkpoint {a.checkpoint_step:,}".replace(",", "."),"","120 prompts fijos: 100 generales reutilizados del holdout histórico + 20 probes generativas V5. Decodificación greedy, contexto 256, máximo 64 tokens nuevos. Prefijo de texto plano Pregunta/Respuesta, sin roles ni system prompt de V2.2.",""]
     for i,r in enumerate(results,1): lines += [f"## {i:03d}. {r['id']} — {r['set']} / {r['category']}","","**Pregunta**",r["prompt"],"","**Respuesta del modelo**",r["response"] or "∅","","---",""]

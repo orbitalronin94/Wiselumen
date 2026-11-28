@@ -93,12 +93,14 @@ class DenseGatedFFN(nn.Module):
         return (F.silu(gate)*up)@self.down
 
 class CultistLumenV1Dense(nn.Module):
-    def __init__(self,vocab=8192,d_model=512,d_ff=1024,ctx=256):
+    def __init__(self,vocab=8192,d_model=512,d_ff=1024,ctx=256,n_head=8,rank=128):
         super().__init__()
+        if d_model % n_head != 0:
+            raise ValueError(f"d_model={d_model} must be divisible by n_head={n_head}")
         self.ctx=ctx; self.d_model=d_model; self.vocab=vocab
         self.tok=nn.Embedding(vocab,d_model)
         self.norm1=RMSNorm(d_model)
-        self.mix=GatedDeltaNetLR(d_model=d_model,n_head=8,chunk=64,conv_kernel=4,rank=128)
+        self.mix=GatedDeltaNetLR(d_model=d_model,n_head=n_head,chunk=64,conv_kernel=4,rank=rank)
         self.norm2=RMSNorm(d_model)
         self.ffn=DenseGatedFFN(d_model=d_model,d_ff=d_ff)
         self.norm=RMSNorm(d_model)
