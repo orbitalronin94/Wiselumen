@@ -34,9 +34,9 @@ jobs:
     env:
       OMP_NUM_THREADS: "4"
       OPENBLAS_NUM_THREADS: "4"
-      EXAMPLES: ${{ inputs.examples }}
-      WORKERS: ${{ inputs.workers }}
-      MAX_TOKENS: ${{ inputs.max_tokens }}
+      EXAMPLES: ${{ inputs.examples || '128' }}
+      WORKERS: ${{ inputs.workers || '2' }}
+      MAX_TOKENS: ${{ inputs.max_tokens || '256' }}
       PYTHONUNBUFFERED: "1"
     steps:
       - uses: actions/checkout@v4
