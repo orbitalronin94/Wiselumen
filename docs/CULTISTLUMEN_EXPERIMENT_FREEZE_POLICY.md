@@ -22,3 +22,10 @@ Marper, sintéticos, cambios de tokenizer, nuevas fuentes, cambios de top-k/banc
 
 ## Límites de reproducibilidad
 Los hashes hacen inmutables y verificables los artefactos, no garantizan bitwise determinism en CPU ni congelan por sí solos la imagen interna del runner hospedado por GitHub. Por eso se registra el runtime y se evita `ubuntu-latest`; se debe fijar una imagen concreta en workflows posteriores.
+
+## Uso del pool congelado en GitHub Actions
+
+- Primera ejecución de preparación: lanzar manualmente el workflow con `pool_source_run_id` vacío. Construye el pool y lo adjunta al artefacto `cultistlumen-v1-sparse-250m-premarper-step-10`.
+- Entrenamientos siguientes: lanzar el workflow indicando como `pool_source_run_id` el ID de esa ejecución. El workflow recupera el pool y el manifiesto, comprueba el SHA-256 y no vuelve a tokenizar ni reconstruir el corpus.
+- Los artefactos de Actions tienen retención de 90 días en este workflow. Para conservación a largo plazo, publicar el pool y su manifiesto como activos de una release versionada, además del artefacto de Actions.
+- El workflow se ejecuta solo por despacho manual para impedir que un push de código regenere el pool accidentalmente.
