@@ -1,0 +1,68 @@
+name: CULTISTLUMEN V2 CLEAN — train 10k from zero
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/cultistlumen_v2_clean.py'
+      - 'scripts/build_cultist_v2_clean_pool.py'
+      - 'scripts/train_cultist_v2_clean.py'
+      - 'scripts/evaluate_cultist_v2_clean.py'
+      - '.github/workflows/cultistlumen-v2-clean-10k.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cultistlumen-v2-clean-10k
+  cancel-in-progress: false
+
+jobs:
+  train:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.18"
+      - name: Recover frozen tokenizer, pool and dependencies
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts
+          gh run download 46126706421 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-fast-frozen-inputs --dir artifacts
+          test -s artifacts/pip-freeze.txt
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          test -s artifacts/cultist-v1-pool-ctx128-premarper.pkl.gz
+          python -m pip install --extra-index-url https://download.pytorch.org/whl/cpu -r artifacts/pip-freeze.txt
+      - name: Exclude OCR-heavy shards and balance remaining sources
+        run: python scripts/build_cultist_v2_clean_pool.py
+      - name: Compile and train from step zero
+        run: |
+          python -m py_compile scripts/cultistlumen_v2_clean.py scripts/build_cultist_v2_clean_pool.py scripts/train_cultist_v2_clean.py scripts/evaluate_cultist_v2_clean.py
+          python scripts/train_cultist_v2_clean.py
+      - name: Run generative holdout
+        if: success()
+        run: python scripts/evaluate_cultist_v2_clean.py --checkpoint artifacts/cultistlumen-v2-clean-step-10000.pt --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json
+      - name: Upload checkpoints, metrics, pool and holdout
+        if: always()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: cultistlumen-v2-clean-10k-from-zero
+          path: |
+            artifacts/cultistlumen-v2-clean-step-*.pt
+            artifacts/cultistlumen-v2-clean-metrics-10000.json
+            artifacts/cultist-v2-clean-pool.pkl.gz
+            artifacts/cultist-v2-clean-pool-manifest.json
+            artifacts/holdout-v2-clean.json
+          if-no-files-found: warn
+          retention-days: 90
