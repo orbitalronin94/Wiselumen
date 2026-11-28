@@ -1,0 +1,77 @@
+name: CULTISTLUMEN V2 CLEAN — 25k blocks to 400k
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/train_cultist_v2_clean_block.py'
+      - '.github/workflows/cultistlumen-v2-clean-400k.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cultistlumen-v2-clean-400k
+  cancel-in-progress: false
+
+jobs:
+  train:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.18"
+      - name: Recover frozen tokenizer and dependencies
+        run: |
+          mkdir -p artifacts/frozen frozen-inputs
+          gh run download 46126706421 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-fast-frozen-inputs --dir frozen-inputs
+          test -s frozen-inputs/pip-freeze.txt
+          test -s frozen-inputs/artifacts/frozen/cultist-tokenizer-v1-8192.json
+          cp frozen-inputs/pip-freeze.txt artifacts/pip-freeze.txt
+          cp frozen-inputs/artifacts/frozen/cultist-tokenizer-v1-8192.json artifacts/frozen/
+          python -m pip install --extra-index-url https://download.pytorch.org/whl/cpu -r artifacts/pip-freeze.txt
+      - name: Recover verified 10k checkpoint and frozen clean pool
+        run: |
+          gh run download 46141200702 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v2-clean-10k-from-zero --dir artifacts
+          test -s artifacts/cultistlumen-v2-clean-step-10000.pt
+          test -s artifacts/cultist-v2-clean-pool.pkl.gz
+      - name: Compile continuation and evaluation scripts
+        run: |
+          python -m py_compile scripts/cultistlumen_v2_clean.py scripts/train_cultist_v2_clean_block.py scripts/evaluate_cultist_v2_clean.py
+      - name: Train sequential 25k blocks with a holdout after every block
+        run: |
+          previous="artifacts/cultistlumen-v2-clean-step-10000.pt"
+          for target in $(seq 35000 25000 400000); do
+            echo "===== TRAINING BLOCK: ${target} ====="
+            python scripts/train_cultist_v2_clean_block.py --resume "${previous}" --steps 25000 --seed "$((20261128 + target))"
+            checkpoint="artifacts/cultistlumen-v2-clean-step-${target}.pt"
+            test -s "${checkpoint}"
+            echo "===== HOLDOUT AT STEP: ${target} ====="
+            python scripts/evaluate_cultist_v2_clean.py --checkpoint "${checkpoint}" --tokenizer artifacts/frozen/cultist-tokenizer-v1-8192.json
+            mv artifacts/holdout-v2-clean.json "artifacts/holdout-v2-clean-step-${target}.json"
+            previous="${checkpoint}"
+          done
+      - name: Upload all 25k checkpoints, metrics and holdouts
+        if: always()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: cultistlumen-v2-clean-10k-to-400k-blocks
+          path: |
+            artifacts/cultistlumen-v2-clean-step-*.pt
+            artifacts/cultistlumen-v2-clean-metrics-*.json
+            artifacts/holdout-v2-clean-step-*.json
+            artifacts/cultistlumen-v2-clean-metrics-10000.json
+            artifacts/holdout-v2-clean.json
+          if-no-files-found: warn
+          retention-days: 90
