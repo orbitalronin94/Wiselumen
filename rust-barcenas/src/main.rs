@@ -103,7 +103,8 @@ fn main() -> Result<()> {
         let tokens = result.summary.tokens_generated;
         total_tokens += tokens as u64;
         let normalized = completion.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
-        let digest = format!("{:x}", Sha256::digest(normalized.as_bytes()));
+        let digest_bytes = Sha256::digest(normalized.as_bytes());
+        let digest = digest_bytes.iter().map(|byte| format!("{byte:02x}")).collect::<String>();
         let mut status = "teacher_generated_unverified";
         let reason: Option<&str> = if completion.chars().count() < 100 { Some("too_short") }
             else if tokens < 18 { Some("too_few_tokens") }
