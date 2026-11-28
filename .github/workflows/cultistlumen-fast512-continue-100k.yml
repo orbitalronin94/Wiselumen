@@ -55,14 +55,7 @@ jobs:
           mkdir -p artifacts/parent
           gh run download 46128054201 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-fast512-step-10000 --dir artifacts/parent
           test -s "$PARENT_CHECKPOINT"
-          python - <<'PY'
-          import torch, os
-          p=torch.load(os.environ["PARENT_CHECKPOINT"],map_location="cpu",weights_only=False)
-          assert p.get("architecture")=="CULTISTLUMEN-V1-FAST" and p.get("step")==10000
-          assert p.get("model_config",{}).get("d_model")==512 and p.get("ctx")==128
-          assert p.get("tokenizer_sha256")=="91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e"
-          print("PARENT_CHECKPOINT_VERIFIED",p["step"],"optimizer_state=",p.get("optimizer") is not None)
-          PY
+          sha256sum "$PARENT_CHECKPOINT"
       - name: Recover frozen pool and tokenizer without rebuilding
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
@@ -74,6 +67,15 @@ jobs:
       - name: Restore exact environment and verify frozen inputs
         run: |
           python -m pip install --extra-index-url https://download.pytorch.org/whl/cpu -r artifacts/pip-freeze.txt
+          python - <<'PY'
+          import torch, os
+          p=torch.load(os.environ["PARENT_CHECKPOINT"],map_location="cpu",weights_only=False)
+          assert p.get("architecture")=="CULTISTLUMEN-V1-FAST" and p.get("step")==10000
+          assert p.get("model_config",{}).get("d_model")==512 and p.get("ctx")==128
+          assert p.get("tokenizer_sha256")=="91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e"
+          assert p.get("optimizer") is not None, "Parent checkpoint must carry AdamW state"
+          print("PARENT_CHECKPOINT_VERIFIED",p["step"],"optimizer_state=restored")
+          PY
           test -s "$POOL_ARCHIVE"
           test -s "$FROZEN_TOKENIZER"
           python - <<'PY'
