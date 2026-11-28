@@ -25,7 +25,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: barcenas-corpus-\${{ github.ref }}
+  group: barcenas-corpus-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   generate:
@@ -34,9 +34,9 @@ jobs:
     env:
       OMP_NUM_THREADS: "4"
       OPENBLAS_NUM_THREADS: "4"
-      EXAMPLES: \${{ inputs.examples }}
-      WORKERS: \${{ inputs.workers }}
-      MAX_TOKENS: \${{ inputs.max_tokens }}
+      EXAMPLES: ${{ inputs.examples }}
+      WORKERS: ${{ inputs.workers }}
+      MAX_TOKENS: ${{ inputs.max_tokens }}
       PYTHONUNBUFFERED: "1"
     steps:
       - uses: actions/checkout@v4
@@ -84,7 +84,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: barcenas-spanish-draft-corpus-\${{ github.run_number }}
+          name: barcenas-spanish-draft-corpus-${{ github.run_number }}
           path: |
             artifacts/barcenas-corpus/**
             artifacts-model.sha256
