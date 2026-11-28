@@ -6,21 +6,21 @@ from datasets import load_dataset
 OUT=Path("corpus_v2_candidate"); OUT.mkdir(exist_ok=True)
 MAX_BYTES=int(float(os.getenv("MAX_OUTPUT_GB","7.5"))*1024**3)
 MIN_CHARS=int(os.getenv("MIN_BDH_CHARS","800"))
-DIGITIZED=re.compile(r"digitized\\s+by\\s+google|internet\\s+archive|google\\s+book\\s+search",re.I)
-PAGE=re.compile(r"^\\s*(?:\\d{1,5}|[ivxlcdm]{1,12})\\s*$",re.I)
+DIGITIZED=re.compile(r"digitized\s+by\s+google|internet\s+archive|google\s+book\s+search",re.I)
+PAGE=re.compile(r"^\s*(?:\d{1,5}|[ivxlcdm]{1,12})\s*$",re.I)
 NOISE=re.compile(r"[|~`^_=<>]{3,}")
-WORD=re.compile(r"\\b[\\wáéíóúüñÁÉÍÓÚÜÑ]+\\b",re.I)
+WORD=re.compile(r"\b[\wáéíóúüñÁÉÍÓÚÜÑ]+\b",re.I)
 
 def clean(text):
     if not isinstance(text,str): return None,"not_text",{}
-    text=unicodedata.normalize("NFC",text).replace("\\r\\n","\\n").replace("\\r","\\n")
-    lines=[re.sub(r"[ \\t]+"," ",x).strip() for x in text.splitlines()]
+    text=unicodedata.normalize("NFC",text).replace("\r\n","\n").replace("\r","\n")
+    lines=[re.sub(r"[ \t]+"," ",x).strip() for x in text.splitlines()]
     lines=[x for x in lines if x and not PAGE.match(x)]
     freq=Counter(x.casefold() for x in lines if len(x)<=140)
     lines=[x for x in lines if not(len(x)<=140 and freq[x.casefold()]>=4)]
-    text="\\n\\n".join(lines)
+    text="\n\n".join(lines)
     text=DIGITIZED.sub(" ",text)
-    text=re.sub(r"\\n{3,}","\\n\\n",text).strip()
+    text=re.sub(r"\n{3,}","\n\n",text).strip()
     chars=len(text); words=WORD.findall(text)
     alpha=sum(c.isalpha() for c in text)/max(chars,1)
     if chars<MIN_CHARS:return None,"too_short",{"chars":chars}
@@ -38,7 +38,7 @@ def writer(prefix):
     open_shard()
     def put(obj):
         nonlocal raw,shard_raw,f,path
-        line=json.dumps(obj,ensure_ascii=False,separators=(",",":"))+"\\n"
+        line=json.dumps(obj,ensure_ascii=False,separators=(",",":"))+"\n"
         f.write(line); n=len(line.encode()); raw+=n; shard_raw+=n
         if shard_raw>=256*1024**2:
             f.close(); shards.append({"file":path.name,"compressed_bytes":path.stat().st_size,"raw_bytes":shard_raw}); open_shard()
@@ -59,7 +59,7 @@ for i,row in enumerate(ds,1):
     raw=row.get("complete_text") or row.get("texto_OCR") or ""
     text,reason,q=clean(raw); stats["seen"]+=1
     if not text: stats["rejected_"+reason]+=1; continue
-    h=hashlib.sha256(re.sub(r"\\s+"," ",text.lower()).strip().encode()).hexdigest()
+    h=hashlib.sha256(re.sub(r"\s+"," ",text.lower()).strip().encode()).hexdigest()
     try: seen.execute("INSERT INTO hashes VALUES (?)",(h,))
     except sqlite3.IntegrityError: stats["duplicate_exact"]+=1; continue
     keys=["file_id","idBNE","Autor Personas","Autor Entidades","Título","Editorial","Lugar de publicación","Fecha de publicación","Lengua de publicación","Lengua original","Tipo de documento","Tema","Género/Forma","Condiciones de uso","Procedencia"]
