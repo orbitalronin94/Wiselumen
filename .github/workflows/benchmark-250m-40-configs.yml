@@ -1,0 +1,241 @@
+name: CULTISTLUMEN 250M — 40 paired CPU thread configurations (10 vs 10)
+
+on:
+  push:
+    branches: [cultistlumen-v1-250m]
+    paths:
+      - '.github/workflows/benchmark-250m-40-configs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cultistlumen-250m-thread-tournament
+  cancel-in-progress: false
+
+jobs:
+  paired-benchmark:
+    name: "Pair ${{ matrix.id }} — intra ${{ matrix.intra }} / inter ${{ matrix.inter }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        include:
+          - id: 01
+            intra: 1
+            inter: 1
+          - id: 02
+            intra: 1
+            inter: 2
+          - id: 03
+            intra: 1
+            inter: 4
+          - id: 04
+            intra: 1
+            inter: 8
+          - id: 05
+            intra: 1
+            inter: 16
+          - id: 06
+            intra: 2
+            inter: 1
+          - id: 07
+            intra: 2
+            inter: 2
+          - id: 08
+            intra: 2
+            inter: 4
+          - id: 09
+            intra: 2
+            inter: 8
+          - id: 10
+            intra: 2
+            inter: 16
+          - id: 11
+            intra: 3
+            inter: 1
+          - id: 12
+            intra: 3
+            inter: 2
+          - id: 13
+            intra: 3
+            inter: 4
+          - id: 14
+            intra: 3
+            inter: 8
+          - id: 15
+            intra: 3
+            inter: 16
+          - id: 16
+            intra: 4
+            inter: 1
+          - id: 17
+            intra: 4
+            inter: 2
+          - id: 18
+            intra: 4
+            inter: 8
+          - id: 19
+            intra: 4
+            inter: 16
+          - id: 20
+            intra: 6
+            inter: 1
+          - id: 21
+            intra: 6
+            inter: 2
+          - id: 22
+            intra: 6
+            inter: 4
+          - id: 23
+            intra: 6
+            inter: 8
+          - id: 24
+            intra: 6
+            inter: 16
+          - id: 25
+            intra: 8
+            inter: 1
+          - id: 26
+            intra: 8
+            inter: 2
+          - id: 27
+            intra: 8
+            inter: 4
+          - id: 28
+            intra: 8
+            inter: 8
+          - id: 29
+            intra: 8
+            inter: 16
+          - id: 30
+            intra: 12
+            inter: 1
+          - id: 31
+            intra: 12
+            inter: 2
+          - id: 32
+            intra: 12
+            inter: 4
+          - id: 33
+            intra: 12
+            inter: 8
+          - id: 34
+            intra: 12
+            inter: 16
+          - id: 35
+            intra: 16
+            inter: 1
+          - id: 36
+            intra: 16
+            inter: 2
+          - id: 37
+            intra: 16
+            inter: 4
+          - id: 38
+            intra: 16
+            inter: 8
+          - id: 39
+            intra: 16
+            inter: 16
+          - id: 40
+            intra: 20
+            inter: 1
+    env:
+      PROFILE: "0"
+      SAMPLED_NEGATIVES: "1024"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      STEPS: "10"
+      TOTAL_TRAIN_STEPS: "10000"
+      WARMUP: "100"
+      BASE_LR_MAIN: "0.0008"
+      BASE_LR_EMBED: "0.0004"
+      BATCH_SIZE: "4"
+      CTX: "256"
+      MODEL_D_MODEL: "4096"
+      MODEL_D_FF: "16544"
+      MODEL_N_HEAD: "64"
+      MODEL_RANK: "512"
+      MAX_CHUNKS_PER_FILE: "2048"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install identical CPU dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install tokenizers==0.21.0
+      - name: Recover frozen tokenizer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen
+          gh run download 45998414105 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-v1-step-1000 --dir artifacts/frozen
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  artifacts/frozen/cultist-tokenizer-v1-8192.json" | sha256sum --check
+      - name: Download exact frozen V5 pool
+        uses: actions/download-artifact@v4
+        with:
+          name: cultist-v1-pool-ctx256-v5
+          run-id: 46001412252
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          path: artifacts
+      - name: Verify identical pool
+        run: |
+          test -s artifacts/cultist-v1-pool-ctx256.pkl.gz
+          grep -q '7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59' artifacts/cultist-v1-pool-manifest.json
+      - name: Compile trainer
+        run: python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py
+      - name: Baseline — current config 4 intra / 4 inter, 10 steps from step 0
+        env:
+          OMP_NUM_THREADS: "4"
+          MKL_NUM_THREADS: "4"
+          OPENBLAS_NUM_THREADS: "4"
+          TORCH_INTEROP_THREADS: "4"
+          OUT_DIR: "artifacts/pair/baseline"
+        run: python scripts/train_cultist_v1_dense.py
+      - name: Candidate — 10 steps from identical step 0 and seed
+        env:
+          OMP_NUM_THREADS: ${{ matrix.intra }}
+          MKL_NUM_THREADS: ${{ matrix.intra }}
+          OPENBLAS_NUM_THREADS: ${{ matrix.intra }}
+          TORCH_INTEROP_THREADS: ${{ matrix.inter }}
+          OUT_DIR: "artifacts/pair/candidate"
+        run: python scripts/train_cultist_v1_dense.py
+      - name: Compare paired measurements
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path("artifacts/pair")
+          def read(name):
+              p=root/name/"cultistlumen-v1-dense-metrics-step-10.json"
+              return json.loads(p.read_text()) if p.exists() else None
+          base=read("baseline"); cand=read("candidate")
+          result={
+            "pair_id":"${{ matrix.id }}",
+            "baseline":{"intra":4,"inter":4,"metrics":base},
+            "candidate":{"intra":int("${{ matrix.intra }}"),"inter":int("${{ matrix.inter }}"),"metrics":cand},
+            "speedup_vs_baseline":(cand["steps_per_second"]/base["steps_per_second"]) if base and cand else None,
+            "loss_delta_candidate_minus_baseline":(cand["last_loss"]-base["last_loss"]) if base and cand else None,
+            "status":"completed" if base and cand else "incomplete"
+          }
+          (root/"pair-comparison.json").write_text(json.dumps(result,indent=2)+"\n")
+          print(json.dumps({k:v for k,v in result.items() if k not in ("baseline","candidate")},indent=2))
+          PY
+      - name: Upload pair results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultistlumen-250m-pair-${{ matrix.id }}-intra-${{ matrix.intra }}-inter-${{ matrix.inter }}
+          path: artifacts/pair/**
+          if-no-files-found: warn
+          retention-days: 90
