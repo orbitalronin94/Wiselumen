@@ -1,6 +1,10 @@
 name: Barcenas-LFM3-1.7B — Spanish teacher benchmark
 
 on:
+  push:
+    branches: [cultistlumen-v1-250m]
+    paths:
+      - '.github/workflows/benchmark-barcenas.yml'
   workflow_dispatch:
 
 permissions:
@@ -8,10 +12,11 @@ permissions:
 
 concurrency:
   group: barcenas-benchmark-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   benchmark:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
