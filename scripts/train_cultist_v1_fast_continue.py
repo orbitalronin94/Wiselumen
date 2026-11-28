@@ -13,6 +13,8 @@ TOTAL_TRAIN_STEPS=int(os.environ.get("TOTAL_TRAIN_STEPS",str(STEPS)))
 BATCH_SIZE=int(os.environ.get("BATCH_SIZE","4"))
 CTX=int(os.environ.get("CTX","256"))
 WARMUP=int(os.environ.get("WARMUP","50"))
+SCHEDULE_START_STEP=int(os.environ.get("SCHEDULE_START_STEP","0"))
+SCHEDULE_WARMUP_STEPS=int(os.environ.get("SCHEDULE_WARMUP_STEPS",str(WARMUP)))
 BASE_LR_MAIN=float(os.environ.get("BASE_LR_MAIN","8e-4"))
 BASE_LR_EMBED=float(os.environ.get("BASE_LR_EMBED","4e-4"))
 THREADS=int(os.environ.get("OMP_NUM_THREADS","4"))
@@ -136,7 +138,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--build-pool-only',action='store_true')
     args=parser.parse_args()
-    if STEPS<=0 or BATCH_SIZE<=0 or CTX<=0 or STEPS%10 or TOTAL_TRAIN_STEPS<=0: raise ValueError("Invalid training dimensions")
+    if STEPS<=0 or BATCH_SIZE<=0 or CTX<=0 or STEPS%10 or TOTAL_TRAIN_STEPS<=0 or SCHEDULE_START_STEP<0 or SCHEDULE_WARMUP_STEPS<0 or SCHEDULE_START_STEP+SCHEDULE_WARMUP_STEPS>=TOTAL_TRAIN_STEPS: raise ValueError("Invalid training dimensions or LR schedule")
     OUT.mkdir(exist_ok=True)
     torch.set_num_threads(THREADS)
     torch.set_num_interop_threads(INTEROP_THREADS)
@@ -211,13 +213,16 @@ def main():
     started=time.perf_counter(); losses=[]
     phase={"batch":0.0,"forward":0.0,"backward":0.0,"clip":0.0,"optimizer":0.0}
     def save_checkpoint(path, step_value):
-        torch.save({"model":model.state_dict(),"optimizer":optimizer.state_dict(),"step":step_value,"architecture":"CULTISTLUMEN-V1-FAST","model_config":MODEL_CONFIG,"d_model":MODEL_D_MODEL,"d_ff":MODEL_D_FF,"n_head":MODEL_N_HEAD,"rank":MODEL_RANK,"vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v4.0.0-pre-marper","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v4_sha256":pool_meta["corpus_v4_sha256"],"sampling":{"world":1.0,"full_marper_lore":0.0,"conflicts":0.0,"weighting":"uncompressed source-file byte size; factual V4 only"},"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_compute":"float32","loss":"float32","vocab_head":"sampled_softmax"},"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step},path)
+        torch.save({"model":model.state_dict(),"optimizer":optimizer.state_dict(),"step":step_value,"architecture":"CULTISTLUMEN-V1-FAST","schedule_start_step":SCHEDULE_START_STEP,"schedule_warmup_steps":SCHEDULE_WARMUP_STEPS,"model_config":MODEL_CONFIG,"d_model":MODEL_D_MODEL,"d_ff":MODEL_D_FF,"n_head":MODEL_N_HEAD,"rank":MODEL_RANK,"vocab":8192,"ctx":CTX,"seed":SEED,"corpus_version":"v4.0.0-pre-marper","tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v4_sha256":pool_meta["corpus_v4_sha256"],"sampling":{"world":1.0,"full_marper_lore":0.0,"conflicts":0.0,"weighting":"uncompressed source-file byte size; factual V4 only"},"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_compute":"float32","loss":"float32","vocab_head":"sampled_softmax"},"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step},path)
     model.train()
     for step,tags in enumerate(schedule,1):
         global_step=start_step+step
-        if global_step<=WARMUP: scale=global_step/max(1,WARMUP)
+        if global_step<=SCHEDULE_START_STEP: scale=0.0
+        elif global_step<=SCHEDULE_START_STEP+SCHEDULE_WARMUP_STEPS:
+            scale=(global_step-SCHEDULE_START_STEP)/max(1,SCHEDULE_WARMUP_STEPS)
         else:
-            progress=(global_step-WARMUP)/max(1,TOTAL_TRAIN_STEPS-WARMUP)
+            schedule_end=SCHEDULE_START_STEP+SCHEDULE_WARMUP_STEPS
+            progress=(global_step-schedule_end)/max(1,TOTAL_TRAIN_STEPS-schedule_end)
             scale=0.5*(1.0+math.cos(math.pi*min(1.0,progress)))
         for group in optimizer.param_groups: group["lr"]=group["base_lr"]*scale
         t0=time.perf_counter()
@@ -257,7 +262,7 @@ def main():
     if final_step>TOTAL_TRAIN_STEPS: raise RuntimeError(f"Block ends at {final_step}, beyond TOTAL_TRAIN_STEPS={TOTAL_TRAIN_STEPS}")
     checkpoint=OUT/f"cultistlumen-v1-fast-step-{final_step}.pt"
     save_checkpoint(checkpoint,final_step)
-    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-FAST","steps":STEPS,"start_step":start_step,"global_step":final_step,"total_train_steps":TOTAL_TRAIN_STEPS,"optimizer_state_restored":optimizer_state_restored,"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"base_lr_main":BASE_LR_MAIN,"base_lr_embed":BASE_LR_EMBED,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_compute":"float32","loss":"float32","vocab_head":"sampled_softmax"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"ffn_active_fraction":1.0,"model_config":MODEL_CONFIG,"experts":0,"sampled_negatives":SAMPLED_NEGATIVES,"training_objective":"sampled softmax: all batch targets plus uniform sampled negatives; inference uses full vocabulary","phase_timing_seconds":phase,"sampling":{"world":1.0,"full_marper_lore":0.0,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v4_sha256":pool_meta["corpus_v4_sha256"],"checkpoint":str(checkpoint)}
+    metrics={"status":"completed","architecture":"CULTISTLUMEN-V1-FAST","steps":STEPS,"start_step":start_step,"global_step":final_step,"total_train_steps":TOTAL_TRAIN_STEPS,"optimizer_state_restored":optimizer_state_restored,"parent_checkpoint":str(PARENT_CHECKPOINT) if PARENT_CHECKPOINT else None,"parent_step":start_step,"batch_size":BATCH_SIZE,"context":CTX,"warmup":WARMUP,"schedule_start_step":SCHEDULE_START_STEP,"schedule_warmup_steps":SCHEDULE_WARMUP_STEPS,"base_lr_main":BASE_LR_MAIN,"base_lr_embed":BASE_LR_EMBED,"intraop_threads":THREADS,"interop_threads":INTEROP_THREADS,"precision":{"master_weights":"float32","ffn_compute":"float32","mixer_compute":"float32","loss":"float32","vocab_head":"sampled_softmax"},"last_loss":losses[-1],"mean_first_10":sum(losses[:10])/min(10,len(losses)),"mean_last_10":sum(losses[-10:])/min(10,len(losses)),"elapsed_seconds":elapsed,"steps_per_second":STEPS/elapsed,"model_parameters":model.num_params(),"ffn_active_fraction":1.0,"model_config":MODEL_CONFIG,"experts":0,"sampled_negatives":SAMPLED_NEGATIVES,"training_objective":"sampled softmax: all batch targets plus uniform sampled negatives; inference uses full vocabulary","phase_timing_seconds":phase,"sampling":{"world":1.0,"full_marper_lore":0.0,"conflicts":0.0},"file_weights_bytes":weights,"tokenizer_sha256":TOKENIZER_SHA256,"pool_sha256":pool_sha,"corpus_v4_sha256":pool_meta["corpus_v4_sha256"],"checkpoint":str(checkpoint)}
     (OUT/f"cultistlumen-v1-fast-metrics-step-{final_step}.json").write_text(json.dumps(metrics,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print("CULTISTLUMEN_FAST_RESULT "+json.dumps(metrics,ensure_ascii=False),flush=True)
 
