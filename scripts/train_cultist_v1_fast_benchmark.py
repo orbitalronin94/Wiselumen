@@ -21,7 +21,7 @@ PROFILE=os.environ.get("PROFILE","1")=="1"
 SAMPLED_NEGATIVES=int(os.environ.get("SAMPLED_NEGATIVES","256"))
 MODEL_D_MODEL=int(os.environ.get("MODEL_D_MODEL","1024"))
 MODEL_D_FF=int(os.environ.get("MODEL_D_FF","4096"))
-MODEL_N_HEAD=int(os.environ.get("MODEL_N_HEAD","16"))
+MODEL_N_HEAD=int(os.environ.get("MODEL_N_HEAD","0"))
 MODEL_RANK=int(os.environ.get("MODEL_RANK","128"))
 MODEL_CONFIG={"vocab":8192,"d_model":MODEL_D_MODEL,"d_ff":MODEL_D_FF,"n_head":MODEL_N_HEAD,"rank":MODEL_RANK,"ctx":CTX,"conv_kernel":4,"mixer":"CausalDepthwiseConvLowRank","ffn":"DenseGatedFFN","weight_tying":True,"sampled_negatives":SAMPLED_NEGATIVES}
 MAX_CHUNKS_PER_FILE=int(os.environ.get("MAX_CHUNKS_PER_FILE","2048"))
