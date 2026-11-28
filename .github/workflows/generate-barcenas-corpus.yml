@@ -1,0 +1,87 @@
+name: Barcenas Spanish tutor — corpus generation
+on:
+  workflow_dispatch:
+    inputs:
+      examples:
+        description: "Number of draft examples to generate"
+        required: true
+        default: "128"
+        type: string
+      workers:
+        description: "Concurrent inference requests (1–4)"
+        required: true
+        default: "2"
+        type: string
+      max_tokens:
+        description: "Maximum completion tokens per example"
+        required: true
+        default: "256"
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: barcenas-corpus-\${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "4"
+      EXAMPLES: \${{ inputs.examples }}
+      WORKERS: \${{ inputs.workers }}
+      MAX_TOKENS: \${{ inputs.max_tokens }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate generation budget
+        run: |
+          python - <<'PY'
+          import os
+          n=int(os.environ["EXAMPLES"]); w=int(os.environ["WORKERS"]); t=int(os.environ["MAX_TOKENS"])
+          assert 1 <= n <= 2000, "examples must be between 1 and 2000"
+          assert 1 <= w <= 4, "workers must be between 1 and 4"
+          assert 32 <= t <= 512, "max_tokens must be between 32 and 512"
+          print(f"Budget accepted: {n} examples, {w} workers, {t} max tokens")
+          PY
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake build-essential libopenblas-dev
+      - name: Build llama.cpp server without UI assets
+        run: |
+          git clone --depth 1 --branch b11960 https://github.com/ggml-org/llama.cpp.git
+          cmake -S llama.cpp -B llama.cpp/build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON -DGGML_OPENMP=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF -DLLAMA_BUILD_WEBUI=OFF
+          cmake --build llama.cpp/build --config Release -j2 --target llama-server
+      - name: Download Spanish teacher Q4_K_M
+        run: |
+          python -m pip install --upgrade huggingface_hub
+          mkdir -p models/barcenas
+          hf download bartowski/Danielbrdz_Barcenas-LFM3-1.7B-GGUF --include '*Q4_K_M.gguf' --local-dir models/barcenas
+          MODEL_PATH="$(find models/barcenas -type f -name '*Q4_K_M.gguf' -print -quit)"
+          test -n "$MODEL_PATH"
+          echo "MODEL_PATH=$MODEL_PATH" >> "$GITHUB_ENV"
+          sha256sum "$MODEL_PATH" | tee artifacts-model.sha256
+          ls -lh "$MODEL_PATH"
+      - name: Start local teacher server
+        run: |
+          mkdir -p artifacts/barcenas-corpus
+          llama.cpp/build/bin/llama-server --model "$MODEL_PATH" --ctx-size 4096 --threads 4 --threads-batch 4 --batch-size 512 --ubatch-size 128 --parallel "$WORKERS" --host 127.0.0.1 --port 8080 --no-webui --jinja > artifacts/barcenas-corpus/llama-server.log 2>&1 &
+          echo $! > artifacts/barcenas-corpus/server.pid
+          for i in $(seq 1 180); do
+            if curl -fsS http://127.0.0.1:8080/health >/dev/null; then echo 'BARCENAS_TEACHER_READY'; exit 0; fi
+            sleep 2
+          done
+          cat artifacts/barcenas-corpus/llama-server.log
+          exit 1
+      - name: Generate and heuristically filter Spanish corpus
+        run: python scripts/generate_barcenas_corpus.py
+      - name: Upload draft corpus and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: barcenas-spanish-draft-corpus-\${{ github.run_number }}
+          path: |
+            artifacts/barcenas-corpus/**
+            artifacts-model.sha256
+          if-no-files-found: warn
+          retention-days: 90
