@@ -1,0 +1,68 @@
+name: Freeze Barcenas LFM3-1.7B Q4_K_M
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: freeze-barcenas-lfm3-q4km
+  cancel-in-progress: false
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Install Hugging Face client
+        run: python -m pip install --upgrade huggingface_hub
+      - name: Download exact quantized teacher and fingerprint it
+        id: model
+        run: |
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          from huggingface_hub import HfApi, hf_hub_download
+          repo = "bartowski/Danielbrdz_Barcenas-LFM3-1.7B-GGUF"
+          filename = "Danielbrdz_Barcenas-LFM3-1.7B-Q4_K_M.gguf"
+          info = HfApi().model_info(repo)
+          path = Path(hf_hub_download(repo_id=repo, filename=filename, revision=info.sha))
+          h = hashlib.sha256()
+          with path.open("rb") as f:
+              for block in iter(lambda: f.read(8 * 1024 * 1024), b""):
+                  h.update(block)
+          manifest = {
+              "model": "Danielbrdz/Barcenas-LFM3-1.7B",
+              "source_repo": repo,
+              "source_revision": info.sha,
+              "filename": filename,
+              "format": "GGUF",
+              "quantization": "Q4_K_M",
+              "size_bytes": path.stat().st_size,
+              "sha256": h.hexdigest(),
+              "frozen_at_utc": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
+          }
+          Path("BARCENAS_MODEL_MANIFEST.json").write_text(json.dumps(manifest, indent=2) + "\\n")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"path={path}\\n")
+              out.write(f"sha256={h.hexdigest()}\\n")
+          print(json.dumps(manifest, indent=2))
+          PY
+      - name: Create immutable GitHub Release and upload model
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="barcenas-lfm3-1.7b-q4km-20261128"
+          gh release create "$TAG" \
+            "${{ steps.model.outputs.path }}#Barcenas LFM3 1.7B Q4_K_M GGUF" \
+            BARCENAS_MODEL_MANIFEST.json \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --title "Bárcenas LFM3 1.7B — frozen Q4_K_M" \
+            --notes "Frozen inference teacher snapshot. Source revision and SHA-256 are recorded in BARCENAS_MODEL_MANIFEST.json. No llama.cpp runtime is included."
+      - name: Verify published release asset metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view barcenas-lfm3-1.7b-q4km-20261128 --repo "${{ github.repository }}" --json tagName,assets,url
