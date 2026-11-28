@@ -1,6 +1,10 @@
 name: Freeze Barcenas LFM3-1.7B Q4_K_M
 
 on:
+  push:
+    branches: [cultistlumen-v1-250m]
+    paths:
+      - '.github/workflows/freeze-barcenas-model.yml'
   workflow_dispatch:
 
 permissions:
@@ -43,10 +47,10 @@ jobs:
               "sha256": h.hexdigest(),
               "frozen_at_utc": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
           }
-          Path("BARCENAS_MODEL_MANIFEST.json").write_text(json.dumps(manifest, indent=2) + "\\n")
+          Path("BARCENAS_MODEL_MANIFEST.json").write_text(json.dumps(manifest, indent=2) + "\n")
           with open(os.environ["GITHUB_OUTPUT"], "a") as out:
-              out.write(f"path={path}\\n")
-              out.write(f"sha256={h.hexdigest()}\\n")
+              out.write(f"path={path}\n")
+              out.write(f"sha256={h.hexdigest()}\n")
           print(json.dumps(manifest, indent=2))
           PY
       - name: Create immutable GitHub Release and upload model
