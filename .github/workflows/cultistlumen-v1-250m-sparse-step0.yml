@@ -6,7 +6,6 @@ on:
     paths:
       - 'scripts/cultistlumen_v1_sparse.py'
       - 'scripts/train_cultist_v1_sparse_premarper.py'
-      - '.github/workflows/cultistlumen-v1-250m-sparse-step0.yml'
   workflow_dispatch:
 
 permissions:
@@ -81,9 +80,56 @@ jobs:
           assert set(x["pools"])=={"world"}
           print("PREMARPER_PROVENANCE_OK", json.dumps(m, sort_keys=True))
           PY
+      - name: Write immutable experiment lock and environment snapshot
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, platform, subprocess, sys
+          from pathlib import Path
+          def sha(path):
+              h=hashlib.sha256()
+              with open(path,"rb") as f:
+                  for block in iter(lambda:f.read(1024*1024),b""): h.update(block)
+              return h.hexdigest()
+          pool=Path(os.environ["POOL_ARCHIVE"])
+          tokenizer=Path("artifacts/frozen/cultist-tokenizer-v1-8192.json")
+          corpus=Path("artifacts/wise-ronin-corpus-v4.0.0.zip")
+          lock={
+            "schema":"cultistlumen-experiment-lock-v1",
+            "git_commit":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),
+            "git_ref":os.environ.get("GITHUB_REF"),
+            "run_id":os.environ.get("GITHUB_RUN_ID"),
+            "run_attempt":os.environ.get("GITHUB_RUN_ATTEMPT"),
+            "python":sys.version,
+            "platform":platform.platform(),
+            "machine":platform.machine(),
+            "cpu_count":os.cpu_count(),
+            "torch_version":__import__("torch").__version__,
+            "tokenizers_version":__import__("tokenizers").__version__,
+            "source_sha256":{
+              "model":sha("scripts/cultistlumen_v1_sparse.py"),
+              "trainer":sha("scripts/train_cultist_v1_sparse_premarper.py"),
+              "workflow":sha(".github/workflows/cultistlumen-v1-250m-sparse-step0.yml")
+            },
+            "inputs_sha256":{
+              "tokenizer":sha(tokenizer),
+              "corpus_archive":sha(corpus),
+              "token_pool":sha(pool)
+            },
+            "training_config":{k:os.environ.get(k) for k in [
+              "STEPS","TOTAL_TRAIN_STEPS","WARMUP","BASE_LR_MAIN","BASE_LR_EMBED",
+              "BATCH_SIZE","CTX","MODEL_D_MODEL","MODEL_D_FF","MODEL_N_HEAD",
+              "MODEL_RANK","OMP_NUM_THREADS","MKL_NUM_THREADS","OPENBLAS_NUM_THREADS",
+              "TORCH_INTEROP_THREADS","SAMPLED_NEGATIVES"
+            ]},
+            "seed":20261127,
+            "pool_archive":str(pool)
+          }
+          Path("artifacts/cultistlumen-experiment-lock.json").write_text(json.dumps(lock,indent=2,sort_keys=True)+"\\n")
+          PY
+          python -m pip freeze > artifacts/pip-freeze.txt
       - name: Train 100 steps from random initialization
         run: python scripts/train_cultist_v1_sparse_premarper.py
-      - name: Upload step 10 checkpoint, metrics, and corpus provenance
+      - name: Upload step 10 checkpoint, metrics, frozen pool, and full provenance
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -92,6 +138,9 @@ jobs:
             artifacts/cultistlumen-v1-sparse-step-10.pt
             artifacts/cultistlumen-v1-sparse-metrics-step-10.json
             artifacts/cultist-v1-premarper-pool-manifest.json
+            artifacts/cultist-v1-pool-ctx128-premarper.pkl.gz
+            artifacts/cultistlumen-experiment-lock.json
+            artifacts/pip-freeze.txt
             artifacts/frozen/cultist-tokenizer-v1-8192.json
             artifacts/wise-ronin-corpus-v4.0.0.zip
           if-no-files-found: warn
