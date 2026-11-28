@@ -41,7 +41,9 @@ def writer(prefix):
         line=json.dumps(obj,ensure_ascii=False,separators=(",",":"))+"\n"
         f.write(line); n=len(line.encode()); raw+=n; shard_raw+=n
         if shard_raw>=256*1024**2:
-            f.close(); shards.append({"file":path.name,"compressed_bytes":path.stat().st_size,"raw_bytes":shard_raw}); open_shard()
+            f.close()
+            shards.append({"file":path.name,"compressed_bytes":path.stat().st_size,"raw_bytes":shard_raw})
+            open_shard()
     def close():
         nonlocal f
         if f:
