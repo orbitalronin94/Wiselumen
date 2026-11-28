@@ -11,6 +11,7 @@ permissions:
   contents: read
   actions: read
 
+# Each candidate is paired with an identical 4x4 baseline from random step zero.
 concurrency:
   group: cultistlumen-250m-thread-tournament
   cancel-in-progress: false
