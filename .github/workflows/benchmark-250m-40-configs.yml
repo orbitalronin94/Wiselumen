@@ -194,6 +194,8 @@ jobs:
           grep -q '7a80da74e5742bcb02345218bcc192d5df4c2fb705fdadb7558fde43ae9fcb59' artifacts/cultist-v1-pool-manifest.json
       - name: Compile trainer
         run: python -m py_compile scripts/cultistlumen_v1_dense.py scripts/train_cultist_v1_dense.py
+      - name: Prepare isolated output directories
+        run: mkdir -p artifacts/pair/baseline artifacts/pair/candidate
       - name: Baseline — current config 4 intra / 4 inter, 10 steps from step 0
         env:
           OMP_NUM_THREADS: "4"
