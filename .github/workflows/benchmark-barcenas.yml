@@ -1,11 +1,6 @@
 name: Barcenas-LFM3-1.7B — Spanish teacher benchmark
 
 on:
-  push:
-    branches: [cultistlumen-v1-250m]
-    paths:
-      - 'scripts/benchmark_barcenas.py'
-      - '.github/workflows/benchmark-barcenas.yml'
   workflow_dispatch:
 
 permissions:

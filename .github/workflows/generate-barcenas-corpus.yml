@@ -1,5 +1,10 @@
 name: Barcenas Spanish tutor — corpus generation
 on:
+  push:
+    branches: [cultistlumen-v1-250m]
+    paths:
+      - 'scripts/generate_barcenas_corpus.py'
+      - '.github/workflows/generate-barcenas-corpus.yml'
   workflow_dispatch:
     inputs:
       examples:
