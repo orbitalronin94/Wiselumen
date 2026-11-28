@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/cultistlumen-v2-clean-400k.yml'
+      - 'scripts/train_cultist_v2_clean_block.py'
   workflow_dispatch:
 
 permissions:
