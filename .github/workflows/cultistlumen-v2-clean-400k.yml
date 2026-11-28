@@ -36,8 +36,8 @@ jobs:
         run: |
           mkdir -p artifacts/frozen frozen-inputs
           gh run download 46126706421 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-fast-frozen-inputs --dir frozen-inputs
-          test -s frozen-inputs/artifacts/frozen/cultist-tokenizer-v1-8192.json
-          cp frozen-inputs/artifacts/frozen/cultist-tokenizer-v1-8192.json artifacts/frozen/
+          test -s frozen-inputs/frozen/cultist-tokenizer-v1-8192.json
+          cp frozen-inputs/frozen/cultist-tokenizer-v1-8192.json artifacts/frozen/
           python -m pip install --upgrade pip
           python -m pip install numpy tokenizers==0.21.0
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
