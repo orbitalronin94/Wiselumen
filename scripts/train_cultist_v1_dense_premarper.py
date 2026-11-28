@@ -129,13 +129,7 @@ class WeightedPoolSampler:
         return rng.choice(self.pool[self.names[index]])
 
 def build_step_sources(steps,batch_size,rng):
-    if steps%10: raise ValueError("STEPS must be a multiple of 10 for exact 90/10 schedule")
-    schedule=[]
-    for _ in range(steps//10):
-        tags=["world"]*(batch_size*9)+["marper"]*batch_size
-        rng.shuffle(tags)
-        schedule.extend([tags[i:i+batch_size] for i in range(0,len(tags),batch_size)])
-    return schedule
+    return [["world"]*batch_size for _ in range(steps)]
 
 def main():
     import argparse
