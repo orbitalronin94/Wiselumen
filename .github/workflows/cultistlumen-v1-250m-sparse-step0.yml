@@ -49,10 +49,22 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
-      - name: Install CPU dependencies
+      - name: Recover frozen dependency lock
+        if: ${{ inputs.pool_source_run_id != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/frozen_env
+          gh run download "$POOL_SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name cultistlumen-v1-sparse-250m-premarper-step-10 --dir artifacts/frozen_env
+          test -s artifacts/frozen_env/pip-freeze.txt
+      - name: Install initial CPU dependencies
+        if: ${{ inputs.pool_source_run_id == '' }}
         run: |
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
           python -m pip install tokenizers==0.21.0
+      - name: Restore exact frozen Python package set
+        if: ${{ inputs.pool_source_run_id != '' }}
+        run: python -m pip install --extra-index-url https://download.pytorch.org/whl/cpu -r artifacts/frozen_env/pip-freeze.txt
       - name: Recover and verify frozen 8192 tokenizer derived from V4
         env:
           GH_TOKEN: ${{ github.token }}
@@ -75,10 +87,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p artifacts/frozen_pool
-          gh run download "$POOL_SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name cultistlumen-v1-sparse-250m-premarper-step-10 --dir artifacts/frozen_pool
-          cp artifacts/frozen_pool/cultist-v1-pool-ctx128-premarper.pkl.gz "$POOL_ARCHIVE"
-          cp artifacts/frozen_pool/cultist-v1-premarper-pool-manifest.json artifacts/cultist-v1-premarper-pool-manifest.json
+          cp artifacts/frozen_env/cultist-v1-pool-ctx128-premarper.pkl.gz "$POOL_ARCHIVE"
+          cp artifacts/frozen_env/cultist-v1-premarper-pool-manifest.json artifacts/cultist-v1-premarper-pool-manifest.json
       - name: Assert frozen pool provenance and SHA-256
         run: |
           python - <<'PY'
