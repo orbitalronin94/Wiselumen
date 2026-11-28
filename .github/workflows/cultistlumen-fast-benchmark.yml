@@ -133,8 +133,7 @@ jobs:
       - name: Restore exact Python environment and verify inputs
         run: |
           python -m pip install --extra-index-url https://download.pytorch.org/whl/cpu -r artifacts/pip-freeze.txt
-          mkdir -p artifacts/frozen
-          mv artifacts/cultist-tokenizer-v1-8192.json artifacts/frozen/cultist-tokenizer-v1-8192.json
+          test -s artifacts/frozen/cultist-tokenizer-v1-8192.json
           python - <<'PY'
           import hashlib, json, os
           from pathlib import Path
