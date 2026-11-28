@@ -1,0 +1,124 @@
+name: CULTISTLUMEN FAST-512 — 100k to 500k in 50k blocks
+
+on:
+  push:
+    branches: [cultistlumen-v1-250m]
+    paths:
+      - '.github/workflows/cultistlumen-fast512-100k-to-500k.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cultistlumen-fast512-100k-to-500k
+  cancel-in-progress: false
+
+jobs:
+  train-and-holdout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      OMP_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "1"
+      TORCH_INTEROP_THREADS: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      PYTHONUNBUFFERED: "1"
+      PROFILE: "0"
+      STEPS: "50000"
+      TOTAL_TRAIN_STEPS: "500000"
+      WARMUP: "200"
+      SCHEDULE_START_STEP: "100000"
+      SCHEDULE_WARMUP_STEPS: "500"
+      BASE_LR_MAIN: "0.0008"
+      BASE_LR_EMBED: "0.0004"
+      BATCH_SIZE: "2"
+      CTX: "128"
+      SAMPLED_NEGATIVES: "256"
+      MODEL_D_MODEL: "512"
+      MODEL_D_FF: "2048"
+      MODEL_RANK: "64"
+      MODEL_N_HEAD: "0"
+      POOL_ARCHIVE: "artifacts/cultist-v1-pool-ctx128-premarper.pkl.gz"
+      FROZEN_TOKENIZER: "artifacts/frozen/cultist-tokenizer-v1-8192.json"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11.18"
+      - name: Recover 100k parent checkpoint and frozen inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/parent artifacts/holdouts
+          gh run download 46129437846 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-fast512-continuation-to-100000 --dir artifacts/parent
+          gh run download 46126706421 --repo "${GITHUB_REPOSITORY}" --name cultistlumen-fast-frozen-inputs --dir artifacts
+          test -s artifacts/parent/cultistlumen-v1-fast-step-100000.pt
+          test -s artifacts/pip-freeze.txt
+          test -s "$POOL_ARCHIVE"
+          test -s "$FROZEN_TOKENIZER"
+          echo "91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e  $FROZEN_TOKENIZER" | sha256sum --check
+          echo "5e564605766b0a7c7e5b4784c0bf459588ee103c014a9aa2a1007a48cc402b13  $POOL_ARCHIVE" | sha256sum --check
+          cp artifacts/parent/cultistlumen-v1-fast-step-100000.pt artifacts/parent/current.pt
+      - name: Restore exact environment and verify 100k parent
+        run: |
+          set -euo pipefail
+          python -m pip install --extra-index-url https://download.pytorch.org/whl/cpu -r artifacts/pip-freeze.txt
+          python - <<'PY'
+          import torch, os, gzip, pickle, hashlib
+          p=torch.load("artifacts/parent/current.pt",map_location="cpu",weights_only=False)
+          assert p.get("architecture")=="CULTISTLUMEN-V1-FAST" and p.get("step")==100000
+          assert p.get("model_config",{}).get("d_model")==512 and p.get("ctx")==128
+          assert p.get("tokenizer_sha256")=="91dfa25c95f07ce9e6f3eee94caeb723712d6eaa656a18162adb0d4a047e6d9e"
+          assert p.get("optimizer") is not None, "100k parent must carry AdamW state"
+          with gzip.open(os.environ["POOL_ARCHIVE"],"rb") as f: pool=pickle.load(f)
+          m=pool["metadata"]
+          assert m["context"]==128 and m["corpus_version"]=="v4.0.0-pre-marper"
+          assert m["sampling"]=={"world":1.0,"marper":0.0,"conflicts":0.0}
+          print("PARENT_100K_VERIFIED optimizer_state=present")
+          print("FROZEN_POOL_VERIFIED",m["corpus_version"],m["sampling"])
+          PY
+          python -m py_compile scripts/cultistlumen_v1_fast.py scripts/train_cultist_v1_fast_continue.py scripts/evaluate_cultistlumen_v1_fast_holdout.py
+      - name: Train 8 consecutive 50k blocks with holdout after each
+        run: |
+          set -euo pipefail
+          for END_STEP in 150000 200000 250000 300000 350000 400000 450000 500000; do
+            START_STEP=$((END_STEP-50000))
+            BLOCK_DIR="artifacts/block-${END_STEP}"
+            HOLDOUT_DIR="artifacts/holdouts/step-${END_STEP}"
+            mkdir -p "$BLOCK_DIR" "$HOLDOUT_DIR"
+            echo "===== TRAIN BLOCK ${START_STEP} -> ${END_STEP} ====="
+            export PARENT_CHECKPOINT="artifacts/parent/current.pt"
+            export PARENT_STEP_OFFSET="$START_STEP"
+            export OUT_DIR="$BLOCK_DIR"
+            export STEPS TOTAL_TRAIN_STEPS WARMUP SCHEDULE_START_STEP SCHEDULE_WARMUP_STEPS
+            export BASE_LR_MAIN BASE_LR_EMBED BATCH_SIZE CTX SAMPLED_NEGATIVES
+            export MODEL_D_MODEL MODEL_D_FF MODEL_RANK MODEL_N_HEAD
+            export POOL_ARCHIVE FROZEN_TOKENIZER
+            python scripts/train_cultist_v1_fast_continue.py
+            CHECKPOINT="$BLOCK_DIR/cultistlumen-v1-fast-step-${END_STEP}.pt"
+            METRICS="$BLOCK_DIR/cultistlumen-v1-fast-metrics-step-${END_STEP}.json"
+            test -s "$CHECKPOINT"
+            test -s "$METRICS"
+            echo "===== HOLDOUT AT ${END_STEP} ====="
+            python scripts/evaluate_cultistlumen_v1_fast_holdout.py --checkpoint "$CHECKPOINT" --tokenizer "$FROZEN_TOKENIZER" --checkpoint-step "$END_STEP" --threads 2 --context 128 --max-new-tokens 64 --out-dir "$HOLDOUT_DIR"
+            cp "$CHECKPOINT" artifacts/parent/current.pt
+            echo "PROMOTED_PARENT step=${END_STEP}"
+          done
+      - name: Upload all block checkpoints, metrics and holdouts
+        if: always()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: cultistlumen-fast512-100k-to-500k-blocks-and-holdouts
+          path: |
+            artifacts/block-*/cultistlumen-v1-fast-step-*.pt
+            artifacts/block-*/cultistlumen-v1-fast-metrics-step-*.json
+            artifacts/holdouts/step-*/*.md
+            artifacts/holdouts/step-*/*.json
+            artifacts/parent/current.pt
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 90
